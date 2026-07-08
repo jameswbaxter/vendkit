@@ -11,11 +11,13 @@ from disk, and never changes scope silently (INV-4, INV-10).
 
 Per slice, two versions exist during a sync:
 
-- **PINNED** — the release currently vendored; read from the pin location
-  declared in the consumer slice config (`pin.file` + `pin.pattern`, see
-  onboarding spec). The pin is the platform-native reference line — an ADO
-  repository-resource `ref: refs/tags/vX.Y.Z` or a GHA `uses: owner/repo@vX.Y.Z`
-  / checkout `ref:`. There is no separate version file (single source of truth).
+- **PINNED** — the release currently vendored. The consumer manifest's
+  `source.release` is authoritative (it records what was actually
+  materialised); the pin location declared in the slice config (`pin.file` +
+  `pin.pattern`) is the bootstrap fallback before the first sync, and is what
+  *watch* reads as the consumer's intent. The pin is the platform-native
+  reference line — an ADO repository-resource `ref: refs/tags/vX.Y.Z` or a
+  GHA checkout `ref:` — never a separate version file.
 - **TARGET** — the release the sync pipeline itself is pinned to. Because the
   pipeline reference resolves the publisher tree at TARGET, **the checkout that
   supplies the content also supplies the engine that materialises it** (INV-6).

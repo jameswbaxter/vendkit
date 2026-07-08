@@ -1,0 +1,33 @@
+# VendKit release watch — all slices (release-watch spec).
+# Weekly detection of new publisher releases; findings become issues.
+# The pull_request trigger is the no-secrets dry-run self-test.
+name: vendkit watch
+on:
+  schedule:
+    - cron: "42 7 * * 1"
+  workflow_dispatch:
+  pull_request:
+    paths: [".vendkit/**", ".github/workflows/vendkit-watch.yml"]
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  watch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Fetch vendkit (pinned)
+        uses: actions/checkout@v4
+        with:
+          repository: __PUBLISHER_REPO__
+          ref: refs/tags/__VERSION__
+          path: .vendkit-engine
+      - name: Watch
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          ARGS=""
+          if [ "${{ github.event_name }}" = "pull_request" ]; then ARGS="--dry-run"; fi
+          PYTHONPATH=.vendkit-engine python3 -m vendkit.cli watch $ARGS

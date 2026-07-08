@@ -78,9 +78,25 @@ See [GLOSSARY.md](GLOSSARY.md) for precise terms.
 
 ## Status
 
-Specification phase. Nothing here is implemented. Schemas are versioned from `1`
-and there are **no** compatibility obligations to any prior system: this is a
-clean-room design.
+**Implemented and self-hosting.** The `vendkit` package (core engine, neutral/
+GitHub/ADO ports, CLI), both scaffold sets, the core conformance rules, and the
+scenario test kit are in place; this repository generates and freshness-checks
+its own manifest from its own `vendkit-export.yml`. See `tests/` for the
+executable invariants and [ROADMAP.md](ROADMAP.md) for what remains before a
+public 1.0 (Layer 2 wrapper packaging, live platform-matrix CI, fleet audit,
+API-verified attestations).
+
+Try it end to end without any CI platform (the neutral port drives everything
+against local git repos):
+
+```sh
+python3 -m pytest                      # unit + scenario kit
+python3 -m vendkit.cli generate --check
+python3 -m vendkit.cli --help
+```
+
+Schemas are versioned from `1` and there are **no** compatibility obligations
+to any prior system: this is a clean-room design.
 
 ## License
 

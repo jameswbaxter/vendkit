@@ -1,0 +1,33 @@
+# VendKit conformance — advisory adoption check (conformance spec).
+# Flip --strict once trust is established ("fully onboarded" == strict passes).
+trigger: none
+pr: none
+
+schedules:
+  - cron: "42 8 * * 1"
+    displayName: "vendkit conformance"
+    branches:
+      include: [__BASE_BRANCH__]
+    always: true
+
+resources:
+  repositories:
+    - repository: vendkit
+      type: git
+      name: __PUBLISHER_REPO__
+      ref: refs/tags/__VERSION__
+
+pool:
+  vmImage: ubuntu-latest
+
+steps:
+  - checkout: self
+  - checkout: vendkit
+  - script: |
+      cd $(Build.SourcesDirectory)/$(Build.Repository.Name)
+      pip install --quiet pyyaml
+      PYTHONPATH=$(Build.SourcesDirectory)/vendkit \
+        python3 -m vendkit.cli conformance --slice __SLICE__
+    displayName: "Conformance (advisory)"
+    env:
+      VENDKIT_PLATFORM: ado

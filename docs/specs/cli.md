@@ -10,14 +10,15 @@ One entrypoint: `vendkit`. Single Python package, Python ≥ 3.10. Global flags:
 |---|---|---|---|
 | `vendkit generate [--check]` | build/verify publisher manifest | 0 | manifest-and-gate §3 |
 | `vendkit gate [--strict] [--all\|--manifest <p>]` | consumer integrity verify + INV-7 | 0 | manifest-and-gate §4 |
-| `vendkit sync --check\|--apply --pinned <v> --target <v> [--reconcile-scope] [--porcelain]` | materialise | 0 (+1 in pipeline) | sync |
-| `vendkit is-newer --pinned <v> --target <v>` | pure version compare, retraction-aware | 0 | releases §2, §4 |
+| `vendkit sync --check\|--apply --target <v> [--reconcile-scope] [--porcelain]` | materialise (low-level) | 0 | sync §2 |
+| `vendkit sync-pipeline --slice <s> [--base-branch <b>]` | full sync lane: versions, probe, apply, pin advance, branch, push, PR | 0+1 | sync §3 |
+| `vendkit is-newer --pinned <v> --target <v> [--retracted <v>]…` | pure version compare; retracted list passed by the (YAML-capable) caller | 0 | releases §2, §4 |
 | `vendkit release --bump <b>\|--version <v>` | cut a release | 0+1 | releases §3 |
 | `vendkit watch [--slice <s>] [--dry-run]` | detect upstream releases, handoff | 0+1 | release-watch |
 | `vendkit migrations --pinned <v> --target <v>` | resolve migration window | 0 | migrations §2 |
 | `vendkit migrations-verify --obligations <json>` | deterministic obligation check | 0 | migrations §4 |
 | `vendkit conformance [--strict] [--verify-attestations]` | adoption check | 0+1 | conformance |
-| `vendkit onboard --platform <p> --profile <p> --version <v>` | scaffold a consumer | 3 | onboarding §2 |
+| `vendkit onboard --target-platform <p> --profile <p> --version <v>` | scaffold a consumer (`--target-platform` avoids colliding with the global port `--platform`) | 3 | onboarding §2 |
 
 ## Conventions (uniform across commands)
 

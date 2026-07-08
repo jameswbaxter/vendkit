@@ -1,0 +1,30 @@
+# VendKit gate lane — integrity check on every PR (manifest-and-gate spec §4).
+# One gate for ALL slices, no path filter.
+#
+# IMPORTANT (differences ledger #1): Azure Repos does not act on YAML `pr:`
+# triggers. Attach this pipeline as a Build Validation branch policy on
+# __BASE_BRANCH__, then record the attestations `pull_request_enforcement`
+# and `required_check_enforced` in .vendkit/__SLICE__.yml.
+trigger: none
+pr: none
+
+resources:
+  repositories:
+    - repository: vendkit
+      type: git
+      name: __PUBLISHER_REPO__
+      ref: refs/tags/__VERSION__ # advanced by sync PRs (pin.files)
+
+pool:
+  vmImage: ubuntu-latest
+
+steps:
+  - checkout: self
+  - checkout: vendkit
+  - script: |
+      cd $(Build.SourcesDirectory)/$(Build.Repository.Name)
+      PYTHONPATH=$(Build.SourcesDirectory)/vendkit \
+        python3 -m vendkit.cli gate --all --strict
+    displayName: "Gate — verify every vendored slice"
+    env:
+      VENDKIT_PLATFORM: ado

@@ -1,0 +1,32 @@
+# VendKit's own export declaration — the framework is its own first publisher
+# (architecture §4, self-hosting). Downstream publishers vendor this slice
+# (engine + scaffolds + core rules) and layer their content slices on top.
+#
+# NOTE: publisher.repo is a placeholder until the repository is published;
+# update it (and re-release) when the public home exists.
+schema_version: 1
+
+slice:
+  name: vendkit
+  title: "VendKit machinery"
+
+publisher:
+  platform: github
+  repo: example-org/vendkit
+
+include:
+  - "vendkit/**/*.py"
+  - "conformance/core-rules.yml"
+  - "scaffold/*/*.tmpl"
+  - "pyproject.toml"
+  - "LICENSE"
+
+exclude:
+  - "tests/**"
+  - "**/__pycache__/**"
+
+profiles:
+  # A repo that only consumes slices needs the engine, not the scaffolder's
+  # onboarding machinery — but the engine is one package; subdivision buys
+  # nothing yet. One whole-surface profile until a real need appears.
+  consumer: {}

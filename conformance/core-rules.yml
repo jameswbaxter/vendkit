@@ -1,0 +1,103 @@
+# VendKit core conformance rules — platform-neutral wiring requirements every
+# slice needs (conformance spec §1). Shipped with each framework release;
+# publishers layer slice-specific rules in their own conformance.yml.
+schema_version: 1
+rules:
+  - id: manifest-committed
+    title: "Slice manifest committed"
+    category: vendoring
+    severity: mandatory
+    detector: { kind: file-exists, path: ".vendkit/<slice>-manifest.json" }
+    remediation: >-
+      Vendor the slice and commit .vendkit/<slice>-manifest.json
+      (vendkit onboard does both).
+
+  - id: gate-wired
+    title: "Gate lane wired, pinned, required on PRs"
+    category: enforcement
+    severity: mandatory
+    detector:
+      kind: pipeline-wired
+      component: gate
+      pinned: true
+      events: [pull_request]
+      required_check: true
+    remediation: >-
+      Wire the gate pipeline (scaffolded by vendkit onboard), pin it to a
+      release tag, and enforce it: required status check (GitHub ruleset) or
+      Build Validation branch policy (Azure DevOps). Record the attestations.
+
+  - id: sync-wired
+    title: "Sync lane scheduled and pinned"
+    category: sync
+    severity: mandatory
+    detector:
+      kind: pipeline-wired
+      component: sync
+      pinned: true
+      events: [schedule]
+    remediation: >-
+      Wire the sync pipeline on a schedule, pinned to a release tag, so the
+      pin advances by reviewed PR on a cadence.
+
+  - id: watch-wired
+    title: "Release watch scheduled"
+    category: sync
+    severity: mandatory
+    detector:
+      kind: pipeline-wired
+      component: watch
+      pinned: true
+      events: [schedule]
+    remediation: >-
+      Wire the watch pipeline on a schedule so new publisher releases surface
+      as work items.
+
+  - id: control-plane-owned
+    title: ".vendkit/ under CODEOWNERS"
+    category: protection
+    severity: mandatory
+    detector:
+      kind: codeowners-covers
+      patterns: [".vendkit/"]
+    remediation: >-
+      Add a CODEOWNERS entry covering .vendkit/** so manifests and slice
+      configs cannot change without owner review (security model §5).
+
+  - id: branch-protected
+    title: "Default branch protected"
+    category: protection
+    severity: mandatory
+    detector: { kind: attest, attestation: branch_protection_enabled }
+    remediation: >-
+      Enable branch protection / a branch policy on the default branch and
+      record the attestation in the slice config.
+
+  - id: sync-credential
+    title: "PR-capable sync credential provisioned"
+    category: prerequisites
+    severity: mandatory
+    detector: { kind: attest, attestation: sync_credential_provisioned }
+    remediation: >-
+      Provision the sync lane's PR-capable credential (GitHub: PAT/App token —
+      not GITHUB_TOKEN; ADO: PR-create-capable identity) and record the
+      attestation.
+
+  - id: gate-paths-lockstep
+    title: "Gate path filter (if any) covers every vendored path"
+    category: enforcement
+    severity: mandatory
+    detector: { kind: paths-lockstep, component: gate }
+    remediation: >-
+      Remove the gate pipeline's path filter (preferred; the scaffolded gate
+      runs unfiltered) or broaden it to cover every manifest consumer_path.
+
+  - id: profile-bound
+    title: "Profile declared in slice config"
+    category: vendoring
+    severity: waivable
+    detector: { kind: profile-bound }
+    remediation: >-
+      Bind the consumer to one of the publisher's profiles in
+      .vendkit/<slice>.yml, or waive with a reason if the whole surface is
+      intended.

@@ -1,0 +1,47 @@
+# VendKit sync lane for slice `__SLICE__` (sync spec §3).
+# Scheduled reconciliation; opens ONE reviewed PR per upgrade. Never merges.
+# The `ref:` below IS the pin — single source of truth, advanced by the sync
+# PR itself. Optional push hint (DR-0006): uncomment resources.pipelines to
+# trigger on the publisher's release-pipeline completion.
+trigger: none
+pr: none
+
+schedules:
+  - cron: "17 6 * * 1-5"
+    displayName: "__SLICE__ sync"
+    branches:
+      include: [__BASE_BRANCH__]
+    always: true
+
+resources:
+  repositories:
+    - repository: publisher
+      type: git
+      name: __PUBLISHER_REPO__
+      ref: refs/tags/__VERSION__ # vendkit-pin __SLICE__ (do not duplicate)
+#  pipelines:
+#    - pipeline: publisher-release
+#      source: <publisher release pipeline name>
+#      trigger: true
+
+pool:
+  vmImage: ubuntu-latest
+
+steps:
+  - checkout: self
+    persistCredentials: true
+  - checkout: publisher
+  - script: |
+      cd $(Build.SourcesDirectory)/$(Build.Repository.Name)
+      PYTHONPATH=$(Build.SourcesDirectory)/publisher \
+        python3 -m vendkit.cli sync-pipeline \
+          --publisher-root $(Build.SourcesDirectory)/publisher \
+          --slice __SLICE__ \
+          --base-branch __BASE_BRANCH__
+    displayName: "Sync — check, apply, PR"
+    env:
+      VENDKIT_PLATFORM: ado
+      SYSTEM_ACCESSTOKEN: $(System.AccessToken)
+      # PR-capable credential; must satisfy branch review, never bypass merge
+      # (security model §4).
+      VENDKIT_TOKEN_OPEN_PR: $(__PR_TOKEN_SECRET__)

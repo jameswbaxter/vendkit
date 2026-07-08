@@ -1,0 +1,26 @@
+# VendKit conformance — advisory adoption check (conformance spec).
+# Flip --strict once trust is established ("fully onboarded" == strict passes).
+name: vendkit conformance
+on:
+  schedule:
+    - cron: "42 8 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  conformance:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Fetch vendkit (pinned)
+        uses: actions/checkout@v4
+        with:
+          repository: __PUBLISHER_REPO__
+          ref: refs/tags/__VERSION__
+          path: .vendkit-engine
+      - name: Conformance (advisory)
+        run: |
+          pip install --quiet pyyaml
+          PYTHONPATH=.vendkit-engine python3 -m vendkit.cli conformance --slice __SLICE__

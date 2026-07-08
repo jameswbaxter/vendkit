@@ -127,10 +127,11 @@ vendkit/
       github.py             #   GitHub binding
       neutral.py            #   no-CI binding (local runs, tests)
     cli.py                  #   single entrypoint `vendkit`
-  platforms/
-    ado/templates/*.yml     # Layer 2: ADO step templates
-    github/actions/*/action.yml       # Layer 2: composite actions
-    github/workflows/*.yml  # Layer 2: reusable workflows
+  platforms/                # Layer 2 wrapper packaging (DEFERRED, see roadmap):
+    ado/templates/*.yml     #   the scaffolded consumer pipelines currently
+    github/actions/*/action.yml       #   invoke the CLI directly from the
+    github/workflows/*.yml  #   pinned publisher checkout — same guarantees,
+                            #   fewer moving parts; wrappers are packaging sugar
   scaffold/
     ado/*.tmpl              # Layer 3: consumer pipeline scaffolds (ADO)
     github/*.tmpl           # Layer 3: consumer pipeline scaffolds (GHA)

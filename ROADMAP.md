@@ -5,6 +5,18 @@ everything built so far (self-hosting is the permanent integration
 environment). "Both platforms" always means the full scenario matrix on ADO
 and GHA (testing.md §3).
 
+> **Status:** M0 is complete and most of M1–M3's Layer 0 scope shipped with it
+> (gate incl. INV-7, sync-pipeline, release with bump/migration pre-gates,
+> watch incl. tag-moved, migrations resolve/verify, conformance with attest
+> degradation, onboard for both platforms — all covered by the scenario kit
+> under the neutral port). Deliberate deviation from the original M1 shape:
+> scaffolded consumer pipelines invoke the CLI directly from the pinned
+> publisher checkout instead of going through `platforms/` wrapper files —
+> same guarantees, fewer moving parts; wrappers remain M4 packaging polish.
+> Still open: live platform-matrix CI (testing §3), REST-fixture contract
+> tests for the GitHub/ADO ports, push-hint dispatch step, fleet audit,
+> API-verified attestations, public-repo hygiene.
+
 ## M0 — Skeleton and invariants (foundation)
 
 - Repo scaffold per architecture §4; CI for lint + unit tests; license

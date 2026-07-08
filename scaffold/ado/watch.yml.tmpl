@@ -1,0 +1,39 @@
+# VendKit release watch — all slices (release-watch spec).
+# Weekly detection of new publisher releases; findings become work items.
+# Attach to a Build Validation policy scoped to .vendkit/** for the
+# no-secrets dry-run self-test on PRs (the pipeline passes --dry-run when
+# Build.Reason == PullRequest).
+trigger: none
+pr: none
+
+schedules:
+  - cron: "42 7 * * 1"
+    displayName: "vendkit watch"
+    branches:
+      include: [__BASE_BRANCH__]
+    always: true
+
+resources:
+  repositories:
+    - repository: vendkit
+      type: git
+      name: __PUBLISHER_REPO__
+      ref: refs/tags/__VERSION__
+
+pool:
+  vmImage: ubuntu-latest
+
+steps:
+  - checkout: self
+  - checkout: vendkit
+  - script: |
+      cd $(Build.SourcesDirectory)/$(Build.Repository.Name)
+      pip install --quiet pyyaml
+      ARGS=""
+      if [ "$(Build.Reason)" = "PullRequest" ]; then ARGS="--dry-run"; fi
+      PYTHONPATH=$(Build.SourcesDirectory)/vendkit \
+        python3 -m vendkit.cli watch $ARGS
+    displayName: "Watch"
+    env:
+      VENDKIT_PLATFORM: ado
+      SYSTEM_ACCESSTOKEN: $(System.AccessToken)

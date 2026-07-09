@@ -1,0 +1,73 @@
+{
+  "tree": [
+    "docs/a.md",
+    "docs/sub/b.md",
+    "docs/sub/deep/c.md",
+    "docs/.hidden.md",
+    "docs/a.txt",
+    "tools/check",
+    "tools/lint/run",
+    "TEMPLATE.md",
+    "templates/x.md"
+  ],
+  "cases": [
+    {
+      "pattern": "docs/**/*.md",
+      "matches": [
+        "docs/.hidden.md",
+        "docs/a.md",
+        "docs/sub/b.md",
+        "docs/sub/deep/c.md"
+      ]
+    },
+    {
+      "pattern": "docs/*.md",
+      "matches": [
+        "docs/.hidden.md",
+        "docs/a.md"
+      ]
+    },
+    {
+      "pattern": "**/*.md",
+      "matches": [
+        "TEMPLATE.md",
+        "docs/.hidden.md",
+        "docs/a.md",
+        "docs/sub/b.md",
+        "docs/sub/deep/c.md",
+        "templates/x.md"
+      ]
+    },
+    {
+      "pattern": "tools/*",
+      "matches": [
+        "tools/check"
+      ]
+    },
+    {
+      "pattern": "tools/**/*",
+      "matches": [
+        "tools/check",
+        "tools/lint/run"
+      ]
+    },
+    {
+      "pattern": "docs/*",
+      "matches": [
+        "docs/.hidden.md",
+        "docs/a.md",
+        "docs/a.txt"
+      ]
+    },
+    {
+      "pattern": "*.md",
+      "matches": [
+        "TEMPLATE.md"
+      ]
+    },
+    {
+      "pattern": "docs/**",
+      "matches": []
+    }
+  ]
+}

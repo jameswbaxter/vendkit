@@ -9,12 +9,12 @@ and GHA (testing.md §3).
 > (gate incl. INV-7, sync-pipeline, release with bump/migration pre-gates,
 > watch incl. tag-moved, migrations resolve/verify, conformance with attest
 > degradation, onboard for both platforms — all covered by the scenario kit
-> under the neutral port). Deliberate deviation from the original M1 shape:
+> against local git repos + the journal handler). Deliberate deviation from the original M1 shape:
 > scaffolded consumer pipelines invoke the CLI directly from the pinned
 > publisher checkout instead of going through `platforms/` wrapper files —
 > same guarantees, fewer moving parts; wrappers remain M4 packaging polish.
 > Still open: live platform-matrix CI (testing §3), REST-fixture contract
-> tests for the GitHub/ADO ports, push-hint dispatch step, fleet audit,
+> tests for the GitHub/ADO reference handlers, push-hint dispatch step, fleet audit,
 > API-verified attestations, public-repo hygiene.
 
 ## M0 — Skeleton and invariants (foundation)
@@ -23,7 +23,7 @@ and GHA (testing.md §3).
   (Apache-2.0) and project naming decision (drop the provisional name).
 - Layer 0: export-declaration parser + validation; normalisation + manifest
   build (`generate`, `generate --check`); version grammar + `is-newer`.
-- Neutral port; CLI skeleton with the exit-code/output conventions (cli.md).
+- Neutral CI surface + journal handler; CLI skeleton with the exit-code/output conventions (cli.md).
 - Scenario-kit harness (throwaway git fixtures) with the manifest round-trip
   cases.
 - **Exit criteria:** INV-2 property tests green; this repo generates and
@@ -33,7 +33,7 @@ and GHA (testing.md §3).
 
 - `gate` (with `--all` + INV-7 collision detection); `sync --check/--apply`
   with adapters, reconcile-scope, provenance recording; porcelain contract.
-- ADO + GHA ports: `emit_output`/`emit_summary`; Layer 2 wrappers for gate and
+- ADO + GHA CI surfaces (`emit_output`/`emit_summary`) and reference handlers; Layer 2 wrappers for gate and
   sync; scaffolder MVP (`onboard`, both platforms, primary mode only).
 - Scenario matrix for INV-1/3/4/7 on both platforms.
 - **Exit criteria:** a demo consumer on each platform vendors a slice from this
@@ -45,7 +45,7 @@ and GHA (testing.md §3).
 - `release` (freshness pre-gate, surface-delta bump enforcement, annotated
   tags); tag-protection setup docs + publisher conformance attests.
 - `watch` (pin scan, channel filter, retraction, provenance `tag-moved`
-  check); port `list_release_tags` + `upsert_work_item` (issue + workitem);
+  check); git-protocol tag listing + handoff handlers (issue + work item);
   credential purposes + liveness probe.
 - Retraction + rc channels in `is-newer`/sync.
 - **Exit criteria:** demo consumers detect and adopt a real release of this
@@ -82,7 +82,7 @@ and GHA (testing.md §3).
 
 - Central push distributor (DR-0006 keeps the door open; no current need).
 - Additional adapter kinds (DR-0009: new kinds are MAJOR events).
-- Third CI platform (DR-0007: the port + ledger make it tractable; not before
+- Third CI platform (DR-0007/DR-0014: template pack + handler + ledger make it tractable; not before
   1.0).
 - Signed manifests/attestations (provenance SHA + ref protection first; revisit
   if consumers cross trust domains).

@@ -3,34 +3,42 @@
 ## 1. Layering
 
 ```
-Layer 3  Adoption surface      scaffolder (onboard), conformance rule specs,
+Layer 3  Adoption surface      scaffolder (init), conformance rule specs,
                                operator documentation
 Layer 2  Platform integration  ADO step templates / GHA composite actions +
                                reusable workflows — thin, parameters-only
-Layer 1  Platform ports        release listing, PR creation, work-item/issue
-                               upsert, CI output + summary emission, trigger
-                               wiring, credential model  (one binding per platform)
+Layer 1  Platform adaptation   CI output surface (in-process dialects) +
+                               handler executables (vendor services: PR,
+                               work items, fact verification) behind the
+                               exec handler protocol
 Layer 0  Core engine           declaration parsing, manifest, materialise,
                                gate verification, version compare, migrations,
-                               conformance evaluation  (pure Python, CI-agnostic)
+                               conformance evaluation, git-protocol upstream
+                               reads  (pure Python; git + filesystem only)
 ```
 
 Rules that keep the layers honest:
 
-- **Layer 0 imports nothing platform-specific** and never inspects CI
-  environment variables except through the port's `detect()` helper. Its outputs
-  are neutral: exit codes, `key=value` lines on stdout, JSON documents.
-- **Layer 1 is the only place platform REST APIs and CI logging dialects
-  appear.** Everything above and below it is shared across platforms.
-- **Layer 2 contains no logic.** A template/action validates parameters, calls
-  the CLI, and maps neutral outputs to platform outputs via the port. If a
-  template needs an `if`, the condition belongs in Layer 0 or 1.
-- **Layer 3 is data plus rendering.** The scaffolder renders platform-keyed
-  template sets; conformance rules are YAML evaluated by the Layer 0 engine with
-  detector bindings supplied by Layer 1.
+- **Layer 0 calls no vendor service** — its externals are git, the
+  filesystem, and handler subprocesses; it never inspects CI environment
+  variables except through `ci.detect()`. Its outputs are neutral: exit
+  codes, `key=value` lines on stdout, JSON documents.
+- **Layer 1 is the only place vendor knowledge appears, split by the
+  format-vs-service rule (DR-0015):** in-process code may understand vendor
+  *formats* (output dialects, pipeline YAML, CODEOWNERS syntax); vendor
+  *services* live exclusively in handler executables behind the handler
+  protocol (DR-0014).
+- **Layer 2 contains no logic.** A template/action validates parameters,
+  calls the CLI, and maps neutral outputs to platform outputs via the CI
+  surface. If a template needs an `if`, the condition belongs in Layer 0
+  or 1.
+- **Layer 3 is data plus rendering.** The scaffolder renders CI-keyed
+  template sets; conformance rules are YAML evaluated by the Layer 0 engine.
 
-See [specs/platform-ports.md](specs/platform-ports.md) for the port interface
-and DR-0007 for why the boundary sits exactly here.
+See [specs/platform-integration.md](specs/platform-integration.md) for the
+CI surface and credential model, [specs/handler-protocol.md](specs/handler-protocol.md)
+for the delivery boundary, and DR-0007/DR-0014 for why the boundary sits
+exactly here.
 
 ## 2. Components and data flow
 
@@ -46,8 +54,8 @@ flowchart LR
   end
 
   subgraph Consumer repo
-    W[watch] -->|pinned < latest| H[handoff: work item / issue]
-    S[sync lane] -->|materialise target release| PR[reviewed sync PR]
+    W[watch] -->|pinned < latest| H[handoff handler → work item / issue]
+    S[sync lane] -->|materialise target release| PR[PR handler → reviewed sync PR]
     GATE[gate lane] -->|every PR| OK{merge allowed}
     MR[migration resolve] --> H2[migration handoff] --> V[migration verify]
     C[conformance check] --> H
@@ -56,7 +64,7 @@ flowchart LR
   end
 
   T -->|pull: schedule / push: release trigger| S
-  T -->|tags API via port| W
+  T -->|git ls-remote --tags| W
 ```
 
 Component inventory, each with its own spec:
@@ -65,13 +73,14 @@ Component inventory, each with its own spec:
 |---|---|---|
 | Export declaration | 0 (schema) | [specs/export-declaration.md](specs/export-declaration.md) |
 | Manifest + gate lane | 0 | [specs/manifest-and-gate.md](specs/manifest-and-gate.md) |
-| Materialise / sync lane | 0 (+1 for PR) | [specs/sync.md](specs/sync.md) |
-| Release cutter | 0 (+1 for push) | [specs/releases-and-versioning.md](specs/releases-and-versioning.md) |
-| Release watch | 0 (+1 for tags API) | [specs/release-watch.md](specs/release-watch.md) |
-| Migrations | 0 (+1 for handoff) | [specs/migrations.md](specs/migrations.md) |
-| Conformance | 0 (+1 detector bindings) | [specs/conformance.md](specs/conformance.md) |
-| Platform ports | 1 | [specs/platform-ports.md](specs/platform-ports.md) |
-| Templates / actions | 2 | [specs/platform-ports.md](specs/platform-ports.md) §5 |
+| Materialise / sync lane | 0 (+1 PR handler) | [specs/sync.md](specs/sync.md) |
+| Release cutter | 0 | [specs/releases-and-versioning.md](specs/releases-and-versioning.md) |
+| Release watch | 0 (+1 handoff handler) | [specs/release-watch.md](specs/release-watch.md) |
+| Migrations | 0 (+1 handoff handler) | [specs/migrations.md](specs/migrations.md) |
+| Conformance | 0 (formats only) | [specs/conformance.md](specs/conformance.md) |
+| Handler protocol + reference handlers | 1 | [specs/handler-protocol.md](specs/handler-protocol.md) |
+| CI surface, credentials, differences ledger | 1 | [specs/platform-integration.md](specs/platform-integration.md) |
+| Templates / actions | 2 | [specs/platform-integration.md](specs/platform-integration.md) §5 |
 | Scaffolder + consumer config | 3 | [specs/onboarding.md](specs/onboarding.md) |
 | CLI | 0 surface | [specs/cli.md](specs/cli.md) |
 
@@ -105,8 +114,10 @@ Numbered; other specs cite them as INV-n. The conformance kit
   `consumer_path` sets are pairwise disjoint. Checked by the gate lane on every
   PR.
 - **INV-8 (Neutral core).** Layer 0 behaves identically on every platform and
-  in no-CI (local/dev) execution. Platform behaviour differences are confined
-  to Layer 1 bindings and are enumerated in the port spec.
+  in no-CI (local/dev) execution — it calls no vendor service (DR-0014).
+  Platform behaviour differences are confined to Layer 1 (CI surface,
+  handlers, dialect parsing) and are enumerated in the platform-integration
+  spec's differences ledger.
 - **INV-9 (Dependency-free gate).** The consumer-side gate path runs on a stock
   Python standard library — no third-party packages, no YAML parsing (the gate
   reads only the JSON manifest).
@@ -114,29 +125,32 @@ Numbered; other specs cite them as INV-n. The conformance kit
   protected branch, or mutates consumer-owned content directly. Every change
   lands as a PR under the consumer's normal review rules.
 
-## 4. Repository layout (future implementation)
+## 4. Repository layout
 
 ```
 vendkit/
   vendkit/                  # Layer 0+1 Python package
-    core/                   #   engine: declaration, manifest, materialise, verify,
-    │                       #   versions, migrations, conformance
-    ports/
-      base.py               #   port interface (Protocol)
-      ado.py                #   Azure DevOps binding
-      github.py             #   GitHub binding
-      neutral.py            #   no-CI binding (local runs, tests)
+    core/                   #   engine: declaration, manifest, materialise,
+    │                       #   verify, versions, migrations, conformance,
+    │                       #   upstream (git-protocol reads), handlers
+    │                       #   (invocation side of the handler protocol)
+    handlers/               #   reference handler executables (Layer 1):
+      github.py             #     GitHub PR/issue/fact delivery
+      ado.py                #     Azure DevOps PR/work-item/fact delivery
+      journal.py            #     neutral journal (tests, local runs)
+    ci.py                   #   CI output surface — the one in-process
+    │                       #   platform adaptation (DR-0014)
     cli.py                  #   single entrypoint `vendkit`
   platforms/                # Layer 2 wrapper packaging (DEFERRED, see roadmap):
-    ado/templates/*.yml     #   the scaffolded consumer pipelines currently
-    github/actions/*/action.yml       #   invoke the CLI directly from the
-    github/workflows/*.yml  #   pinned publisher checkout — same guarantees,
-                            #   fewer moving parts; wrappers are packaging sugar
+    azure-pipelines/templates/*.yml       # the scaffolded consumer pipelines
+    github-actions/actions/*/action.yml   # currently invoke the CLI directly
+    github-actions/workflows/*.yml        # from the pinned publisher checkout —
+                            #   same guarantees, fewer moving parts
   scaffold/
-    ado/*.tmpl              # Layer 3: consumer pipeline scaffolds (ADO)
-    github/*.tmpl           # Layer 3: consumer pipeline scaffolds (GHA)
+    azure-pipelines/*.tmpl  # Layer 3: consumer pipeline scaffolds (ADO)
+    github-actions/*.tmpl   # Layer 3: consumer pipeline scaffolds (GHA)
+                            #   (ci: none scaffolds no pipelines at all)
   conformance/
-    spec-schema.md          # rule schema
     core-rules.yml          # platform-neutral wiring rules shipped by default
   migrations/               # this repo's own migration payloads (self-hosted)
   vendkit-export.yml        # this repo's own export declaration (self-hosted)
@@ -144,7 +158,7 @@ vendkit/
 ```
 
 **Self-hosting.** The framework repository is its own first publisher: it
-exports the engine, ports, templates and scaffolder as a slice, cuts releases
+exports the engine, handlers, templates and scaffolder as a slice, cuts releases
 with its own release command, and gates itself with its own gate lane. Downstream
 publishers vendor the machinery slice and layer their own content slices on top
 (tier chain). Bootstrap is unproblematic: the release freshness pre-gate needs

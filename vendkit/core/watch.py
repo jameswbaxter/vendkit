@@ -1,15 +1,20 @@
-"""Release watch (release-watch spec). Layer 0 compare; port for listing."""
+"""Release watch (release-watch spec). Pure detection — no delivery.
+
+Watch compares each slice's pin against the publisher's latest qualifying
+release over the git protocol (core/upstream.py) and returns findings.
+Turning findings into tickets is the handoff handler's job (DR-0014); the
+CLI invokes it, this module never does.
+"""
 
 from __future__ import annotations
 
 from dataclasses import dataclass, field
 from pathlib import Path
 
-from . import versions
+from . import upstream, versions
 from .manifest import VENDKIT_DIR, load_manifest
 from .sliceconfig import SliceConfig, discover_slice_configs, read_pin
-from .util import UsageError, VendkitError
-from ..ports.base import RepoRef
+from .util import UsageError
 
 
 @dataclass
@@ -32,12 +37,12 @@ class WatchReport:
         return [f for f in self.findings if f.kind != "no-releases"]
 
 
-def _retracted_at_newest(port, repo: RepoRef, newest_tag: str) -> list[str]:
+def retracted_at_newest(url: str, newest_tag: str) -> list[str]:
     """Read the retraction list from the NEWEST release's declaration
     (releases spec §4 bootstrapping quirk). Best-effort: an unreadable
     declaration means no retractions, not a crash."""
     try:
-        raw = port.read_file(repo, newest_tag, "vendkit-export.yml")
+        raw = upstream.read_file_at(url, newest_tag, "vendkit-export.yml")
         import yaml
         data = yaml.safe_load(raw) or {}
         return list(data.get("retracted") or [])
@@ -47,7 +52,6 @@ def _retracted_at_newest(port, repo: RepoRef, newest_tag: str) -> list[str]:
 
 def watch(
     consumer_root: str,
-    get_port,
     slice_name: str | None = None,
     dry_run: bool = False,
 ) -> WatchReport:
@@ -61,11 +65,11 @@ def watch(
         report.slices += 1
         if dry_run:
             continue  # PR self-test: no network, empty successful report
-        report.findings.extend(_watch_one(consumer_root, cfg, get_port))
+        report.findings.extend(_watch_one(consumer_root, cfg))
     return report
 
 
-def _watch_one(consumer_root: str, cfg: SliceConfig, get_port) -> list[WatchFinding]:
+def _watch_one(consumer_root: str, cfg: SliceConfig) -> list[WatchFinding]:
     findings: list[WatchFinding] = []
     # 1. PINNED — config rot must be loud (spec §2).
     try:
@@ -73,17 +77,13 @@ def _watch_one(consumer_root: str, cfg: SliceConfig, get_port) -> list[WatchFind
     except UsageError as exc:
         return [WatchFinding(cfg.slice_name, "pin-unreadable", detail=str(exc))]
 
-    # 2. LATEST via the upstream's platform port.
-    port = get_port(cfg.publisher_platform)
-    repo = RepoRef(cfg.publisher_platform, cfg.publisher_repo)
-    try:
-        tags = port.list_release_tags(repo)
-    except VendkitError as exc:
-        raise  # infrastructure failure: propagate, exit >= 4
+    # 2. LATEST over the git protocol (vendor-free — DR-0015).
+    url = upstream.clone_url(cfg.publisher_scm, cfg.publisher_repo)
+    tags = upstream.list_release_tags(url)
 
     names = [t.name for t in tags]
     newest = versions.latest(names, channel="rc")
-    retracted = _retracted_at_newest(port, repo, newest) if newest else []
+    retracted = retracted_at_newest(url, newest) if newest else []
     latest = versions.latest(names, channel=cfg.channel, retracted=retracted)
     if latest is None:
         return [WatchFinding(cfg.slice_name, "no-releases")]

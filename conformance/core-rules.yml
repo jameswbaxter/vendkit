@@ -54,15 +54,18 @@ rules:
       as work items.
 
   - id: control-plane-owned
-    title: ".vendkit/ under CODEOWNERS"
+    title: ".vendkit/ changes require owner review"
     category: protection
-    severity: mandatory
+    severity: waivable
     detector:
       kind: codeowners-covers
       patterns: [".vendkit/"]
     remediation: >-
-      Add a CODEOWNERS entry covering .vendkit/** so manifests and slice
-      configs cannot change without owner review (security model §5).
+      GitHub: add a CODEOWNERS entry covering .vendkit/** (opt-in at init
+      via --codeowners). Azure Repos does not honour CODEOWNERS: add a
+      required-reviewers branch policy and record the
+      required_reviewers_policy attestation. Waivable with a reason where
+      ownership review is handled by other means (security model §5).
 
   - id: branch-protected
     title: "Default branch protected"

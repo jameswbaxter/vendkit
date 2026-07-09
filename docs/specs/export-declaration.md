@@ -21,10 +21,12 @@ slice:
   title: "Design docs"        # Optional display title (reports, PR titles). Default: name.
 
 publisher:
-  # REQUIRED. Platform-neutral coordinates of this repo, used by scaffolded
-  # consumer pipelines and by watch entries. `repo` is owner/repo (GitHub) or
-  # project/repo (ADO).
-  platform: github            # github | ado
+  # REQUIRED. Coordinates of this repo, used by scaffolded consumer
+  # pipelines and watch entries. `scm` is provenance and shorthand-expansion
+  # metadata only — core never branches on it (DR-0015). `repo` is a
+  # shorthand (github: owner/repo; azure-repos: org/project/repo) or any
+  # git-cloneable URL/path, used verbatim.
+  scm: github                 # github | azure-repos
   repo: example-org/design-docs
 
 include:                      # Anchored, repo-relative glob patterns.

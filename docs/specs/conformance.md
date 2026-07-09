@@ -53,34 +53,40 @@ Platform-neutral kinds, implemented in Layer 0 unless noted:
 | `file-exists` | path present | |
 | `manifest-tracked` | path is a `consumer_path` in the slice manifest | |
 | `profile-bound` | slice config declares a profile the declaration defines | |
-| `codeowners-covers` | ownership file covers given patterns | both platforms use CODEOWNERS syntax |
-| `paths-lockstep` | if the gate pipeline path-filters, the filter covers every `consumer_path` | Layer 1 parses the pipeline |
-| `pipeline-wired` | a pipeline references the given framework component, pinned, on the given events, enforced | **Layer 1 binding per platform**, §3 |
+| `codeowners-covers` | ownership review covers given patterns | SCM-axis: GitHub parses CODEOWNERS; Azure Repos does not honour it → degrades to the `required_reviewers_policy` attestation (DR-0015) |
+| `paths-lockstep` | if the gate pipeline path-filters, the filter covers every `consumer_path` | parses the dialect named by the slice config's `ci:`; `skipped` under `ci: none` |
+| `pipeline-wired` | a pipeline references the given framework component, pinned, on the given events, enforced | dialect by `ci:`, §3; `skipped` under `ci: none` (manual mode is visible, not hidden) |
 | `attest` | consumer config asserts a non-tree-decidable fact | §4 |
 | `tool` | a manifest-tracked executable exits 0 | shared with migration checks |
+
+Pipeline parsing is *format* knowledge and stays in core; anything needing a
+vendor *service* goes through the fact-verify handler (§4) — the
+format-vs-service rule (DR-0015).
 
 Publishers may not invent detector kinds; they extend via `tool` (vendored,
 gate-verified executables). This keeps the checker's trusted computing base
 fixed.
 
-## 3. `pipeline-wired`: per-platform decidability
+## 3. `pipeline-wired`: per-CI decidability
 
-The same rule is decided differently per platform — this is the canonical
-example of the port boundary in conformance:
+The same rule is decided differently per CI dialect (selected by the slice
+config's `ci:` field, never env-sniffed — a fleet audit decides identically
+to CI):
 
-| Aspect | GitHub Actions | Azure DevOps |
+| Aspect | github-actions | azure-pipelines |
 |---|---|---|
-| Locate pipelines | `.github/workflows/*.yml` | `azure-pipelines/*.yml`, `azure-pipelines.yml`, configured dirs |
-| "references component" | `uses: <publisher-repo>/<path>@<ref>` or `uses: ./` composite call | `- template: <path>@<alias>` where alias resolves via `resources.repositories` |
-| `pinned` | `@vX.Y.Z` (or 40-hex SHA) | alias `ref:` starts `refs/tags/` |
-| `events: [pull_request]` | tree-decidable: `on: pull_request` | **not tree-decidable**: Azure Repos ignores `pr:`; requires Build Validation policy → `attest` (or API verification when a token with policy read is provided) |
+| Locate pipelines | `.github/workflows/*.yml` | `azure-pipelines/*.yml`, `azure-pipelines.yml` |
+| "references component" | the pipeline invokes the component's CLI subcommand (direct call, composite action, or template all bottom out in the invocation) | same |
+| `pinned` | a `refs/tags/vX.Y.Z` checkout ref, `@vX.Y.Z`, or 40-hex SHA | `resources.repositories` `ref:` starts `refs/tags/` |
+| `events: [pull_request]` | tree-decidable: `on: pull_request` | **not tree-decidable**: Azure Repos ignores `pr:`; requires Build Validation policy → `attest` (or fact-verify handler, §4) |
 | `events: [schedule]` | tree-decidable: `on: schedule` | tree-decidable: `schedules:` block |
-| `required_check` | branch protection / ruleset → `attest` or API | Build Validation policy → `attest` or API |
+| `required_check` | branch protection / ruleset → `attest` or fact-verify | Build Validation policy → `attest` or fact-verify |
+| `ci: none` | every `pipeline-wired`/`paths-lockstep` rule reports `skipped` — manual orchestration forfeits automated enforcement, stated in every report | same |
 
-The rule *spec* stays identical across platforms; only the Layer 1 binding
+The rule *spec* stays identical across platforms; only the dialect binding
 changes (INV-8). Where a platform fact is not tree-decidable the binding
-degrades to an `attest` sub-check automatically, and upgrades itself to an API
-check when the port is given a credential with the relevant read scope.
+degrades to an `attest` sub-check automatically, with the fact-verify
+handler as the upgrade path (§4).
 
 ## 4. Attestations
 
@@ -95,8 +101,11 @@ attestations:
 ```
 
 Attested rules report `attested`, not `pass` — dashboards can distinguish
-verified facts from asserted ones. Ports should offer `--verify-attestations`
-to check them via API where scopes allow, promoting `attested` → `pass`.
+verified facts from asserted ones. `conformance --verify-attestations`
+sends each attested fact to the configured **fact-verify handler**
+(handler-protocol spec §3): verdict `true` promotes `attested` → `pass`,
+`false` demotes to `fail` (a wrong attestation is a finding), `unknown`
+(insufficient scopes) leaves it attested. Core calls no vendor API itself.
 
 ## 5. Fleet view
 

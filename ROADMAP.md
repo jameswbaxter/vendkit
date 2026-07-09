@@ -13,6 +13,12 @@ and GHA (testing.md §3).
 > scaffolded consumer pipelines invoke the CLI directly from the pinned
 > publisher checkout instead of going through `platforms/` wrapper files —
 > same guarantees, fewer moving parts; wrappers remain M4 packaging polish.
+> Go engine (DR-0017): implemented at the repo root (cmd/vendkit, internal/,
+> embedded assets); full scenario-kit parity with the Python reference
+> (VENDKIT_CLI ratchet) and byte-identical self-host manifests both ways.
+> Still to do for the cutover: release-attached checksummed binaries +
+> engine pin (DR-0016), Go reference handlers, Python retirement (MAJOR).
+>
 > Still open: live platform-matrix CI (testing §3), REST-fixture contract
 > tests for the GitHub/ADO reference handlers, push-hint dispatch step, fleet audit,
 > API-verified attestations, public-repo hygiene.

@@ -8,11 +8,193 @@
       "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30"
     },
     {
+      "consumer_path": "assets.go",
+      "exec": false,
+      "path": "assets.go",
+      "raw": false,
+      "sha256": "9fe16a0dc5df98ecd112d5d242e86efd68edbcc34056a4f5f34bf075461a0a26"
+    },
+    {
+      "consumer_path": "cmd/vendkit/cmds.go",
+      "exec": false,
+      "path": "cmd/vendkit/cmds.go",
+      "raw": false,
+      "sha256": "efd886ccbba0cf66db605e5b1ee391147814d7d4563df50dbb0978a587c77cfc"
+    },
+    {
+      "consumer_path": "cmd/vendkit/human.go",
+      "exec": false,
+      "path": "cmd/vendkit/human.go",
+      "raw": false,
+      "sha256": "52cac5c7fde3644b1c5d1c9078efdff94a5699f15dd172aa06e6f866c3503e04"
+    },
+    {
+      "consumer_path": "cmd/vendkit/main.go",
+      "exec": false,
+      "path": "cmd/vendkit/main.go",
+      "raw": false,
+      "sha256": "1f30c76b9c44e73a6d2d81b3300b973945742b6d1812a6d8453b1dff0176e6b2"
+    },
+    {
       "consumer_path": "conformance/core-rules.yml",
       "exec": false,
       "path": "conformance/core-rules.yml",
       "raw": false,
       "sha256": "6d75862c604f95799b8077bfc7fa2e42a657585d95893e3bd8784eb95482c8ee"
+    },
+    {
+      "consumer_path": "go.mod",
+      "exec": false,
+      "path": "go.mod",
+      "raw": false,
+      "sha256": "51f3893c52726fbbd8a5bb064b9e54c18bbda9c51fd34fe522fab24e41c421da"
+    },
+    {
+      "consumer_path": "go.sum",
+      "exec": false,
+      "path": "go.sum",
+      "raw": false,
+      "sha256": "e42794fa9b56301ad073de55cac1dea683b320ed951454d8709ffc7156088dd2"
+    },
+    {
+      "consumer_path": "internal/ci/ci.go",
+      "exec": false,
+      "path": "internal/ci/ci.go",
+      "raw": false,
+      "sha256": "5f6fc99cfbb1b65dbfa1833fba1d9124c1969edbff0861a9c982bf07dd93f836"
+    },
+    {
+      "consumer_path": "internal/core/adapters.go",
+      "exec": false,
+      "path": "internal/core/adapters.go",
+      "raw": false,
+      "sha256": "0ab3fe8a55a9629ae692e9bb58f0755afffced85dc5e3a90e5fa44d89f76e705"
+    },
+    {
+      "consumer_path": "internal/core/canonjson.go",
+      "exec": false,
+      "path": "internal/core/canonjson.go",
+      "raw": false,
+      "sha256": "2efdae02dc0eb3b93a8a2a8caaca5f5d2e071834c9bb0cd443cbd46f78c1222f"
+    },
+    {
+      "consumer_path": "internal/core/conformance.go",
+      "exec": false,
+      "path": "internal/core/conformance.go",
+      "raw": false,
+      "sha256": "e80746ca2ebe7a6b5b06074278faafdc99c7833bffc69399e252bfac027b77d3"
+    },
+    {
+      "consumer_path": "internal/core/declaration.go",
+      "exec": false,
+      "path": "internal/core/declaration.go",
+      "raw": false,
+      "sha256": "f55b19c837a7d35c003b63d1d609faf5c92d302beb7c18476df3a51e73722322"
+    },
+    {
+      "consumer_path": "internal/core/difflib.go",
+      "exec": false,
+      "path": "internal/core/difflib.go",
+      "raw": false,
+      "sha256": "d0f40996c5c3c56e2ce4bd575444e73e81711c2eb90157aa821a27703d3ea819"
+    },
+    {
+      "consumer_path": "internal/core/handlers.go",
+      "exec": false,
+      "path": "internal/core/handlers.go",
+      "raw": false,
+      "sha256": "4e9fb3b8cfebb7671c7e791b633cf6a6526f9af136b5ef60a6d20b5941ac19d2"
+    },
+    {
+      "consumer_path": "internal/core/manifest.go",
+      "exec": false,
+      "path": "internal/core/manifest.go",
+      "raw": false,
+      "sha256": "87baf554f64d412797459b7722085b77c956dcabbd29313a65df1b315740a15b"
+    },
+    {
+      "consumer_path": "internal/core/materialise.go",
+      "exec": false,
+      "path": "internal/core/materialise.go",
+      "raw": false,
+      "sha256": "94929b3ca4f8a0450a9b773b09640767cf295eec9175b10dde0d9fc3cd52c742"
+    },
+    {
+      "consumer_path": "internal/core/migrations.go",
+      "exec": false,
+      "path": "internal/core/migrations.go",
+      "raw": false,
+      "sha256": "3f04cc8cbbd15a99e2cd9df8bb4684452d0add16546287365e19bd5361e42b9e"
+    },
+    {
+      "consumer_path": "internal/core/normalise.go",
+      "exec": false,
+      "path": "internal/core/normalise.go",
+      "raw": false,
+      "sha256": "4442191f78eaaea45222dc5bd165b9869b0519383632f11648422a50aa02c8cc"
+    },
+    {
+      "consumer_path": "internal/core/onboard.go",
+      "exec": false,
+      "path": "internal/core/onboard.go",
+      "raw": false,
+      "sha256": "920003c1fc1e98f9dd3eded35f5a3f5f8414640c0524563cc9921ce0b05d11fe"
+    },
+    {
+      "consumer_path": "internal/core/release.go",
+      "exec": false,
+      "path": "internal/core/release.go",
+      "raw": false,
+      "sha256": "079796ad2b605e986f1bc962d1377c5b546fadf0bd04c70b6c78327485d7ed44"
+    },
+    {
+      "consumer_path": "internal/core/sliceconfig.go",
+      "exec": false,
+      "path": "internal/core/sliceconfig.go",
+      "raw": false,
+      "sha256": "6a2ceaa7b5c8e6cad2c51912233fe44b77d78eb601ca1e5b496ed8b10d209fd7"
+    },
+    {
+      "consumer_path": "internal/core/treeglob.go",
+      "exec": false,
+      "path": "internal/core/treeglob.go",
+      "raw": false,
+      "sha256": "54afce40cd86b7fcdb6dfe019331ce51f2b74c0f8d68ae58c71419fb2891f3dd"
+    },
+    {
+      "consumer_path": "internal/core/upstream.go",
+      "exec": false,
+      "path": "internal/core/upstream.go",
+      "raw": false,
+      "sha256": "bf6b9d608cb623810dac5c68606d963f0dff06de27b9905a354319aa14ef2db9"
+    },
+    {
+      "consumer_path": "internal/core/util.go",
+      "exec": false,
+      "path": "internal/core/util.go",
+      "raw": false,
+      "sha256": "7e44332dcccb05b1ae44549295559405560c938baff3140446580837e9d45e33"
+    },
+    {
+      "consumer_path": "internal/core/versions.go",
+      "exec": false,
+      "path": "internal/core/versions.go",
+      "raw": false,
+      "sha256": "969b35cfe9346855a16077503126f07081902f7c4afd6c8744a2028e3c08d49a"
+    },
+    {
+      "consumer_path": "internal/core/watch.go",
+      "exec": false,
+      "path": "internal/core/watch.go",
+      "raw": false,
+      "sha256": "c424fb658ba5e09bd8febb231b5336fdf6951c81eb56a3873e969c52010c415c"
+    },
+    {
+      "consumer_path": "internal/core/yamlutil.go",
+      "exec": false,
+      "path": "internal/core/yamlutil.go",
+      "raw": false,
+      "sha256": "dc33461152d6a93e5378c3b71e84a6277a2199b0a0f34d320bb9ef2a6a652b6f"
     },
     {
       "consumer_path": "pyproject.toml",

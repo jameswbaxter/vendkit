@@ -59,6 +59,10 @@ Field rules:
   - `raw` — `true` when the file is not valid UTF-8; the hash is then over raw
     bytes with no normalisation. Text/binary is decided at generate time and
     recorded, never re-guessed at verify time.
+  - `seed` — optional, `true` for scaffold-once entries (DR-0013). The entry
+    is the "seeding happened" lifecycle record; its `sha256` is the
+    **template's** hash (publisher-side at publish, consumer-side as of the
+    last shipped sync) — a divergence-note comparator, never a gate input.
 
 ## 2. Normalisation recipe v1
 
@@ -91,6 +95,10 @@ drift, while any substantive edit changes the hash (DR-0004).
   - `removed` — file missing.
   There is deliberately **no `added` finding**: consumers own every path outside
   the tracked slice.
+- **Seed entries are exempt from hash/exec/removed checks** — a seeded file is
+  consumer-owned and free to diverge or disappear (DR-0013). They still claim
+  their `consumer_path` for the collision check below, and are exempt from the
+  `paths-lockstep` conformance coverage requirement.
 - **INV-7 enforcement:** with `--all`, fail if any `consumer_path` appears in
   more than one manifest (`collision` finding), regardless of hashes.
 - `--strict` exits 1 on any finding; without it, findings are reported, exit 0

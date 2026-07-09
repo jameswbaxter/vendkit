@@ -37,7 +37,9 @@ def build_publisher_manifest(decl: "ExportDecl", root: str) -> dict:
     publisher manifest; consumer manifests re-hash post-adapter bytes)."""
     entries = []
     seen_consumer: dict[str, str] = {}
-    for rel in decl.exported_files(root):
+    vendored = decl.exported_files(root)
+    seeded = decl.seeded_files(root)
+    for rel in vendored + seeded:
         p = Path(root) / rel
         digest, raw = normalise_hash(p.read_bytes())
         consumer_path = decl.consumer_path(rel)
@@ -47,13 +49,17 @@ def build_publisher_manifest(decl: "ExportDecl", root: str) -> dict:
                 f"({seen_consumer[consumer_path]} vs {rel})"
             )
         seen_consumer[consumer_path] = rel
-        entries.append({
+        entry = {
             "path": rel,
             "consumer_path": consumer_path,
-            "sha256": digest,
+            "sha256": digest,  # for seeds: the template's hash (DR-0013)
             "exec": _is_exec(p),
             "raw": raw,
-        })
+        }
+        if rel in seeded and rel not in vendored:
+            entry["seed"] = True
+        entries.append(entry)
+    entries.sort(key=lambda e: e["path"])
     return {
         "schema_version": SCHEMA_VERSION,
         "slice": decl.slice_name,
@@ -139,6 +145,11 @@ def gate_check(consumer_root: str, manifest_paths: list[str]) -> GateReport:
                 ))
                 continue
             claimed[cpath] = mpath
+            if entry.get("seed"):
+                # Seeded files are consumer-owned after materialisation
+                # (DR-0013): free to diverge, free to delete. They still
+                # claim their consumer_path above (INV-7).
+                continue
             f = Path(consumer_root) / cpath
             if not f.is_file():
                 report.findings.append(

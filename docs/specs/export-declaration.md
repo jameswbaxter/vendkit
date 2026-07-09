@@ -27,10 +27,16 @@ publisher:
   platform: github            # github | ado
   repo: example-org/design-docs
 
-include:                      # REQUIRED. Anchored, repo-relative glob patterns.
+include:                      # Anchored, repo-relative glob patterns.
   - "docs/standards/**/*.md"  # `**` matches zero or more directories.
   - "tools/lint/**/*"
-exclude:                      # Optional. Applied to the include result.
+seed:                         # Optional. Scaffold-once templates (DR-0013):
+  - "templates/*.md"          # materialised only when the consumer path does
+                              # not exist, then consumer-owned and free to
+                              # diverge. Must be disjoint from include (a
+                              # path matched by both is a hard error). At
+                              # least one of include/seed must be non-empty.
+exclude:                      # Optional. Applied to include AND seed results.
   - "**/TEMPLATE.md"
   - "**/tests/**"
 
@@ -68,6 +74,11 @@ manifest_name: docs-manifest.json   # Optional. Default: "<slice.name>-manifest.
   The exported surface is `matched(include) − matched(exclude)`, deduplicated,
   sorted. Directories are never entries; only regular files. Symlinks are
   rejected at generate time (they cannot be identity-copied portably).
+- **Seed.** Same glob and exclusion semantics as `include`, producing the
+  scaffold-once surface (DR-0013, sync spec §6). The two surfaces must be
+  disjoint; overlap is a generate-time hard error. Seeds flow through the
+  same adapters (a `prefix-namespace` rename applies; `glob-localise` runs
+  once at seed time) and the same profile `export_slice` scoping.
 - **Determinism.** The exported set and all adapter outputs depend only on the
   declaration and the tree (INV-2). Generate on the same tree is byte-stable.
 - **Adapters** apply in declaration order; at most one `prefix-namespace` and at

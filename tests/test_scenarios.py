@@ -45,8 +45,11 @@ def world(tmp_path):
     pub = tmp_path / "publisher"
     (pub / "docs").mkdir(parents=True)
     (pub / "tools").mkdir()
+    (pub / "templates").mkdir()
     (pub / "docs" / "standard.md").write_text("# Standard\n\nRule one.\n")
     (pub / "docs" / "guide.md").write_text("# Guide\n")
+    (pub / "templates" / "CONTRIBUTING.md").write_text(
+        "# Contributing\n\nStarter text — customise me.\n")
     tool = pub / "tools" / "check"
     tool.write_text("#!/bin/sh\nexit 0\n")
     tool.chmod(tool.stat().st_mode | stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH)
@@ -55,6 +58,7 @@ schema_version: 1
 slice: {name: docs, title: "Design docs"}
 publisher: {platform: github, repo: example-org/pub}
 include: ["docs/**/*.md", "tools/*"]
+seed: ["templates/*.md"]
 exclude: ["**/TEMPLATE.md"]
 profiles:
   code-repo: {}
@@ -358,6 +362,121 @@ def test_conformance_reports_and_attestations(world):
         "sync_credential_provisioned: false", "sync_credential_provisioned: true"
     ).replace("attestations:", "attestations:\n  required_check_enforced: true"))
     vk("conformance", "--slice", "docs", "--strict", cwd=con)
+
+
+# -- seeded files (DR-0013) -----------------------------------------------------------
+
+def test_seed_scaffolded_once_and_free_to_diverge(world):
+    _, con = world
+    seeded = con / "templates" / "CONTRIBUTING.md"
+    assert "Starter text" in seeded.read_text()          # onboard seeded it
+    manifest = json.loads((con / ".vendkit" / "docs-manifest.json").read_text())
+    entry = next(e for e in manifest["entries"]
+                 if e["path"] == "templates/CONTRIBUTING.md")
+    assert entry["seed"] is True
+    seeded.write_text("# Contributing\n\nOur own rules.\n")  # diverge
+    vk("gate", "--strict", cwd=con)                       # gate never checks seeds
+
+
+def test_seed_adopts_preexisting_file_without_clobbering(world, tmp_path):
+    pub, _ = world
+    con2 = tmp_path / "consumer2"
+    (con2 / "templates").mkdir(parents=True)
+    own = "# Contributing\n\nPredates the slice; must survive onboarding.\n"
+    (con2 / "templates" / "CONTRIBUTING.md").write_text(own)
+    vk("onboard", "--target-platform", "github", "--version", "v0.1.0",
+       "--profile", "code-repo", "--publisher-root", str(pub),
+       "--consumer-root", str(con2), cwd=pub)
+    assert (con2 / "templates" / "CONTRIBUTING.md").read_text() == own
+    manifest = json.loads((con2 / ".vendkit" / "docs-manifest.json").read_text())
+    assert any(e["path"] == "templates/CONTRIBUTING.md" and e.get("seed")
+               for e in manifest["entries"])
+
+
+def test_template_update_never_touches_copy_and_notes_in_pr(world, tmp_path):
+    pub, con = world
+    ours = "# Contributing\n\nHeavily customised.\n"
+    (con / "templates" / "CONTRIBUTING.md").write_text(ours)
+    git("add", "-A", cwd=con)
+    git("commit", "-q", "-m", "customise seed", cwd=con)
+    # Upstream: template improves AND a vendored file changes (a template-only
+    # change deliberately never forces a PR on its own).
+    (pub / "templates" / "CONTRIBUTING.md").write_text("# Contributing v2\n")
+    (pub / "docs" / "standard.md").write_text("# Standard\n\nRule one.\nRule two.\n")
+    _release(pub, "v0.2.0")
+    journal = tmp_path / "journal.jsonl"
+    vk("sync-pipeline", "--slice", "docs", "--publisher-root", str(pub),
+       "--consumer-root", str(con), cwd=con,
+       env={"VENDKIT_NEUTRAL_JOURNAL": str(journal)})
+    assert (con / "templates" / "CONTRIBUTING.md").read_text() == ours
+    pr = next(json.loads(l) for l in journal.read_text().splitlines()
+              if json.loads(l)["op"] == "open_pr")
+    assert "upstream template changed" in pr["body"]
+    assert "templates/CONTRIBUTING.md" in pr["body"]
+    vk("gate", "--strict", cwd=con)                       # INV-1 still holds
+
+
+def test_seed_notes_silent_suppresses_pr_section():
+    from vendkit.cli import _pr_body
+    from vendkit.core.materialise import SyncReport
+    report = SyncReport(updated=["docs/x.md"],
+                        template_updated=["templates/CONTRIBUTING.md"])
+    loud = _pr_body("docs", "v1", "v2", report, [], {}, seed_notes="informational")
+    quiet = _pr_body("docs", "v1", "v2", report, [], {}, seed_notes="silent")
+    assert "upstream template changed" in loud
+    assert "upstream template changed" not in quiet
+
+
+def test_seed_deletion_respected_with_escape_hatch(world):
+    pub, con = world
+    (con / "templates" / "CONTRIBUTING.md").unlink()
+    git("add", "-A", cwd=con)
+    git("commit", "-q", "-m", "we do not want this template", cwd=con)
+    vk("gate", "--strict", cwd=con)                       # deletion is not drift
+    (pub / "docs" / "guide.md").write_text("# Guide v2\n")
+    _release(pub, "v0.2.0")
+    vk("sync-pipeline", "--slice", "docs", "--publisher-root", str(pub),
+       "--consumer-root", str(con), cwd=con)
+    assert not (con / "templates" / "CONTRIBUTING.md").exists()  # not re-seeded
+    # Escape hatch: drop the entry, reconcile re-offers the seed.
+    mpath = con / ".vendkit" / "docs-manifest.json"
+    manifest = json.loads(mpath.read_text())
+    manifest["entries"] = [e for e in manifest["entries"]
+                           if e["path"] != "templates/CONTRIBUTING.md"]
+    mpath.write_text(json.dumps(manifest))
+    proc = vk("sync", "--apply", "--reconcile-scope", "--target", "v0.2.0",
+              "--publisher-root", str(pub), "--consumer-root", str(con), cwd=con)
+    assert "seeded: templates/CONTRIBUTING.md" in proc.stdout
+    assert (con / "templates" / "CONTRIBUTING.md").is_file()
+
+
+def test_seed_path_still_claims_inv7_collision(world):
+    _, con = world
+    manifest = json.loads((con / ".vendkit" / "docs-manifest.json").read_text())
+    seed_entry = next(e for e in manifest["entries"] if e.get("seed"))
+    rogue = {**manifest, "slice": "rogue", "entries": [seed_entry]}
+    (con / ".vendkit" / "rogue-manifest.json").write_text(json.dumps(rogue))
+    proc = vk("gate", "--strict", cwd=con, check=False)
+    assert proc.returncode == 1 and "collision" in proc.stdout
+
+
+def test_seed_retirement_is_patch_grade(world):
+    pub, con = world
+    (pub / "templates" / "CONTRIBUTING.md").unlink()
+    vk("generate", cwd=pub)
+    git("add", "-A", cwd=pub)
+    git("commit", "-q", "-m", "retire template", cwd=pub)
+    git("push", "-q", "origin", "main", cwd=pub)
+    # A seed removal demands neither MAJOR nor a migration payload (DR-0013).
+    vk("release", "--version", "v0.1.1", cwd=pub)
+    proc = vk("sync-pipeline", "--slice", "docs", "--publisher-root", str(pub),
+              "--consumer-root", str(con), cwd=con)
+    assert "changed=true" in proc.stdout
+    assert (con / "templates" / "CONTRIBUTING.md").is_file()  # copy untouched
+    manifest = json.loads((con / ".vendkit" / "docs-manifest.json").read_text())
+    assert not any(e["path"] == "templates/CONTRIBUTING.md"
+                   for e in manifest["entries"])              # no longer tracked
+    vk("gate", "--strict", cwd=con)
 
 
 def test_gate_path_is_stdlib_only(world):

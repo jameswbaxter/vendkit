@@ -85,7 +85,7 @@ def test_path_match_crosses_segments():
 # -- declaration / adapters --------------------------------------------------------
 
 def _decl(tmp_path, extra=""):
-    (tmp_path / "docs").mkdir()
+    (tmp_path / "docs").mkdir(exist_ok=True)
     (tmp_path / "docs" / "a.md").write_text("# a\n")
     (tmp_path / "docs" / "TEMPLATE.md").write_text("t\n")
     (tmp_path / "vendkit-export.yml").write_text(f"""\
@@ -141,6 +141,27 @@ profiles: {code: {}, docs-only: {}}
     assert b'applyTo: "src/**, **/*.py"' in out       # other-profile glob dropped
     unbound = apply_adapters(decl, "docs/a.md", body, None)
     assert unbound == body                            # unbound keeps the union
+
+
+def test_seed_surface_and_overlap_error(tmp_path):
+    (tmp_path / "templates").mkdir()
+    (tmp_path / "templates" / "notes.md").write_text("starter\n")
+    decl = _decl(tmp_path, 'seed: ["templates/*.md"]')
+    assert decl.seeded_files(str(tmp_path)) == ["templates/notes.md"]
+    assert decl.exported_files(str(tmp_path)) == ["docs/a.md"]
+    # A path matched by both include and seed is a hard error (DR-0013):
+    # the publisher must make the two surfaces disjoint (exclude or narrow).
+    overlapping = _decl(tmp_path, 'seed: ["docs/a.md"]')
+    with pytest.raises(UsageError, match="both include and seed"):
+        overlapping.exported_files(str(tmp_path))
+
+
+def test_seed_respects_prefix_namespace(tmp_path):
+    decl = _decl(tmp_path, """\
+seed: ["templates/*.md"]
+adapters: [{kind: prefix-namespace, match: 'templates/*.md', prefix: 'vnd-'}]
+""")
+    assert decl.consumer_path("templates/notes.md") == "templates/vnd-notes.md"
 
 
 def test_profile_export_slice(tmp_path):

@@ -158,6 +158,10 @@ watch:
     kind: {"workitem" if decl.publisher_platform == "ado" else "issue"}
     dedup_key: vendkit-watch-{decl.slice_name}
     routing: {{}}
+seeds:
+  # Seeded files are scaffolded once, then yours (DR-0013). 'informational'
+  # adds a note to sync PRs when an upstream template later changes.
+  notes: informational
 attestations:
   branch_protection_enabled: false
   sync_credential_provisioned: false

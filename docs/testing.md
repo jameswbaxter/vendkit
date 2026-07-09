@@ -34,6 +34,12 @@ end-to-end, no network, `neutral` port. Core scenario matrix:
 | two slices, colliding path | `collision` finding (INV-7) |
 | migration window resolve + verify | window arithmetic incl. multi-version jump; zero obligations = green no-op |
 | retracted target | `is-newer`/sync refuse, exit 3 |
+| seed scaffolded on onboard, then edited | gate strict passes (free to diverge) |
+| seed path pre-exists in consumer | adopted: entry added, file byte-untouched |
+| upstream template changes | consumer copy untouched; `template-updated` note in PR body (informational default), suppressed by `seeds.notes: silent` |
+| consumer deletes a seeded file | never re-seeded; dropping the entry + reconcile re-offers it |
+| seed path claimed by second slice | `collision` finding (INV-7 covers seeds) |
+| template retired upstream | entry dropped, copy untouched; patch-grade release allowed |
 | tag-moved simulation (rewrite tag in fixture repo) | sync refuses; watch raises integrity finding |
 | release cut: stale manifest / existing tag / non-monotonic version / missing migration on removal | each refused |
 | watch dry-run | no network, exit 0, empty report |

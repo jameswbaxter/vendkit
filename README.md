@@ -49,7 +49,9 @@ commit. Two lanes keep the copy faithful: the **sync lane** (scheduled or
 push-triggered; opens one reviewed PR per upgrade) and the **gate lane** (runs on
 every consumer PR; fails if a vendored file was hand-edited or deleted). A
 **composition invariant** binds them: the sync lane's output always passes the
-gate lane. Releases that reshape *consumer-owned* content ship declarative
+gate lane. Publishers can also ship **seeded files** — scaffold-once templates
+materialised only where no file exists, then consumer-owned and free to
+diverge, never clobbered (DR-0013). Releases that reshape *consumer-owned* content ship declarative
 **migration** payloads, resolved per consumer and verified deterministically.
 **Conformance** rules — shipped with each release — evaluate whether a consumer
 is correctly wired. A **scaffolder** onboards a new consumer in one command.

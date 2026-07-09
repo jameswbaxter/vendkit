@@ -119,7 +119,7 @@ def cmd_migrations_verify(args) -> int:
 
 def cmd_sync(args) -> int:
     from .core.materialise import materialise
-    decl = _decl(args)
+    decl = ExportDecl_load(args)  # declaration lives in the publisher checkout
     report = materialise(
         args.publisher_root, args.consumer_root, decl, target=args.target,
         apply=args.apply, reconcile_scope=args.reconcile_scope,
@@ -132,6 +132,12 @@ def cmd_sync(args) -> int:
             print(f"added: {c}")
         for c in report.removed_upstream:
             print(f"removed-upstream: {c} (left on disk — delete in this PR)")
+        for c in report.seeded:
+            print(f"seeded: {c} (scaffold-once; yours to change from now on)")
+        for c in report.seed_retired:
+            print(f"seed-retired: {c} (template gone upstream; file is yours, nothing to delete)")
+        for c in report.template_updated:
+            print(f"template-updated: {c} (informational; your copy is untouched)")
     port.emit_output("changed", "true" if report.changed else "false")
     return 0
 
@@ -223,7 +229,8 @@ def cmd_sync_pipeline(args) -> int:
     applicable, _ = migrations.resolve(
         migrations.load_entries(args.publisher_root), pinned, target, cfg.profile)
     body = _pr_body(cfg.slice_name, pinned, target, report, applicable,
-                    load_manifest(str(manifest_path)).get("source") or {})
+                    load_manifest(str(manifest_path)).get("source") or {},
+                    seed_notes=cfg.seed_notes)
 
     def git(*a):
         subprocess.run(["git", "-c", "user.name=vendkit-sync",
@@ -254,7 +261,8 @@ def ExportDecl_load(args):
     return ExportDecl.load(str(decl_path))
 
 
-def _pr_body(slice_name, pinned, target, report, applicable, source) -> str:
+def _pr_body(slice_name, pinned, target, report, applicable, source,
+             seed_notes="informational") -> str:
     lines = [
         f"Sync of slice `{slice_name}`: **{pinned} → {target}**.",
         "",
@@ -266,6 +274,19 @@ def _pr_body(slice_name, pinned, target, report, applicable, source) -> str:
     ]
     for c in report.removed_upstream:
         lines.append(f"  - `{c}`")
+    if report.seeded:
+        lines += ["", "**Seeded in this PR** (scaffold-once — yours to change "
+                      "from now on, the gate never checks them):"]
+        lines += [f"- `{c}`" for c in report.seeded]
+    if report.seed_retired:
+        lines += ["", "**Seed templates retired upstream** (your copies are "
+                      "unaffected; they simply stop being tracked):"]
+        lines += [f"- `{c}`" for c in report.seed_retired]
+    if seed_notes == "informational" and report.template_updated:
+        lines += ["", "**Seeded files whose upstream template changed** — "
+                      "your copies are yours and were not touched; review the "
+                      "publisher's template manually if interested:"]
+        lines += [f"- `{c}`" for c in report.template_updated]
     if applicable:
         lines += ["", "**Applicable migrations in this window** "
                       "(judgment-bearing; see work items):"]

@@ -52,8 +52,9 @@ declaration in it, the consumer's current manifest and bound profile:
    computed from the **vendored** (post-adapter) bytes, and `source:` set to
    `{platform, repo, release: TARGET, commit: <resolved SHA>}`.
 
-Report classes: `updated`, `removed-upstream`, `added`, plus the summary
-`changed=true|false` (`changed` = any of the three non-empty).
+Report classes: `updated`, `removed-upstream`, `added`, `seeded`,
+`seed-retired`, `template-updated`, plus the summary `changed=true|false`
+(`changed` = any class except `template-updated` non-empty; see §6).
 
 **Porcelain contract (INV-3).** With `--porcelain`, a successful `--check` run
 always exits 0 and prints exactly one `changed=` line; machine callers treat any
@@ -109,3 +110,29 @@ bound profile name and adapter parameters — never the consumer tree.
   failure, by design (INV-5; see security model).
 - Credential loss (push/PR denied) must fail the pipeline red — the sync lane
   is only trustworthy if its failure is visible (see security model §4).
+
+## 6. Seeded files (scaffold-once — DR-0013)
+
+Paths under the declaration's `seed:` surface are templates handed out once,
+then consumer-owned. Semantics, all decided by the manifest entry (which is
+the "seeding happened" record — no other state):
+
+- **Untracked seed path** (reconcile only): target absent → write it and add a
+  `seed: true` entry (`seeded` report class); target **already exists** →
+  *adopt without writing* — add the entry, never clobber the consumer's file.
+- **Tracked seed entry**: never written again, whether the file exists, has
+  diverged, or was deleted — deletion is respected. The entry carries the
+  template's current hash; when it differs from the stored one **and** the
+  consumer's file exists, the path is reported `template-updated` —
+  informational only, never sets `changed`, and (when the slice config's
+  `seeds.notes` is `informational`, the default) listed in the next real sync
+  PR's body. `seeds.notes: silent` suppresses the note.
+- **Template retired upstream**: the entry is dropped (`seed-retired`); the
+  consumer's copy is untouched and simply stops being tracked. Seed removals
+  are exempt from the release command's MAJOR-bump and migration pre-gates.
+- **Re-seed escape hatch**: remove the entry from the manifest; the next
+  reconcile re-offers the seed as a reviewed PR addition.
+- The gate never hash-checks seed entries but they still claim their
+  `consumer_path` (INV-7). INV-1 is unaffected: the gate skips exactly what
+  sync refuses to write. Template hashes refresh only when a sync PR actually
+  ships, so a `template-updated` note may repeat until the next real sync.

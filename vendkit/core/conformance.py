@@ -282,7 +282,10 @@ def _paths_lockstep(det, cfg, platform, pipelines, manifest):
                    if isinstance(info.data.get("pr"), dict) else None)
     if not filters:
         return "pass", "gate runs unfiltered"
+    # Seed entries are exempt: the gate never hash-checks them, so filter
+    # coverage is moot (DR-0013).
     uncovered = [e["consumer_path"] for e in manifest.get("entries", [])
-                 if not match_any(e["consumer_path"], list(filters))]
+                 if not e.get("seed")
+                 and not match_any(e["consumer_path"], list(filters))]
     return ("pass", "") if not uncovered else (
         "fail", f"filter misses {len(uncovered)} path(s), e.g. {uncovered[0]}")

@@ -74,6 +74,51 @@ def test_empty_file_stable():
     assert a == b
 
 
+# -- golden fidelity vectors (DR-0017) ----------------------------------------------
+# Shared data files that any second engine implementation must reproduce
+# exactly. The Python engine is the reference: these tests keep the vectors
+# honest; a port's test suite consumes the same files.
+
+import base64 as _b64
+import json as _json
+from pathlib import Path as _Path
+
+_VECTORS = _Path(__file__).parent / "vectors"
+
+
+def test_normalisation_vectors():
+    for case in _json.loads((_VECTORS / "normalisation.json").read_text()):
+        digest, raw = normalise_hash(_b64.b64decode(case["input_b64"]))
+        assert (digest, raw) == (case["sha256"], case["raw"]), case["name"]
+
+
+def test_fnmatch_glob_vectors():
+    for case in _json.loads((_VECTORS / "fnmatch-globs.json").read_text()):
+        assert path_match(case["path"], case["pattern"]) == case["match"], case
+
+
+def test_pathlib_glob_vectors(tmp_path):
+    doc = _json.loads((_VECTORS / "pathlib-globs.json").read_text())
+    for rel in doc["tree"]:
+        p = tmp_path / rel
+        p.parent.mkdir(parents=True, exist_ok=True)
+        p.write_text("x\n")
+    for case in doc["cases"]:
+        hits = sorted(h.relative_to(tmp_path).as_posix()
+                      for h in tmp_path.glob(case["pattern"]) if h.is_file())
+        assert hits == case["matches"], case["pattern"]
+
+
+def test_canonical_manifest_vector(tmp_path):
+    from vendkit.core.manifest import dump_manifest
+    manifest = _json.loads(
+        (_VECTORS / "canonical-manifest.input.json").read_text())
+    out = tmp_path / "m.json"
+    dump_manifest(manifest, str(out))
+    assert out.read_bytes() == (
+        _VECTORS / "canonical-manifest.expected.json").read_bytes()
+
+
 # -- the one glob matcher ----------------------------------------------------------
 
 def test_path_match_crosses_segments():

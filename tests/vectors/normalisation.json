@@ -1,0 +1,92 @@
+[
+  {
+    "name": "crlf",
+    "input_b64": "bGluZSBvbmUNCmxpbmUgdHdvDQo=",
+    "sha256": "e9024f1a07d29d52ad3aa5e1a18e94db1f3a9fd32b89e39d47c472cd99071e13",
+    "raw": false
+  },
+  {
+    "name": "empty",
+    "input_b64": "",
+    "sha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b",
+    "raw": false
+  },
+  {
+    "name": "invalid-utf8",
+    "input_b64": "//4AYmluYXJ5AQ==",
+    "sha256": "53141f921a9d2c2c200c4d5c30b615506f00451cd42b7f57e95b94327c1a892f",
+    "raw": true
+  },
+  {
+    "name": "lone-cr",
+    "input_b64": "bGluZSBvbmUNbGluZSB0d28N",
+    "sha256": "e9024f1a07d29d52ad3aa5e1a18e94db1f3a9fd32b89e39d47c472cd99071e13",
+    "raw": false
+  },
+  {
+    "name": "many-final-newlines",
+    "input_b64": "bGluZSBvbmUKbGluZSB0d28KCgoK",
+    "sha256": "e9024f1a07d29d52ad3aa5e1a18e94db1f3a9fd32b89e39d47c472cd99071e13",
+    "raw": false
+  },
+  {
+    "name": "nbsp-at-eol-not-stripped",
+    "input_b64": "bGluZSBvbmXCoAo=",
+    "sha256": "1466ebede739a2322e52c4191219cf53b926cb6289933700e1e12ad9f2f6cd75",
+    "raw": false
+  },
+  {
+    "name": "no-final-newline",
+    "input_b64": "bGluZSBvbmUKbGluZSB0d28=",
+    "sha256": "e9024f1a07d29d52ad3aa5e1a18e94db1f3a9fd32b89e39d47c472cd99071e13",
+    "raw": false
+  },
+  {
+    "name": "one-char-edit",
+    "input_b64": "bGluZSBvbmUhCmxpbmUgdHdvCg==",
+    "sha256": "d67e6b6e114dc03c8cf3d0ee5099cb4b60a9dc5f3d4545935f58c74c3761b50b",
+    "raw": false
+  },
+  {
+    "name": "only-newlines",
+    "input_b64": "CgoK",
+    "sha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b",
+    "raw": false
+  },
+  {
+    "name": "plain-lf",
+    "input_b64": "bGluZSBvbmUKbGluZSB0d28K",
+    "sha256": "e9024f1a07d29d52ad3aa5e1a18e94db1f3a9fd32b89e39d47c472cd99071e13",
+    "raw": false
+  },
+  {
+    "name": "tabs-and-crlf-mix",
+    "input_b64": "YSAJDQpiDQ1jCSAKCg==",
+    "sha256": "7bebbe912f70e4e817f83e3cdeb5f11f9bc556334d9789484f665b63dd3b14dc",
+    "raw": false
+  },
+  {
+    "name": "trailing-ws",
+    "input_b64": "bGluZSBvbmUgIApsaW5lIHR3bwkK",
+    "sha256": "e9024f1a07d29d52ad3aa5e1a18e94db1f3a9fd32b89e39d47c472cd99071e13",
+    "raw": false
+  },
+  {
+    "name": "unicode-text",
+    "input_b64": "Y2Fmw6kg4oCUIG5hw692ZSDwn5iACg==",
+    "sha256": "4b7210e6ca320c1bfdcbadd622580bcd25153c04b4b12060a63bb6b37037162a",
+    "raw": false
+  },
+  {
+    "name": "utf8-bom-kept-as-content",
+    "input_b64": "77u/bGluZSBvbmUK",
+    "sha256": "b34bc7a12bb358b8289a16d0b91c7541b721a3a5fde7fdfb2ecdeabb01fbccdf",
+    "raw": false
+  },
+  {
+    "name": "whitespace-only-line",
+    "input_b64": "YQogICAJCmIK",
+    "sha256": "770423513bd0765c18e500000baec91976bcd8267a245437b32572665c6ac370",
+    "raw": false
+  }
+]

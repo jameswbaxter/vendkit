@@ -1,0 +1,72 @@
+[
+  {
+    "path": "docs/a/b/c.md",
+    "pattern": "docs/**",
+    "match": true
+  },
+  {
+    "path": "docs/x.md",
+    "pattern": "docs/*.md",
+    "match": true
+  },
+  {
+    "path": "docs/a/b.md",
+    "pattern": "docs/*.md",
+    "match": true
+  },
+  {
+    "path": "docs/x.md",
+    "pattern": "src/*",
+    "match": false
+  },
+  {
+    "path": ".hidden",
+    "pattern": "*",
+    "match": true
+  },
+  {
+    "path": "a/b/TEMPLATE.md",
+    "pattern": "**/TEMPLATE.md",
+    "match": true
+  },
+  {
+    "path": "TEMPLATE.md",
+    "pattern": "**/TEMPLATE.md",
+    "match": false
+  },
+  {
+    "path": "tools/check",
+    "pattern": "tools/*",
+    "match": true
+  },
+  {
+    "path": "docs/ab.md",
+    "pattern": "docs/[ab]*.md",
+    "match": true
+  },
+  {
+    "path": "docs/cb.md",
+    "pattern": "docs/[ab]*.md",
+    "match": false
+  },
+  {
+    "path": "docs/x.md",
+    "pattern": "docs/?.md",
+    "match": true
+  },
+  {
+    "path": "docs/xy.md",
+    "pattern": "docs/?.md",
+    "match": false
+  },
+  {
+    "path": "a/b",
+    "pattern": "a?b",
+    "match": true
+  },
+  {
+    "path": "Docs/x.md",
+    "pattern": "docs/*",
+    "match": false
+  }
+]

@@ -16,11 +16,21 @@ import pytest
 REPO = Path(__file__).resolve().parent.parent
 
 
+# The engine under test (DR-0017 parity ratchet): the Python reference by
+# default; set VENDKIT_CLI to run the identical scenario matrix against
+# another implementation, e.g. VENDKIT_CLI=/path/to/vendkit-go.
+import shlex
+
+VENDKIT_CLI = (shlex.split(os.environ["VENDKIT_CLI"])
+               if os.environ.get("VENDKIT_CLI")
+               else [sys.executable, "-m", "vendkit.cli"])
+
+
 def vk(*args, cwd, check=True, env=None):
     full_env = {**os.environ, "VENDKIT_PLATFORM": "neutral",
                 "PYTHONPATH": str(REPO), **(env or {})}
     proc = subprocess.run(
-        [sys.executable, "-m", "vendkit.cli", *args],
+        [*VENDKIT_CLI, *args],
         cwd=cwd, capture_output=True, text=True, env=full_env,
     )
     if check and proc.returncode != 0:

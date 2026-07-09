@@ -110,6 +110,9 @@ Numbered; other specs cite them as INV-n. The conformance kit
   engine (the pinned platform reference resolves the same tree that supplies
   both content and engine). Gate verification always runs against the *pinned*
   release's manifest. There is no version skew inside either operation.
+  *Forward note:* when the compiled engine ships, this restates as an
+  explicit engine pin with schema-competence gating — see DR-0016. The
+  human-tier CLI documents its own relaxation (cli spec).
 - **INV-7 (Disjointness).** Across all slices vendored by one consumer, the
   `consumer_path` sets are pairwise disjoint. Checked by the gate lane on every
   PR.

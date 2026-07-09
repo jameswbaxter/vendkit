@@ -24,3 +24,5 @@ sequentially, never reused.
 | [DR-0013](DR-0013-seeded-files.md) | Seeded files: a scaffold-once lifecycle class | accepted |
 | [DR-0014](DR-0014-handler-protocol.md) | Detection and delivery split by an exec handler protocol | accepted |
 | [DR-0015](DR-0015-scm-ci-axes.md) | SCM and CI axes; formats not services | accepted |
+| [DR-0016](DR-0016-engine-as-pinned-artefact.md) | The engine becomes a pinned, checksummed artefact (INV-6 revision) | accepted (effective with DR-0017) |
+| [DR-0017](DR-0017-single-implementation-go.md) | Single engine implementation in Go; scenario kit as parity ratchet | accepted |

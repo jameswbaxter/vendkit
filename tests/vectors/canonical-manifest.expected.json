@@ -1,0 +1,29 @@
+{
+  "entries": [
+    {
+      "consumer_path": "docs/caf\u00e9 & <t>.md",
+      "exec": false,
+      "path": "docs/caf\u00e9 & <t>.md",
+      "raw": false,
+      "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+    },
+    {
+      "consumer_path": "docs/z.md",
+      "exec": true,
+      "path": "docs/z.md",
+      "raw": true,
+      "seed": true,
+      "sha256": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"
+    }
+  ],
+  "normalisation": "utf8;lf;strip-trailing-ws;single-final-newline;sha256",
+  "profile": "*",
+  "schema_version": 1,
+  "slice": "docs",
+  "source": {
+    "commit": "abababababababababababababababababababab",
+    "release": "v1.2.3",
+    "repo": "example-org/pub",
+    "scm": "github"
+  }
+}

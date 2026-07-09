@@ -48,6 +48,12 @@ the spec.
 - **Content adapter** — a named, declared transform applied to a class of files
   during materialise (e.g. filename-prefix namespacing, glob localisation).
   Default is the **identity copy**: verbatim bytes, identical path, at every hop.
+- **Seeded file** — a scaffold-once template (declared under `seed:` in the
+  export declaration): materialised only when the target path does not exist,
+  then consumer-owned and free to diverge. The gate never checks it; sync never
+  rewrites it; deleting it is respected (the manifest entry is the "seeding
+  happened" record). Upstream template changes surface as an informational
+  note in sync PRs (configurable per slice). See DR-0013.
 - **Migration** — a declarative payload shipped with a release describing a
   structural or convention change to *consumer-owned* content that mechanical
   sync cannot perform, with machine-checkable verification obligations.

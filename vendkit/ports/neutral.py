@@ -71,7 +71,8 @@ class NeutralPort:
 
     def open_or_update_pr(self, repo, head_branch, base_branch, title, body_md):
         self._journal({"op": "open_pr", "repo": repo.repo,
-                       "head": head_branch, "base": base_branch, "title": title})
+                       "head": head_branch, "base": base_branch,
+                       "title": title, "body": body_md})
         return PrRef(url=f"neutral://pr/{head_branch}", number=0)
 
     def upsert_work_item(self, dedup_key, title, body_md,

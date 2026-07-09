@@ -22,6 +22,7 @@ class SliceConfig:
     handoff_kind: str
     handoff_dedup_key: str
     handoff_routing: dict
+    seed_notes: str
     attestations: dict[str, bool]
     waivers: list[dict]
     path: str
@@ -46,6 +47,10 @@ class SliceConfig:
         channel = watch.get("channel", "stable")
         if channel not in ("stable", "rc"):
             errs.append("watch.channel must be 'stable' or 'rc'")
+        seeds = data.get("seeds") or {}
+        seed_notes = seeds.get("notes", "informational")
+        if seed_notes not in ("informational", "silent"):
+            errs.append("seeds.notes must be 'informational' or 'silent'")
         if errs:
             # A half-configured slice must be loud for every command (DR-0012).
             raise UsageError(f"{path}: " + "; ".join(errs))
@@ -61,6 +66,7 @@ class SliceConfig:
             handoff_kind=handoff.get("kind", "issue"),
             handoff_dedup_key=handoff.get("dedup_key", f"vendkit-watch-{name}"),
             handoff_routing=handoff.get("routing") or {},
+            seed_notes=seed_notes,
             attestations=data.get("attestations") or {},
             waivers=data.get("waivers") or [],
             path=path,

@@ -21,3 +21,4 @@ sequentially, never reused.
 | [DR-0010](DR-0010-review-gated-scope.md) | Scope changes are reviewed PR events, never automatic | accepted |
 | [DR-0011](DR-0011-single-cli-stdlib-gate.md) | One CLI; dependency-free consumer gate path | accepted |
 | [DR-0012](DR-0012-consumer-config-consolidation.md) | One consumer config file per slice under `.vendkit/` | accepted |
+| [DR-0013](DR-0013-seeded-files.md) | Seeded files: a scaffold-once lifecycle class | accepted |

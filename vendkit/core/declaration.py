@@ -41,6 +41,7 @@ class ExportDecl:
     publisher_repo: str
     include: list[str]
     exclude: list[str]
+    seed: list[str]
     adapters: list[Adapter]
     profiles: dict[str, Profile]
     retracted: list[str]
@@ -72,8 +73,11 @@ class ExportDecl:
             errs.append("publisher.repo must be '<owner-or-project>/<repo>'")
 
         include = data.get("include") or []
-        if not include or not all(isinstance(p, str) for p in include):
-            errs.append("include must be a non-empty list of glob strings")
+        seed = data.get("seed") or []
+        if not all(isinstance(p, str) for p in include + seed):
+            errs.append("include/seed must be lists of glob strings")
+        if not include and not seed:
+            errs.append("at least one of include/seed must be non-empty")
         exclude = data.get("exclude") or []
 
         adapters: list[Adapter] = []
@@ -111,7 +115,7 @@ class ExportDecl:
         manifest_name = data.get("manifest_name") or f"{name}-manifest.json"
 
         known = {"schema_version", "slice", "publisher", "include", "exclude",
-                 "adapters", "profiles", "retracted", "manifest_name"}
+                 "seed", "adapters", "profiles", "retracted", "manifest_name"}
         for key in data:
             if key not in known:
                 errs.append(f"unknown top-level key: {key!r}")
@@ -121,31 +125,47 @@ class ExportDecl:
         return cls(
             slice_name=name, slice_title=title,
             publisher_platform=platform, publisher_repo=repo,
-            include=include, exclude=exclude, adapters=adapters,
+            include=include, exclude=exclude, seed=seed, adapters=adapters,
             profiles=profiles, retracted=retracted,
             manifest_name=manifest_name, path=path,
         )
 
     # -- export surface ----------------------------------------------------
 
-    def exported_files(self, root: str) -> list[str]:
-        """Sorted repo-relative posix paths: matched(include) − matched(exclude).
+    def _matched(self, root: str, patterns: list[str]) -> list[str]:
+        """Sorted repo-relative posix paths: matched(patterns) − matched(exclude).
 
         Regular files only; symlinks are rejected (export-declaration spec §2).
         """
         rootp = Path(root)
         found: set[str] = set()
-        for pattern in self.include:
+        for pattern in patterns:
             for hit in rootp.glob(pattern):
                 rel = hit.relative_to(rootp).as_posix()
                 if hit.is_symlink():
                     raise UsageError(f"symlink in export surface: {rel}")
                 if hit.is_file():
                     found.add(rel)
-        result = [p for p in sorted(found) if not match_any(p, self.exclude)]
-        if not result:
+        return [p for p in sorted(found) if not match_any(p, self.exclude)]
+
+    def exported_files(self, root: str) -> list[str]:
+        """The vendored (drift-gated) surface."""
+        result = self._matched(root, self.include)
+        if not result and not self.seed:
             raise UsageError(f"{self.path}: export surface is empty")
+        overlap = set(result) & set(self._matched(root, self.seed))
+        if overlap:
+            # A path cannot be both drift-gated and free-to-diverge (DR-0013).
+            raise UsageError(
+                f"{self.path}: path(s) matched by both include and seed: "
+                f"{', '.join(sorted(overlap)[:3])}"
+            )
         return result
+
+    def seeded_files(self, root: str) -> list[str]:
+        """The scaffold-once surface (DR-0013): materialised only when the
+        consumer path does not exist, then consumer-owned."""
+        return self._matched(root, self.seed)
 
     # -- adapters ----------------------------------------------------------
 

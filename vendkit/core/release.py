@@ -45,7 +45,10 @@ def _tag_exists(root: str, tag: str) -> bool:
 
 
 def _surface_delta(root: str, decl: ExportDecl, previous: str) -> tuple[set, set]:
-    """(added paths, removed paths) vs the previous release's manifest."""
+    """(added paths, removed non-seed paths) vs the previous release's
+    manifest. Seed-entry removals are excluded: retiring a template leaves
+    every consumer's file intact (DR-0013), so it never demands a MAJOR or a
+    migration payload. Seed additions still count (they imply MINOR)."""
     proc = subprocess.run(
         ["git", "show", f"{previous}:{decl.manifest_name}"],
         cwd=root, capture_output=True, text=True,
@@ -53,9 +56,11 @@ def _surface_delta(root: str, decl: ExportDecl, previous: str) -> tuple[set, set
     if proc.returncode != 0:
         return set(), set()  # previous release predates a manifest: no gate
     import json
-    prev_paths = {e["path"] for e in json.loads(proc.stdout).get("entries", [])}
+    prev_entries = json.loads(proc.stdout).get("entries", [])
+    prev_paths = {e["path"] for e in prev_entries}
+    prev_nonseed = {e["path"] for e in prev_entries if not e.get("seed")}
     curr_paths = {e["path"] for e in build_publisher_manifest(decl, root)["entries"]}
-    return curr_paths - prev_paths, prev_paths - curr_paths
+    return curr_paths - prev_paths, prev_nonseed - curr_paths
 
 
 def cut(

@@ -89,7 +89,7 @@
       "exec": false,
       "path": "vendkit/cli.py",
       "raw": false,
-      "sha256": "686ebff8b8a198ae157002065775fc1455b9aa665d31945ed228393b9e84fa98"
+      "sha256": "9e12d9c7fe2f92dde1025c0526edde7404d9166ceed4288af2379706224f4168"
     },
     {
       "consumer_path": "vendkit/core/__init__.py",
@@ -110,28 +110,28 @@
       "exec": false,
       "path": "vendkit/core/conformance.py",
       "raw": false,
-      "sha256": "40afbfdc8745f91d3cf799380b2d34fee681eb793ed3a7bfcd41c4033492b7d0"
+      "sha256": "15b8cdbcd6c198d1a68e9924cca27a8dc25dea5844cfede75576f8f620484355"
     },
     {
       "consumer_path": "vendkit/core/declaration.py",
       "exec": false,
       "path": "vendkit/core/declaration.py",
       "raw": false,
-      "sha256": "3de617f92a5e27973710a52138bba884c8bf77029bee4696d8566f04090ec3be"
+      "sha256": "bbad81bf081d14f763a3509fe30b156e283d8dc80df38e33a8365e642684cbde"
     },
     {
       "consumer_path": "vendkit/core/manifest.py",
       "exec": false,
       "path": "vendkit/core/manifest.py",
       "raw": false,
-      "sha256": "ea2908d63ffad20ed63075c312a2b6f60f13c838914e4b209cb100ec225ca62f"
+      "sha256": "679728460ce8331bb75627d61aaf4ea1b2e22e7e0d153a73c1078fef1424eae6"
     },
     {
       "consumer_path": "vendkit/core/materialise.py",
       "exec": false,
       "path": "vendkit/core/materialise.py",
       "raw": false,
-      "sha256": "5cd13b9391d584252e4811b60e29fb5b7ac35067a3cd5b644c2cfa9f0f1916a8"
+      "sha256": "0bb791c127a623f09f73ed229142025c57b5f878e848edcbc47a0465e7db2ea4"
     },
     {
       "consumer_path": "vendkit/core/migrations.py",
@@ -152,21 +152,21 @@
       "exec": false,
       "path": "vendkit/core/onboard.py",
       "raw": false,
-      "sha256": "c5135ecaa03a977f0092b903ac6452dc20f8d92a3178cfd1c65ac5985eebe73b"
+      "sha256": "e0d8ddee287390d262fe3b2403c69b97ed4e0025e22d42544fc9fa87e7839769"
     },
     {
       "consumer_path": "vendkit/core/release.py",
       "exec": false,
       "path": "vendkit/core/release.py",
       "raw": false,
-      "sha256": "4e756052858d661023c12365f056e3890dcbe5f11fa60b16ccc0c4472f0a52a9"
+      "sha256": "737875c36cf1e63c0dcbe1d178acc897f59faece2ef543db51547f10e2bd630a"
     },
     {
       "consumer_path": "vendkit/core/sliceconfig.py",
       "exec": false,
       "path": "vendkit/core/sliceconfig.py",
       "raw": false,
-      "sha256": "2632a36e0508a89498a7c14be3a4e2d2ef397871773a64af62085a13b7d916d7"
+      "sha256": "757485c7c9d9757b38e98c62d39a6a6ed42a2604ba66371302637b711a1daf8d"
     },
     {
       "consumer_path": "vendkit/core/util.py",
@@ -222,7 +222,7 @@
       "exec": false,
       "path": "vendkit/ports/neutral.py",
       "raw": false,
-      "sha256": "4fc8e16753c3018d4b2232a24ad4ee1ffb10d0c6e0e616bc7f38cf5b430cde03"
+      "sha256": "9a2fddb9c2c8fda1d3a02de3fc18ab6564277eca22064712fdf7ebe68d81c53e"
     }
   ],
   "normalisation": "utf8;lf;strip-trailing-ws;single-final-newline;sha256",

@@ -27,10 +27,17 @@ class SyncReport:
     updated: list[str] = field(default_factory=list)
     removed_upstream: list[str] = field(default_factory=list)
     added: list[str] = field(default_factory=list)
+    seeded: list[str] = field(default_factory=list)          # DR-0013
+    seed_retired: list[str] = field(default_factory=list)    # template gone upstream
+    template_updated: list[str] = field(default_factory=list)  # informational only
 
     @property
     def changed(self) -> bool:
-        return bool(self.updated or self.removed_upstream or self.added)
+        # template_updated is deliberately excluded: an upstream template
+        # change never forces a PR for a diverged, consumer-owned copy —
+        # the note rides along with the next real sync (sync spec §4).
+        return bool(self.updated or self.removed_upstream or self.added
+                    or self.seeded or self.seed_retired)
 
 
 def _render(decl: ExportDecl, publisher_root: str, rel: str,
@@ -87,7 +94,9 @@ def materialise(
         )
 
     exported = set(decl.exported_files(publisher_root))
-    tracked = [e["path"] for e in current.get("entries", [])]
+    seeds = set(decl.seeded_files(publisher_root))
+    tracked_entries = {e["path"]: e for e in current.get("entries", [])}
+    tracked = list(tracked_entries)
     new_entries: list[dict] = []
 
     def _emit_entry(rel: str, bucket: list[str]) -> None:
@@ -102,17 +111,50 @@ def materialise(
             if apply:
                 _write(consumer_root, cpath, data, execbit)
 
+    def _emit_seed(rel: str) -> None:
+        """Scaffold-once (DR-0013): a tracked seed is NEVER written again —
+        the entry is the 'seeding happened' record, so deletion is respected.
+        The entry's sha tracks the TEMPLATE (divergence-note comparator)."""
+        data, cpath, execbit = _render(decl, publisher_root, rel, profile)
+        digest, raw = normalise_hash(data)
+        new_entries.append({
+            "path": rel, "consumer_path": cpath, "sha256": digest,
+            "exec": execbit, "raw": raw, "seed": True,
+        })
+        prior = tracked_entries.get(rel)
+        if prior is None:
+            # Untracked: seed if absent; adopt (entry only, never clobber)
+            # if the consumer already has a file at the target path.
+            report.seeded.append(cpath)
+            if apply and not (Path(consumer_root) / cpath).is_file():
+                _write(consumer_root, cpath, data, execbit)
+        elif (prior.get("sha256") != digest
+              and (Path(consumer_root) / cpath).is_file()):
+            report.template_updated.append(cpath)
+
     # 1. Tracked refresh + 2. removals (report-only; files stay on disk).
     for rel in tracked:
-        if rel in exported:
+        if rel in seeds:
+            _emit_seed(rel)
+        elif rel in exported:
+            # Includes a publisher reclassifying a seed as vendored: the
+            # refresh overwrites — a deliberate, PR-visible class change.
             _emit_entry(rel, report.updated)
+        elif tracked_entries[rel].get("seed"):
+            # Template retired upstream: the consumer's copy is theirs now;
+            # nothing to delete, just stop tracking.
+            report.seed_retired.append(rel)
         else:
             report.removed_upstream.append(rel)
 
     # 3. Additions — opt-in, bounded by the profile's export slice (DR-0010).
     if reconcile_scope:
-        for rel in sorted(exported - set(tracked)):
-            if decl.profile_in_scope(profile, rel):
+        for rel in sorted((exported | seeds) - set(tracked)):
+            if not decl.profile_in_scope(profile, rel):
+                continue
+            if rel in seeds:
+                _emit_seed(rel)
+            else:
                 _emit_entry(rel, report.added)
 
     # 4. Manifest rewrite with provenance (manifest spec §1).

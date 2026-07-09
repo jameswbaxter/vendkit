@@ -96,7 +96,7 @@
       "exec": false,
       "path": "vendkit/cli.py",
       "raw": false,
-      "sha256": "8eafa6552a43c1e8939bc1b36cc3be428fa92b93983a226ee0ad30b49684efde"
+      "sha256": "869383cdba464fa05d41f03a51a3eb75051cf40f5b0b139daf57721127cb75e8"
     },
     {
       "consumer_path": "vendkit/core/__init__.py",
@@ -145,7 +145,7 @@
       "exec": false,
       "path": "vendkit/core/materialise.py",
       "raw": false,
-      "sha256": "175b9e75701f6a530630e0dc60c3ce7099c29a513ebb849821f2c5a9fa1e00d3"
+      "sha256": "f9ce4a5278dd20ead2af6075e0151360f37ee6af70af1569525427b9b38c44cd"
     },
     {
       "consumer_path": "vendkit/core/migrations.py",
@@ -187,7 +187,7 @@
       "exec": false,
       "path": "vendkit/core/upstream.py",
       "raw": false,
-      "sha256": "918c8f2742542a16d99fec3ddb45231833edd9f4007e3b938e95a9a06cc3b783"
+      "sha256": "9f6fe3a22d054d3eb1a6f623b6553f01224d6cd0d8598b1be09ff3c1479bb88d"
     },
     {
       "consumer_path": "vendkit/core/util.py",

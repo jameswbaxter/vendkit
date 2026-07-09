@@ -584,6 +584,81 @@ def test_codeowners_is_opt_in_and_github_only(world, tmp_path):
     assert proc.returncode == 2 and "required-reviewers" in proc.stderr
 
 
+# -- human tier -----------------------------------------------------------------
+
+def test_status_reports_pin_latest_and_drift(world):
+    pub, con = world
+    proc = vk("status", cwd=con)
+    assert "docs" in proc.stdout and "v0.1.0" in proc.stdout
+    assert "up to date" in proc.stdout and "clean" in proc.stdout
+    (pub / "docs" / "guide.md").write_text("# Guide v2\n")
+    _release(pub, "v0.2.0")
+    f = con / "docs" / "standard.md"
+    f.write_text(f.read_text() + "sneaky edit\n")
+    proc = vk("status", cwd=con)
+    assert "UPDATE AVAILABLE (minor)" in proc.stdout
+    assert "DRIFT: 1 finding(s)" in proc.stdout
+
+
+def test_diff_previews_without_touching_the_tree(world):
+    pub, con = world
+    (pub / "docs" / "standard.md").write_text("# Standard\n\nRule one.\nRule two.\n")
+    _release(pub, "v0.2.0")
+    before = (con / "docs" / "standard.md").read_text()
+    proc = vk("diff", cwd=con)
+    assert "v0.1.0 → v0.2.0" in proc.stdout
+    assert "+Rule two." in proc.stdout
+    assert (con / "docs" / "standard.md").read_text() == before  # read-only
+
+
+def test_update_local_applies_and_composes_with_gate(world):
+    pub, con = world
+    (pub / "docs" / "standard.md").write_text("# Standard\n\nRule one.\nRule two.\n")
+    _release(pub, "v0.2.0")
+    proc = vk("update", cwd=con)
+    assert "applied to the working tree" in proc.stdout
+    assert "Rule two." in (con / "docs" / "standard.md").read_text()
+    manifest = json.loads((con / ".vendkit" / "docs-manifest.json").read_text())
+    assert manifest["source"]["release"] == "v0.2.0"
+    text = (con / ".github" / "workflows" / "docs-sync.yml").read_text()
+    assert "refs/tags/v0.2.0" in text                  # pins advanced
+    vk("gate", "--strict", cwd=con)                    # INV-1 via the human path
+    again = vk("update", cwd=con)                      # idempotent
+    assert "already at v0.2.0" in again.stdout
+
+
+def test_update_pr_is_a_composition_over_the_sync_lane(world, tmp_path):
+    pub, con = world
+    (pub / "docs" / "guide.md").write_text("# Guide v2\n")
+    _release(pub, "v0.2.0")
+    journal = tmp_path / "journal.jsonl"
+    proc = vk("update", "--pr", cwd=con,
+              env={"VENDKIT_NEUTRAL_JOURNAL": str(journal)})
+    assert "pr-delivered=true" in proc.stdout
+    pr = next(json.loads(l) for l in journal.read_text().splitlines()
+              if json.loads(l)["kind"] == "pr")
+    assert pr["head_branch"] == "vendkit/docs/sync-v0.1.0-to-v0.2.0"
+
+
+def test_explain_registry(world):
+    _, con = world
+    assert "tampering" in vk("explain", "tag-moved", cwd=con).stdout
+    assert "retracted" in vk("explain", "list", cwd=con).stdout
+    proc = vk("explain", "nonsense", cwd=con, check=False)
+    assert proc.returncode == 2
+
+
+def test_init_noninteractive_requires_ci_and_version(world, tmp_path):
+    pub, _ = world
+    con = tmp_path / "prompt-consumer"
+    con.mkdir()
+    git("init", "-q", "-b", "main", cwd=con)
+    proc = vk("init", "--scm", "github", "--version", "v0.1.0",
+              "--publisher-root", str(pub), "--consumer-root", str(con),
+              cwd=pub, check=False)
+    assert proc.returncode == 2 and "--ci is required" in proc.stderr
+
+
 def test_gate_path_is_stdlib_only(world):
     """INV-9: the gate must run with PyYAML unimportable."""
     _, con = world

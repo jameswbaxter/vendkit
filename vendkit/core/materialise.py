@@ -176,6 +176,46 @@ def materialise(
     return report
 
 
+def preview(
+    publisher_root: str,
+    consumer_root: str,
+    decl: ExportDecl,
+    reconcile_scope: bool = True,
+) -> list[tuple[str, bytes | None, bytes]]:
+    """(consumer_path, current bytes or None, post-apply bytes) for every
+    file apply would write — the human diff's data source (cli spec, human
+    tier). Mirrors materialise's classification exactly: tracked seeds are
+    never rewritten; unwritten upstream removals do not appear (they are
+    report classes, not writes)."""
+    manifest_path = str(Path(consumer_root) / VENDKIT_DIR / decl.manifest_name)
+    current = load_manifest(manifest_path)
+    cfg = find_slice_config(consumer_root, decl.slice_name)
+    profile = cfg.profile if cfg else None
+    exported = set(decl.exported_files(publisher_root))
+    seeds = set(decl.seeded_files(publisher_root))
+    tracked = {e["path"]: e for e in current.get("entries", [])}
+    out: list[tuple[str, bytes | None, bytes]] = []
+
+    def emit(rel: str, seed_only_if_absent: bool = False) -> None:
+        data, cpath, _ = _render(decl, publisher_root, rel, profile)
+        f = Path(consumer_root) / cpath
+        old = f.read_bytes() if f.is_file() else None
+        if seed_only_if_absent and old is not None:
+            return  # adopt, never clobber (DR-0013)
+        if old != data:
+            out.append((cpath, old, data))
+
+    for rel in tracked:
+        if rel in exported and rel not in seeds:
+            emit(rel)
+    if reconcile_scope:
+        for rel in sorted((exported | seeds) - set(tracked)):
+            if not decl.profile_in_scope(profile, rel):
+                continue
+            emit(rel, seed_only_if_absent=rel in seeds)
+    return out
+
+
 def seed_empty_manifest(consumer_root: str, decl: ExportDecl) -> str:
     """Onboarding seed: an empty tracked slice for reconcile to expand."""
     path = Path(consumer_root) / VENDKIT_DIR / decl.manifest_name

@@ -299,6 +299,294 @@ def _pr_body(slice_name, pinned, target, report, applicable, source,
     return "\n".join(lines)
 
 
+# -- human tier ------------------------------------------------------------------
+# Compositions over the machine tier — never a parallel code path (cli spec).
+# Output formatting here is exempt from the key=value stability promise.
+
+def _slice_or_only(args):
+    """--slice, or the sole configured slice; ambiguity is a usage error."""
+    from .core.sliceconfig import discover_slice_configs
+    configs = discover_slice_configs(args.consumer_root)
+    if not configs:
+        raise UsageError("no slice configs under .vendkit/ — run `vendkit init`")
+    if getattr(args, "slice", None):
+        hits = [c for c in configs if c.slice_name == args.slice]
+        if not hits:
+            raise UsageError(f"no slice config for {args.slice!r}")
+        return hits[0]
+    if len(configs) == 1:
+        return configs[0]
+    raise UsageError(
+        f"{len(configs)} slices configured — pass --slice "
+        f"({', '.join(c.slice_name for c in configs)})")
+
+
+def _pinned_release(consumer_root: str, cfg) -> str:
+    from .core.manifest import VENDKIT_DIR, load_manifest
+    from .core.sliceconfig import read_pin
+    mpath = Path(consumer_root) / VENDKIT_DIR / f"{cfg.slice_name}-manifest.json"
+    if mpath.is_file():
+        release = (load_manifest(str(mpath)).get("source") or {}).get("release")
+        if release:
+            return release
+    return read_pin(consumer_root, cfg)
+
+
+def _latest_release(cfg) -> str | None:
+    from .core import upstream, versions
+    from .core.watch import retracted_at_newest
+    url = upstream.clone_url(cfg.publisher_scm, cfg.publisher_repo)
+    names = [t.name for t in upstream.list_release_tags(url)]
+    newest = versions.latest(names, channel="rc")
+    retracted = retracted_at_newest(url, newest) if newest else []
+    return versions.latest(names, channel=cfg.channel, retracted=retracted)
+
+
+def cmd_status(args) -> int:
+    """The human entry point: where is every slice, and does anything need
+    attention?"""
+    from .core import versions
+    from .core.manifest import VENDKIT_DIR, gate_check
+    from .core.sliceconfig import discover_slice_configs
+    configs = discover_slice_configs(args.consumer_root)
+    if args.slice:
+        configs = [c for c in configs if c.slice_name == args.slice]
+        if not configs:
+            raise UsageError(f"no slice config for {args.slice!r}")
+    if not configs:
+        raise UsageError("no slice configs under .vendkit/ — run `vendkit init`")
+    rows = []
+    for cfg in configs:
+        row = {"slice": cfg.slice_name, "ci": cfg.ci, "scm": cfg.scm,
+               "profile": cfg.profile}
+        try:
+            row["pinned"] = _pinned_release(args.consumer_root, cfg)
+        except VendkitError as exc:
+            row["pinned"], row["pin_error"] = None, str(exc)
+        try:
+            row["latest"] = _latest_release(cfg)
+        except VendkitError as exc:
+            row["latest"], row["latest_error"] = None, str(exc)
+        if row.get("pinned") and row.get("latest"):
+            row["update"] = (versions.require(row["latest"])
+                             > versions.require(row["pinned"]))
+            row["bump"] = (versions.classify_bump(row["pinned"], row["latest"])
+                           if row["update"] else "")
+        mpath = Path(args.consumer_root) / VENDKIT_DIR / f"{cfg.slice_name}-manifest.json"
+        row["drift"] = (len(gate_check(args.consumer_root, [str(mpath)]).findings)
+                        if mpath.is_file() else None)
+        rows.append(row)
+    if args.json:
+        print(json.dumps(rows, indent=2))
+        return 0
+    for r in rows:
+        line = f"{r['slice']:<12} pinned {r.get('pinned') or '?':<10}"
+        if r.get("latest"):
+            line += f" latest {r['latest']:<10}"
+            line += (f" UPDATE AVAILABLE ({r['bump']})" if r.get("update")
+                     else " up to date")
+        else:
+            line += " latest unknown"
+        if r.get("drift"):
+            line += f"  DRIFT: {r['drift']} finding(s) — run `vendkit gate`"
+        elif r.get("drift") == 0:
+            line += "  clean"
+        line += f"  [ci: {r['ci']}]"
+        print(line)
+        for key in ("pin_error", "latest_error"):
+            if r.get(key):
+                print(f"  ! {r[key]}")
+    return 0
+
+
+def _fetched_publisher(cfg, target: str):
+    """TemporaryDirectory context with the publisher cloned at `target`."""
+    import tempfile
+
+    from .core import upstream
+    url = upstream.clone_url(cfg.publisher_scm, cfg.publisher_repo)
+    tmp = tempfile.TemporaryDirectory(prefix="vendkit-publisher-")
+    try:
+        upstream.fetch_publisher(url, target, tmp.name)
+    except Exception:
+        tmp.cleanup()
+        raise
+    return tmp
+
+
+def cmd_diff(args) -> int:
+    """What would `update` change? Unified diff of every file apply would
+    write, against a throwaway checkout of the target release."""
+    import difflib
+
+    from .core.declaration import ExportDecl
+    from .core.materialise import preview
+    cfg = _slice_or_only(args)
+    target = args.target or _latest_release(cfg)
+    if target is None:
+        raise UsageError("publisher has no qualifying releases")
+    pinned = _pinned_release(args.consumer_root, cfg)
+    if not args.target and target == pinned:
+        print(f"{cfg.slice_name}: up to date at {pinned}")
+        return 0
+    with _fetched_publisher(cfg, target) as pub:
+        decl = ExportDecl.load(str(Path(pub) / DEFAULT_DECL))
+        changes = preview(pub, args.consumer_root, decl)
+        print(f"# {cfg.slice_name}: {pinned} → {target} "
+              f"({len(changes)} file(s) would change)")
+        for cpath, old, new in changes:
+            try:
+                old_lines = (old or b"").decode("utf-8").splitlines(keepends=True)
+                new_lines = new.decode("utf-8").splitlines(keepends=True)
+            except UnicodeDecodeError:
+                print(f"Binary file {cpath} differs")
+                continue
+            sys.stdout.writelines(difflib.unified_diff(
+                old_lines, new_lines,
+                fromfile=f"a/{cpath}" + ("" if old is not None else " (new file)"),
+                tofile=f"b/{cpath}"))
+    return 0
+
+
+def cmd_update(args) -> int:
+    """The whole upgrade, human-invoked. --local (default): apply to the
+    working tree + advance pins, you review and commit. --pr: the full sync
+    lane against a fetched checkout (composition over sync-pipeline).
+
+    Note: the human tier runs the INSTALLED engine against the fetched
+    target tree — a documented INV-6 relaxation guarded by schema-version
+    gating; the CI sync lane preserves INV-6 exactly."""
+    import argparse as _argparse
+
+    from .core import versions
+    from .core.declaration import ExportDecl
+    from .core.materialise import materialise
+    from .core.watch import retracted_at_newest
+    cfg = _slice_or_only(args)
+    pinned = _pinned_release(args.consumer_root, cfg)
+    target = args.target or _latest_release(cfg)
+    if target is None:
+        raise UsageError("publisher has no qualifying releases")
+    if target == pinned:
+        print(f"{cfg.slice_name}: already at {target}")
+        return 0
+    with _fetched_publisher(cfg, target) as pub:
+        if args.pr:
+            ns = _argparse.Namespace(
+                slice=cfg.slice_name, base_branch=args.base_branch,
+                consumer_repo=None, reconcile_scope=True,
+                consumer_root=args.consumer_root, publisher_root=pub,
+                export_decl=DEFAULT_DECL, json=False,
+                platform=getattr(args, "platform", None))
+            return cmd_sync_pipeline(ns)
+        decl = ExportDecl.load(str(Path(pub) / DEFAULT_DECL))
+        retracted = list(decl.retracted)
+        try:
+            from .core import upstream
+            url = upstream.clone_url(cfg.publisher_scm, cfg.publisher_repo)
+            newest = versions.latest(
+                [t.name for t in upstream.list_release_tags(url)], channel="rc")
+            if newest:
+                retracted += retracted_at_newest(url, newest)
+        except Exception:
+            pass
+        if not versions.is_newer(pinned, target, retracted=retracted):
+            print(f"{cfg.slice_name}: {target} is not newer than {pinned}")
+            return 0
+        report = materialise(pub, args.consumer_root, decl, target=target,
+                             apply=True, reconcile_scope=True)
+        for rel in cfg.pin_files:
+            f = Path(args.consumer_root) / rel
+            if f.is_file():
+                f.write_text(f.read_text(encoding="utf-8").replace(
+                    f"refs/tags/{pinned}", f"refs/tags/{target}"),
+                    encoding="utf-8")
+        for label, paths in (
+            ("updated", report.updated), ("added", report.added),
+            ("seeded", report.seeded),
+            ("removed upstream (delete when you commit)", report.removed_upstream),
+            ("seed retired (file is yours)", report.seed_retired),
+            ("template updated (informational)", report.template_updated),
+        ):
+            for c in paths:
+                print(f"{label}: {c}")
+        print(f"\n{cfg.slice_name}: {pinned} → {target} applied to the working "
+              "tree (manifest + pins advanced). Review and commit; the gate "
+              "re-verifies your PR (INV-1).")
+    return 0
+
+
+_EXPLANATIONS = {
+    # gate findings
+    "changed": "A vendored file's content or exec bit differs from the "
+        "manifest. Vendored files change only via sync PRs (INV-10). Fix: "
+        "revert the edit (`git checkout -- <path>`); to change it for real, "
+        "contribute upstream and let a release deliver it.",
+    "removed": "A manifest-tracked file is missing. Restore it, or if the "
+        "publisher retired it, a sync PR will drop it from tracking.",
+    "collision": "Two slices claim the same consumer path (INV-7). One "
+        "publisher must rename or exclude; a prefix-namespace adapter is the "
+        "usual fix.",
+    # watch findings
+    "update-available": "The publisher released something newer than your "
+        "pin. Run `vendkit diff` to inspect, `vendkit update` to adopt, or "
+        "wait for the scheduled sync PR.",
+    "tag-moved": "The pinned tag no longer resolves to the commit your "
+        "manifest recorded — possible tampering (INV-5). Sync refuses until "
+        "resolved. Contact the publisher; a legitimate fix ships as a NEW "
+        "release, never a re-tag.",
+    "pin-unreadable": "The pin pattern found no parsable version in "
+        "pin.files[0]. Fix the reference line or the pattern in "
+        ".vendkit/<slice>.yml.",
+    "no-releases": "The publisher has no qualifying release tags on your "
+        "channel. Benign for new publishers; check watch.channel otherwise.",
+    # refusals
+    "retracted": "The target release was retracted by the publisher — do "
+        "not adopt it. Wait for (or request) the fixed, newer release.",
+    "stale-manifest": "The committed publisher manifest does not match the "
+        "tree. Run `vendkit generate`, commit, and cut the release again.",
+    "tag-exists": "That version is already released; tags are immutable "
+        "(INV-5). Pick the next version.",
+    "bump-too-small": "The surface delta demands a bigger version bump "
+        "(removals ⇒ MAJOR, additions ⇒ MINOR).",
+    "migration-missing": "The release removes exported files but ships no "
+        "migrations/ entry for this version. Add one, or record an override "
+        "with --no-migrations-needed.",
+    "not-newer": "The requested version does not exceed the latest release.",
+    # sync report classes
+    "removed-upstream": "The target release no longer exports this file. "
+        "Sync left it on disk; delete it in the sync PR under review "
+        "(INV-4: nothing is auto-deleted).",
+    "seeded": "A scaffold-once template landed because the path did not "
+        "exist. It is yours now: edit or delete freely (DR-0013).",
+    "seed-retired": "The publisher retired a seed template. Your copy is "
+        "untouched; it simply stops being tracked.",
+    "template-updated": "The upstream template behind one of your seeded "
+        "files changed. Informational only — your copy was not touched.",
+    # conformance statuses
+    "attested": "The rule depends on a platform fact that is not decidable "
+        "from the tree; your slice config asserts it. Verify via "
+        "`conformance --verify-attestations` with a fact-verify handler.",
+    "waived": "You waived this (waivable) rule with a recorded reason in "
+        "the slice config.",
+    "skipped": "Not applicable in this configuration (e.g. pipeline rules "
+        "under ci: none — manual mode forfeits automated enforcement).",
+}
+
+
+def cmd_explain(args) -> int:
+    if args.topic in (None, "list"):
+        for key in sorted(_EXPLANATIONS):
+            print(key)
+        return 0
+    text = _EXPLANATIONS.get(args.topic)
+    if text is None:
+        raise UsageError(
+            f"unknown topic {args.topic!r} — `vendkit explain list`")
+    print(f"{args.topic}: {text}")
+    return 0
+
+
 # -- watch / migrations / conformance ------------------------------------------
 
 def cmd_watch(args) -> int:
@@ -422,14 +710,43 @@ def _infer_scm(consumer_root: str) -> str | None:
     return None
 
 
+def _prompt(question: str, choices: list[str] | None = None,
+            allow_empty: bool = False) -> str:
+    """TTY-only prompt for init's human path; never used non-interactively."""
+    hint = f" [{'/'.join(choices)}]" if choices else ""
+    while True:
+        answer = input(f"{question}{hint}: ").strip()
+        if not answer and allow_empty:
+            return ""
+        if answer and (choices is None or answer in choices):
+            return answer
+
+
 def cmd_init(args) -> int:
     from .core.onboard import onboard
     decl = ExportDecl_load(args)
+    interactive = sys.stdin.isatty() and sys.stdout.isatty()
+    if not args.ci:
+        if not interactive:
+            raise UsageError("--ci is required (github-actions|azure-pipelines|none)")
+        args.ci = _prompt("CI host ('none' = fully manual orchestration)",
+                          ["github-actions", "azure-pipelines", "none"])
+    if not args.version:
+        if not interactive:
+            raise UsageError("--version is required (the release to pin)")
+        args.version = _prompt("Publisher release to pin (e.g. v1.2.3)")
+    if not args.profile and decl.profiles and interactive:
+        args.profile = _prompt(
+            "Profile", sorted(decl.profiles), allow_empty=True) or None
     scm = args.scm or _infer_scm(args.consumer_root)
     if scm is None:
-        raise UsageError(
-            "cannot infer the SCM host from the consumer's origin remote — "
-            "pass --scm github|azure-repos")
+        if interactive:
+            scm = _prompt("SCM host (no origin remote to infer from)",
+                          ["github", "azure-repos"])
+        else:
+            raise UsageError(
+                "cannot infer the SCM host from the consumer's origin remote — "
+                "pass --scm github|azure-repos")
     result = onboard(
         args.publisher_root, args.consumer_root, decl,
         ci=args.ci, scm=scm, version=args.version,
@@ -535,14 +852,16 @@ def build_parser() -> argparse.ArgumentParser:
 
     sp = sub.add_parser("init", aliases=["onboard"],
                         help="scaffold a consumer (run from publisher checkout)")
-    sp.add_argument("--ci", required=True,
+    sp.add_argument("--ci",
                     choices=["github-actions", "azure-pipelines", "none"],
                     help="the consumer's CI host; 'none' = fully manual "
-                         "orchestration, no pipelines scaffolded")
+                         "orchestration, no pipelines scaffolded "
+                         "(prompted on a TTY when omitted)")
     sp.add_argument("--scm", choices=["github", "azure-repos"],
                     help="the consumer's SCM host (default: inferred from "
                          "the origin remote)")
-    sp.add_argument("--version", required=True)
+    sp.add_argument("--version",
+                    help="publisher release to pin (prompted on a TTY)")
     sp.add_argument("--profile")
     sp.add_argument("--mode", choices=["primary", "additive"], default="primary")
     sp.add_argument("--base-branch", default="main")
@@ -553,6 +872,41 @@ def build_parser() -> argparse.ArgumentParser:
                          "required-reviewers policy instead)")
     common(sp, decl=True, consumer=True, publisher=True)
     sp.set_defaults(fn=cmd_init)
+
+    # -- human tier (compositions; formatting exempt from output stability) --
+
+    sp = sub.add_parser("status", help="per-slice rollup: pinned vs latest, "
+                                       "drift, attention items")
+    sp.add_argument("--slice")
+    common(sp, consumer=True)
+    sp.set_defaults(fn=cmd_status)
+
+    sp = sub.add_parser("diff", help="unified diff of what `update` would "
+                                     "change (fetches the target release)")
+    sp.add_argument("--slice")
+    sp.add_argument("--target", help="release to compare (default: latest)")
+    common(sp, consumer=True)
+    sp.set_defaults(fn=cmd_diff)
+
+    sp = sub.add_parser("update", help="upgrade a slice: apply locally "
+                                       "(default) or run the full PR lane")
+    sp.add_argument("--slice")
+    sp.add_argument("--target", help="release to adopt (default: latest)")
+    mode = sp.add_mutually_exclusive_group()
+    mode.add_argument("--local", dest="pr", action="store_false", default=False,
+                      help="apply to the working tree; you review and commit")
+    mode.add_argument("--pr", dest="pr", action="store_true",
+                      help="branch, push, and deliver a PR via the handler")
+    sp.add_argument("--base-branch", default="main")
+    common(sp, consumer=True)
+    sp.set_defaults(fn=cmd_update)
+
+    sp = sub.add_parser("explain", help="what a finding/refusal/status means "
+                                        "and the sanctioned fix")
+    sp.add_argument("topic", nargs="?", help="e.g. tag-moved, retracted; "
+                                             "'list' to enumerate")
+    common(sp)
+    sp.set_defaults(fn=cmd_explain)
 
     return p
 

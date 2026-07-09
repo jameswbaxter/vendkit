@@ -17,7 +17,7 @@ One manifest per slice. Publisher-side it lives at the repo root under
   "slice": "docs",
   "profile": "code-repo",
   "source": {
-    "platform": "github",
+    "scm": "github",
     "repo": "example-org/design-docs",
     "release": "v1.4.2",
     "commit": "8c5f2f0e…40-hex…"
@@ -44,9 +44,17 @@ Field rules:
 - `source` — **consumer-side only** (absent in the publisher manifest, which
   describes the working tree, not a release). Written by materialise from the
   resolved target: `release` is the tag, `commit` the SHA it resolved to at sync
-  time. This is the tamper-evidence anchor (INV-5; see security model §3).
+  time; `scm` is provenance metadata (DR-0015). This is the tamper-evidence
+  anchor (INV-5; see security model §3), and under `ci: none` the `release`
+  field is also the slice's pin (sync spec §1).
 - `normalisation` — the canonicalisation recipe identifier. v1 defines exactly
   one recipe (below). A future recipe is a new string and a schema bump.
+
+**Canonical serialisation** (normative — `generate --check` compares
+serialised bytes, and any future second engine implementation must reproduce
+them exactly): JSON with keys sorted lexicographically at every level,
+2-space indentation, no trailing whitespace, `ensure_ascii` escaping of
+non-ASCII, no HTML escaping of `<`/`>`/`&`, and a single trailing newline.
 - `entries` — sorted by `path`, unique on `path` **and** on `consumer_path`.
   - `path` — publisher-repo-relative source path.
   - `consumer_path` — where the file lands in the consumer. Differs from `path`

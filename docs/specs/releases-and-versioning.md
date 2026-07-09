@@ -55,8 +55,8 @@ write-restricted to it (security model §2).
 
 A shipped release found harmful is **retracted, not deleted**: add its version
 to `retracted:` in the export declaration and cut a new (patch) release.
-Consumers' watch skips retracted versions when computing LATEST; `is-newer`
-/ sync refuse a retracted TARGET with a distinct exit (`refused=retracted`).
+Consumers' watch skips retracted versions when computing LATEST; sync
+refuses a retracted TARGET with a distinct exit (`refused=retracted`).
 Deleting a tag is never the mechanism — pinned consumers must keep resolving
 their pin (INV-5), and deletion is indistinguishable from tampering.
 

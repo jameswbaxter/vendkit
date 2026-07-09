@@ -11,7 +11,7 @@ slice:
   title: "VendKit machinery"
 
 publisher:
-  platform: github
+  scm: github
   repo: example-org/vendkit
 
 include:

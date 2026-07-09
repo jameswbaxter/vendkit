@@ -18,8 +18,9 @@ Property tests worth the setup:
 
 ## 2. Scenario kit (the machinery testing itself)
 
-A harness that builds throwaway publisher/consumer git repos and drives the CLI
-end-to-end, no network, `neutral` port. Core scenario matrix:
+A harness that builds throwaway publisher/consumer git repos and drives the
+CLI end-to-end, no network, neutral CI surface, deliveries asserted through
+the journal handler. Core scenario matrix:
 
 | Scenario | Asserts |
 |---|---|
@@ -33,7 +34,7 @@ end-to-end, no network, `neutral` port. Core scenario matrix:
 | two slices, disjoint | gate `--all` passes |
 | two slices, colliding path | `collision` finding (INV-7) |
 | migration window resolve + verify | window arithmetic incl. multi-version jump; zero obligations = green no-op |
-| retracted target | `is-newer`/sync refuse, exit 3 |
+| retracted target | sync refuses, exit 3 |
 | seed scaffolded on onboard, then edited | gate strict passes (free to diverge) |
 | seed path pre-exists in consumer | adopted: entry added, file byte-untouched |
 | upstream template changes | consumer copy untouched; `template-updated` note in PR body (informational default), suppressed by `seeds.notes: silent` |
@@ -43,24 +44,31 @@ end-to-end, no network, `neutral` port. Core scenario matrix:
 | tag-moved simulation (rewrite tag in fixture repo) | sync refuses; watch raises integrity finding |
 | release cut: stale manifest / existing tag / non-monotonic version / missing migration on removal | each refused |
 | watch dry-run | no network, exit 0, empty report |
+| `ci: none` end-to-end | no pipelines scaffolded; gate/watch/conformance run manually; pipeline rules `skipped`; sync pushes branch, `pr-delivered=false` + intent emitted |
+| stray `.vendkit/*.yml` | usage error (strict namespace), never a silent skip |
+| init SCM inference | origin remote → `scm:`; no remote + no `--scm` = usage error |
+| CODEOWNERS opt-in | absent by default; `--codeowners` writes stanza (GitHub); refused on azure-repos with policy pointer |
+| PR/handoff intents | journal handler receives protocol-versioned documents; dedup keys and deterministic branch as specified |
 
 ## 3. Platform matrix (Layer 1/2)
 
-The same scenario kit re-run under each port binding, in real CI:
+The same scenario kit re-run per platform, in real CI:
 
 - **GHA:** kit runs inside a workflow; asserts `GITHUB_OUTPUT`/step-summary
-  wiring, composite-action parameter passthrough, and the sync PR credential
-  refusal (difference #2).
+  wiring, composite-action parameter passthrough, and the reference PR
+  handler's `GITHUB_TOKEN` refusal (difference #2).
 - **ADO:** kit runs inside a pipeline; asserts `##vso` output mapping, template
   parameter passthrough, base64-safe transport of JSON outputs.
-- Port REST methods (`list_release_tags`, `open_or_update_pr`,
-  `upsert_work_item`) get contract tests against recorded HTTP fixtures plus a
-  small live smoke suite in the framework repo's own CI (it is its own
-  publisher — self-hosting is the permanent integration environment).
+- The reference handlers' REST paths get contract tests against recorded
+  HTTP fixtures plus a small live smoke suite in the framework repo's own CI
+  (it is its own publisher — self-hosting is the permanent integration
+  environment). The handler *protocol* itself is covered platform-free via
+  the journal handler.
 
 **Parity rule:** a scenario or behaviour difference discovered on one platform
-must land as (a) a ledger entry (ports spec §6) and (b) a matrix test on both
-platforms — the peer-backend claim (INV-8) is only as true as this matrix.
+must land as (a) a ledger entry (platform-integration spec §6) and (b) a
+matrix test on both platforms — the peer-backend claim (INV-8) is only as
+true as this matrix.
 
 ## 4. Consumer-facing self-tests
 

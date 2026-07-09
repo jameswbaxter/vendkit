@@ -37,7 +37,7 @@ class Profile:
 class ExportDecl:
     slice_name: str
     slice_title: str
-    publisher_platform: str
+    publisher_scm: str
     publisher_repo: str
     include: list[str]
     exclude: list[str]
@@ -65,12 +65,15 @@ class ExportDecl:
         title = sl.get("title") or name
 
         pub = data.get("publisher") or {}
-        platform = pub.get("platform", "")
-        if platform not in ("github", "ado"):
-            errs.append("publisher.platform must be 'github' or 'ado'")
+        scm = pub.get("scm", "")
+        if scm not in ("github", "azure-repos"):
+            errs.append("publisher.scm must be 'github' or 'azure-repos'")
         repo = pub.get("repo", "")
-        if not isinstance(repo, str) or repo.count("/") != 1:
-            errs.append("publisher.repo must be '<owner-or-project>/<repo>'")
+        # A URL/path is used verbatim by git; shorthand is scm-expanded
+        # (core/upstream.py). Core never branches on scm beyond that
+        # expansion — it is provenance and link metadata (DR-0015).
+        if not isinstance(repo, str) or not repo:
+            errs.append("publisher.repo is required (git URL or shorthand)")
 
         include = data.get("include") or []
         seed = data.get("seed") or []
@@ -124,7 +127,7 @@ class ExportDecl:
             raise UsageError(f"{path}: " + "; ".join(errs))
         return cls(
             slice_name=name, slice_title=title,
-            publisher_platform=platform, publisher_repo=repo,
+            publisher_scm=scm, publisher_repo=repo,
             include=include, exclude=exclude, seed=seed, adapters=adapters,
             profiles=profiles, retracted=retracted,
             manifest_name=manifest_name, path=path,

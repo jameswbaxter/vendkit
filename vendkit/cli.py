@@ -18,9 +18,9 @@ from .core.util import Refusal, UsageError, VendkitError
 DEFAULT_DECL = "vendkit-export.yml"
 
 
-def _port(args):
-    from .ports.base import get_port
-    return get_port(getattr(args, "platform", None))
+def _ci(args):
+    from .ci import get_surface
+    return get_surface(getattr(args, "platform", None))
 
 
 def _decl(args):
@@ -36,7 +36,7 @@ def cmd_generate(args) -> int:
     )
     decl = _decl(args)
     fresh = build_publisher_manifest(decl, args.root)
-    port = _port(args)
+    port = _ci(args)
     if args.check:
         try:
             committed = load_manifest(str(Path(args.root) / decl.manifest_name))
@@ -62,7 +62,7 @@ def cmd_release(args) -> int:
         summary=args.summary, no_migrations_needed=args.no_migrations_needed,
         dry_run=args.dry_run,
     )
-    port = _port(args)
+    port = _ci(args)
     port.emit_output("version", result.version)
     port.emit_output("previous", result.previous or "")
     port.emit_output("surface-delta", f"+{result.added}/-{result.removed}")
@@ -77,7 +77,7 @@ def cmd_gate(args) -> int:
     if not paths:
         raise UsageError("no manifests found under .vendkit/")
     report = gate_check(args.consumer_root, paths)
-    port = _port(args)
+    port = _ci(args)
     for f in report.findings:
         print(f"{f.kind}: {f.consumer_path} [{f.slice_name}] {f.detail}".rstrip())
     port.emit_output("findings", str(len(report.findings)))
@@ -93,18 +93,10 @@ def cmd_gate(args) -> int:
     return 0
 
 
-def cmd_is_newer(args) -> int:
-    from .core import versions
-    newer = versions.is_newer(args.pinned, args.target,
-                              retracted=args.retracted or [])
-    _port(args).emit_output("newer", "true" if newer else "false")
-    return 0
-
-
 def cmd_migrations_verify(args) -> int:
     from .core.migrations import load_obligations, verify
     report = verify(args.consumer_root, load_obligations(args.obligations))
-    port = _port(args)
+    port = _ci(args)
     for failure in report.failures:
         print(f"unmet: {failure}")
     port.emit_output("obligations", str(report.checked))
@@ -124,7 +116,7 @@ def cmd_sync(args) -> int:
         args.publisher_root, args.consumer_root, decl, target=args.target,
         apply=args.apply, reconcile_scope=args.reconcile_scope,
     )
-    port = _port(args)
+    port = _ci(args)
     if not args.porcelain:
         for c in report.updated:
             print(f"updated: {c}")
@@ -157,15 +149,14 @@ def _publisher_tag(publisher_root: str) -> str:
 
 def cmd_sync_pipeline(args) -> int:
     """Full sync-lane orchestration (sync spec §3): resolve versions, probe,
-    apply, advance pins, branch, push, open/update ONE reviewed PR."""
-    from .core import migrations, versions
+    apply, advance pins, branch, push, and hand ONE reviewed-PR intent to
+    the configured PR handler (DR-0014)."""
+    from .core import handlers, migrations, upstream, versions
     from .core.manifest import VENDKIT_DIR, load_manifest
     from .core.materialise import materialise
     from .core.sliceconfig import find_slice_config, read_pin
-    from .ports.base import RepoRef
-    import os
 
-    port = _port(args)
+    ci_out = _ci(args)
     consumer_root = args.consumer_root
     decl = ExportDecl_load(args)
     cfg = find_slice_config(consumer_root, args.slice)
@@ -182,41 +173,38 @@ def cmd_sync_pipeline(args) -> int:
 
     # Retractions live at the NEWEST release's declaration (releases spec §4):
     # a target's own checkout cannot know it was retracted afterwards. Union
-    # the target declaration's list with a best-effort read of the newest one.
+    # the target declaration's list with a best-effort read of the newest one
+    # — over the git protocol, no vendor API (DR-0015).
     retracted = list(decl.retracted)
     try:
-        from .core.watch import _retracted_at_newest
-        upstream = port if port.name == "neutral" else __import__(
-            "vendkit.ports.base", fromlist=["get_port"]
-        ).get_port(cfg.publisher_platform)
-        tags = [t.name for t in upstream.list_release_tags(
-            RepoRef(cfg.publisher_platform, cfg.publisher_repo))]
+        from .core.watch import retracted_at_newest
+        url = upstream.clone_url(cfg.publisher_scm, cfg.publisher_repo)
+        tags = [t.name for t in upstream.list_release_tags(url)]
         newest = versions.latest(tags, channel="rc")
         if newest:
-            retracted += _retracted_at_newest(
-                upstream, RepoRef(cfg.publisher_platform, cfg.publisher_repo),
-                newest)
+            retracted += retracted_at_newest(url, newest)
     except Exception:
         pass  # advisory steering, not integrity: proceed on target's own list
 
     if not versions.is_newer(pinned, target, retracted=retracted):
-        port.emit_output("update-available", "false")
-        port.emit_output("changed", "false")
+        ci_out.emit_output("update-available", "false")
+        ci_out.emit_output("changed", "false")
         return 0
-    port.emit_output("update-available", "true")
+    ci_out.emit_output("update-available", "true")
 
     # Probe (INV-3: a crash can never masquerade as staleness).
     probe = materialise(args.publisher_root, consumer_root, decl, target=target)
     if not probe.changed:
-        port.emit_output("changed", "false")
+        ci_out.emit_output("changed", "false")
         return 0
 
     report = materialise(args.publisher_root, consumer_root, decl,
                          target=target, apply=True,
                          reconcile_scope=args.reconcile_scope)
-    port.emit_output("changed", "true")
+    ci_out.emit_output("changed", "true")
 
     # Advance every pin line in lockstep (sync spec §3 step 4).
+    # Under ci: none there are no pin files — provenance is the pin.
     for rel in cfg.pin_files:
         f = Path(consumer_root) / rel
         if f.is_file():
@@ -242,14 +230,28 @@ def cmd_sync_pipeline(args) -> int:
     git("commit", "-m", f"sync({cfg.slice_name}): {pinned} -> {target}")
     git("push", "--force", "origin", branch)
 
-    repo = args.consumer_repo or os.environ.get("GITHUB_REPOSITORY") or (
-        f"{os.environ.get('SYSTEM_TEAMPROJECT', '')}/"
-        f"{os.environ.get('BUILD_REPOSITORY_NAME', '')}"
-    )
-    pr = port.open_or_update_pr(
-        RepoRef(port.name, repo), branch, args.base_branch,
-        f"sync({cfg.slice_name}): {pinned} → {target}", body)
-    port.emit_output("pr-url", pr.url)
+    # PR delivery is a handler concern (DR-0014): the engine composes the
+    # intent; the handler owns the vendor API. The deterministic branch name
+    # is the idempotency key the handler must honour (protocol spec §3).
+    intent = {
+        "head_branch": branch,
+        "base_branch": args.base_branch,
+        "title": f"sync({cfg.slice_name}): {pinned} → {target}",
+        "body_md": body,
+        "slice": cfg.slice_name,
+    }
+    if args.consumer_repo:
+        intent["repo"] = args.consumer_repo
+    command = handlers.resolve("pr", cfg)
+    if command is None:
+        # Unwired (e.g. ci: none, fully manual): the branch is pushed and
+        # the intent is printed — the human delivers the PR themselves.
+        ci_out.emit_output("pr-delivered", "false")
+        ci_out.emit_output("pr-intent", json.dumps(intent, sort_keys=True))
+        return 0
+    facts = handlers.invoke(command, "pr", intent, cwd=consumer_root)
+    ci_out.emit_output("pr-delivered", "true")
+    ci_out.emit_output("pr-url", facts.get("url", ""))
     return 0
 
 
@@ -300,33 +302,43 @@ def _pr_body(slice_name, pinned, target, report, applicable, source,
 # -- watch / migrations / conformance ------------------------------------------
 
 def cmd_watch(args) -> int:
+    """Detection is core; delivery is the handoff handler's (DR-0014).
+    Watch itself never talks to a ticket system."""
+    from .core import handlers
     from .core.watch import render_report, watch
-    from .ports.base import get_port
-    port = _port(args)
-    # Upstream ports are keyed by the publisher's platform (ports spec §1) —
-    # except under the neutral runner (local runs, tests, fleet audit), where
-    # repo coordinates are local paths/URLs resolved by git itself.
-    upstream_port = (lambda name: port) if port.name == "neutral" else get_port
-    report = watch(args.consumer_root, upstream_port,
+    ci_out = _ci(args)
+    report = watch(args.consumer_root,
                    slice_name=args.slice, dry_run=args.dry_run)
     markdown = render_report(report)
-    port.emit_summary(markdown)
-    port.emit_output("findings", str(len(report.actionable)))
+    ci_out.emit_summary(markdown)
+    ci_out.emit_output("findings", str(len(report.actionable)))
     if args.json:
         print(json.dumps([vars(f) for f in report.findings]))
-    if not args.dry_run and not args.no_handoff:
-        for f in report.actionable:
-            cfgs = {c.slice_name: c for c in _slice_configs(args.consumer_root)}
-            cfg = cfgs[f.slice_name]
-            key = cfg.handoff_dedup_key
-            if f.kind != "update-available":
-                key += "-integrity"
-            title = (f"vendkit({f.slice_name}): update available "
-                     f"{f.pinned} → {f.latest}"
-                     if f.kind == "update-available"
-                     else f"vendkit({f.slice_name}): {f.kind}")
-            item = port.upsert_work_item(key, title, markdown, None)
-            port.emit_output(f"item-{f.slice_name}", item.url)
+    if args.dry_run or args.no_handoff or not report.actionable:
+        return 0
+    cfgs = {c.slice_name: c for c in _slice_configs(args.consumer_root)}
+    unwired = False
+    for f in report.actionable:
+        cfg = cfgs[f.slice_name]
+        command = handlers.resolve("handoff", cfg)
+        if command is None:
+            unwired = True
+            continue  # report-only: findings are on stdout/summary already
+        key = cfg.handoff_dedup_key
+        if f.kind != "update-available":
+            key += "-integrity"  # integrity findings never share the
+            #                      update item (release-watch spec §3)
+        title = (f"vendkit({f.slice_name}): update available "
+                 f"{f.pinned} → {f.latest}"
+                 if f.kind == "update-available"
+                 else f"vendkit({f.slice_name}): {f.kind}")
+        facts = handlers.invoke(
+            command, "handoff",
+            {"dedup_key": key, "title": title, "body_md": markdown,
+             "slice": f.slice_name},
+            cwd=args.consumer_root)
+        ci_out.emit_output(f"item-{f.slice_name}", facts.get("url", ""))
+    ci_out.emit_output("handoff", "unwired" if unwired else "delivered")
     return 0
 
 
@@ -340,7 +352,7 @@ def cmd_migrations(args) -> int:
     applicable, obligations = resolve(
         load_entries(args.publisher_root), args.pinned, args.target,
         args.profile)
-    port = _port(args)
+    port = _ci(args)
     port.emit_output("count", str(len(applicable)))
     port.emit_output("ids", ",".join(m["id"] for m in applicable))
     print(json.dumps({"applicable": [
@@ -351,40 +363,78 @@ def cmd_migrations(args) -> int:
 
 
 def cmd_conformance(args) -> int:
+    from .core import handlers
     from .core.conformance import CORE_RULES, evaluate, load_rules
     from .core.sliceconfig import find_slice_config
-    from .ports.base import detect
     cfg = find_slice_config(args.consumer_root, args.slice)
     if cfg is None:
         raise UsageError(f"no slice config for {args.slice!r} under .vendkit/")
     rule_files = [str(CORE_RULES)]
     if args.rules:
         rule_files.append(args.rules)
-    platform = args.platform or (
-        "github" if cfg.publisher_platform == "github" else "ado")
-    if platform == "neutral":
-        platform = cfg.publisher_platform
-    report = evaluate(args.consumer_root, cfg, platform, load_rules(rule_files))
-    port = _port(args)
+    report = evaluate(args.consumer_root, cfg, load_rules(rule_files))
+    if args.verify_attestations:
+        # Promote attested → pass via the fact-verify handler; a false
+        # verdict is a fail; unknown stays attested (conformance spec §4).
+        command = handlers.resolve("fact-verify", cfg)
+        if command is None:
+            raise UsageError(
+                "--verify-attestations needs a fact-verify handler "
+                "(handlers.fact-verify in the slice config)")
+        for r in report.results:
+            if r.status != "attested":
+                continue
+            facts = handlers.invoke(
+                command, "fact-verify",
+                {"fact": r.detail, "slice": cfg.slice_name},
+                cwd=args.consumer_root)
+            verdict = facts.get("verdict", "unknown")
+            if verdict == "true":
+                r.status, r.detail = "pass", f"{r.detail} (verified)"
+            elif verdict == "false":
+                r.status, r.detail = "fail", f"{r.detail} (verification refuted)"
+    ci_out = _ci(args)
     for r in report.results:
         print(f"{r.status:<9} {r.rule_id:<28} {r.detail}".rstrip())
-    port.emit_output("gap-count", str(len(report.gaps)))
+    ci_out.emit_output("gap-count", str(len(report.gaps)))
     if args.json:
         print(json.dumps([vars(r) for r in report.results]))
     if report.gaps and args.strict:
-        port.emit_error(f"{len(report.gaps)} conformance gap(s)")
+        ci_out.emit_error(f"{len(report.gaps)} conformance gap(s)")
         return 1
     return 0
 
 
-def cmd_onboard(args) -> int:
+def _infer_scm(consumer_root: str) -> str | None:
+    """The origin remote discriminates the SCM host (DR-0015): init runs in
+    the consumer repo, so the answer is usually already on disk."""
+    proc = subprocess.run(
+        ["git", "-C", consumer_root, "remote", "get-url", "origin"],
+        capture_output=True, text=True,
+    )
+    if proc.returncode != 0:
+        return None
+    url = proc.stdout.strip()
+    if "github.com" in url:
+        return "github"
+    if "dev.azure.com" in url or "visualstudio.com" in url:
+        return "azure-repos"
+    return None
+
+
+def cmd_init(args) -> int:
     from .core.onboard import onboard
     decl = ExportDecl_load(args)
+    scm = args.scm or _infer_scm(args.consumer_root)
+    if scm is None:
+        raise UsageError(
+            "cannot infer the SCM host from the consumer's origin remote — "
+            "pass --scm github|azure-repos")
     result = onboard(
         args.publisher_root, args.consumer_root, decl,
-        platform=args.target_platform, version=args.version,
+        ci=args.ci, scm=scm, version=args.version,
         profile=args.profile, mode=args.mode, base_branch=args.base_branch,
-        pr_token_secret=args.pr_token_secret,
+        pr_token_secret=args.pr_token_secret, codeowners=args.codeowners,
     )
     for path in result.written:
         print(f"wrote: {path}")
@@ -398,8 +448,9 @@ def cmd_onboard(args) -> int:
 
 def build_parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(prog="vendkit", description=__doc__)
-    p.add_argument("--platform", choices=["github", "ado", "neutral"],
-                   help="port override (default: auto-detect)")
+    p.add_argument("--platform",
+                   choices=["github-actions", "azure-pipelines", "neutral"],
+                   help="CI output surface override (default: auto-detect)")
     sub = p.add_subparsers(dest="command", required=True)
 
     def common(sp, decl=False, consumer=False, publisher=False):
@@ -442,13 +493,6 @@ def build_parser() -> argparse.ArgumentParser:
     common(sp, decl=True, consumer=True, publisher=True)
     sp.set_defaults(fn=cmd_sync_pipeline)
 
-    sp = sub.add_parser("is-newer", help="pure version compare")
-    sp.add_argument("--pinned", required=True)
-    sp.add_argument("--target", required=True)
-    sp.add_argument("--retracted", action="append", default=[])
-    common(sp)
-    sp.set_defaults(fn=cmd_is_newer)
-
     sp = sub.add_parser("release", help="cut an immutable release tag")
     sp.add_argument("--bump", choices=["patch", "minor", "major"])
     sp.add_argument("--version")
@@ -484,20 +528,31 @@ def build_parser() -> argparse.ArgumentParser:
     sp.add_argument("--slice", required=True)
     sp.add_argument("--strict", action="store_true")
     sp.add_argument("--rules", help="additional publisher rule spec")
+    sp.add_argument("--verify-attestations", action="store_true",
+                    help="promote attested facts via the fact-verify handler")
     common(sp, consumer=True)
     sp.set_defaults(fn=cmd_conformance)
 
-    sp = sub.add_parser("onboard", help="scaffold a consumer (run from publisher)")
-    sp.add_argument("--target-platform", "--platform-target",
-                    dest="target_platform", required=True,
-                    choices=["github", "ado"])
+    sp = sub.add_parser("init", aliases=["onboard"],
+                        help="scaffold a consumer (run from publisher checkout)")
+    sp.add_argument("--ci", required=True,
+                    choices=["github-actions", "azure-pipelines", "none"],
+                    help="the consumer's CI host; 'none' = fully manual "
+                         "orchestration, no pipelines scaffolded")
+    sp.add_argument("--scm", choices=["github", "azure-repos"],
+                    help="the consumer's SCM host (default: inferred from "
+                         "the origin remote)")
     sp.add_argument("--version", required=True)
     sp.add_argument("--profile")
     sp.add_argument("--mode", choices=["primary", "additive"], default="primary")
     sp.add_argument("--base-branch", default="main")
     sp.add_argument("--pr-token-secret", default="VENDKIT_PR_TOKEN")
+    sp.add_argument("--codeowners", metavar="OWNERS",
+                    help="opt-in: write a CODEOWNERS stanza covering "
+                         ".vendkit/ (GitHub only; Azure Repos uses a "
+                         "required-reviewers policy instead)")
     common(sp, decl=True, consumer=True, publisher=True)
-    sp.set_defaults(fn=cmd_onboard)
+    sp.set_defaults(fn=cmd_init)
 
     return p
 

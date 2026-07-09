@@ -40,7 +40,7 @@ steps:
           --base-branch __BASE_BRANCH__
     displayName: "Sync — check, apply, PR"
     env:
-      VENDKIT_PLATFORM: ado
+      VENDKIT_PLATFORM: azure-pipelines
       SYSTEM_ACCESSTOKEN: $(System.AccessToken)
       # PR-capable credential; must satisfy branch review, never bypass merge
       # (security model §4).

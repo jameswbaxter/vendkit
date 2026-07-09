@@ -49,8 +49,10 @@ deletion remains unambiguous evidence of trouble.
 
 ## 4. Credential model
 
-Four purposes, resolved by the port (ports spec §3): read-upstream,
-push-branch, open-PR, work-items. Principles:
+Four purposes (platform-integration spec §3): read-upstream and push-branch
+are ordinary **git credentials** spent by git itself; open-PR and work-items
+are API tokens spent by the **handlers** that deliver those intents.
+Principles:
 
 - **Least scope per purpose** — never one broad PAT for everything. Prefer
   platform-native identities (GitHub App with narrow permissions;
@@ -60,8 +62,9 @@ push-branch, open-PR, work-items. Principles:
   purpose read-only on the watch schedule, so expiry surfaces on cadence, not
   at the next release.
 - **Consumer-held only** — no publisher-held write credentials into consumers.
-  The one relaxation is the optional GHA push-hint dispatch token (ports spec
-  §4), which is dispatch-scoped, opt-in, and does not bypass any review.
+  The one relaxation is the optional GHA push-hint dispatch token
+  (platform-integration spec §4), which is dispatch-scoped, opt-in, and does
+  not bypass any review.
 - The sync PR credential deliberately **must satisfy branch review, not bypass
   it**: exemptions (ADO policy allowances) apply only to *creating* the PR,
   never to merging it.
@@ -74,8 +77,10 @@ push-branch, open-PR, work-items. Principles:
   surface as PR content; a compromised publisher cannot silently widen what a
   consumer executes.
 - **Gate self-protection:** `.vendkit/**` (manifests, configs) and the gate
-  pipeline itself must be CODEOWNERS-covered (core conformance rule), so
-  disabling the gate is itself a reviewed, owner-approved change.
+  pipeline itself should require owner review — CODEOWNERS on GitHub,
+  a required-reviewers branch policy on Azure Repos (core conformance rule
+  `control-plane-owned`, waivable with a recorded reason) — so disabling the
+  gate is itself a reviewed, owner-approved change.
 - **Disjointness (INV-7)** prevents a second slice from overwriting another
   slice's files as a smuggling path.
 
@@ -85,8 +90,10 @@ The framework repo is its own publisher (self-hosted): its releases are cut by
 its own release command behind the same tag protections, its tree is
 gate-verified, and its conformance core rules apply to it. Dependency policy:
 Layer 0 consumer path is stdlib-only (INV-9); publisher/sync paths may use one
-pinned YAML library; ports use stdlib HTTP. No transitive dependency sprawl —
-the machinery that guards supply chains must itself be a minimal one.
+pinned YAML library; the reference handlers use stdlib HTTP. No transitive
+dependency sprawl — the machinery that guards supply chains must itself be a
+minimal one. Handlers are consumer-configured executables and sit inside the
+consumer's trust boundary like any pipeline step (handler-protocol spec §7).
 
 ## 7. Residual risks (accepted, documented)
 

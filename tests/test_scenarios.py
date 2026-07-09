@@ -56,7 +56,7 @@ def world(tmp_path):
     (pub / "vendkit-export.yml").write_text("""\
 schema_version: 1
 slice: {name: docs, title: "Design docs"}
-publisher: {platform: github, repo: example-org/pub}
+publisher: {scm: github, repo: example-org/pub}
 include: ["docs/**/*.md", "tools/*"]
 seed: ["templates/*.md"]
 exclude: ["**/TEMPLATE.md"]
@@ -77,13 +77,16 @@ profiles:
     con.mkdir()
     (con / "CODEOWNERS").write_text("/.vendkit/ @example-org/owners\n")
     git("init", "-q", "-b", "main", cwd=con)
-    vk("onboard", "--target-platform", "github", "--version", "v0.1.0",
-       "--profile", "code-repo", "--publisher-root", str(pub),
-       "--consumer-root", str(con), cwd=pub)
-    # Neutral-port coordinates: the publisher is a local path.
+    vk("init", "--ci", "github-actions", "--scm", "github",
+       "--version", "v0.1.0", "--profile", "code-repo",
+       "--publisher-root", str(pub), "--consumer-root", str(con), cwd=pub)
+    # Local-world coordinates: the publisher is a path git can clone, and
+    # deliveries go to the journal handler instead of the GitHub API.
     cfg = con / ".vendkit" / "docs.yml"
-    cfg.write_text(cfg.read_text().replace(
-        "repo: example-org/pub", f"repo: {pub}"))
+    cfg.write_text(cfg.read_text()
+                   .replace("repo: example-org/pub", f"repo: {pub}")
+                   .replace("vendkit.handlers.github",
+                            "vendkit.handlers.journal"))
     git("add", "-A", cwd=con)
     git("commit", "-q", "-m", "onboard docs slice v0.1.0", cwd=con)
     con_origin = tmp_path / "consumer-origin.git"
@@ -172,11 +175,12 @@ def test_sync_upgrade_composes_with_gate(world, tmp_path):
     assert "update-available=true" in proc.stdout
     assert "changed=true" in proc.stdout
 
-    # One PR, deterministic branch, via the port.
+    # One PR intent, deterministic branch, via the PR handler.
     records = [json.loads(l) for l in journal.read_text().splitlines()]
-    prs = [r for r in records if r["op"] == "open_pr"]
+    prs = [r for r in records if r["kind"] == "pr"]
     assert len(prs) == 1
-    assert prs[0]["head"] == "vendkit/docs/sync-v0.1.0-to-v0.2.0"
+    assert prs[0]["head_branch"] == "vendkit/docs/sync-v0.1.0-to-v0.2.0"
+    assert prs[0]["vendkit_handler_protocol"] == 1
 
     # Content refreshed, addition reconciled, pins advanced in lockstep.
     assert "Rule two." in (con / "docs" / "standard.md").read_text()
@@ -317,10 +321,10 @@ def test_watch_detects_update_and_dry_run_is_offline(world, tmp_path):
     assert findings[0]["kind"] == "update-available"
     assert findings[0]["latest"] == "v0.2.0"
     assert findings[0]["bump"] == "minor"
-    # Handoff creates exactly one deduped work item.
+    # Handoff hands exactly one deduped intent to the handler.
     vk("watch", cwd=con, env={"VENDKIT_NEUTRAL_JOURNAL": str(journal)})
     items = [json.loads(l) for l in journal.read_text().splitlines()
-             if json.loads(l)["op"] == "upsert_work_item"]
+             if json.loads(l)["kind"] == "handoff"]
     assert len(items) == 1 and items[0]["dedup_key"] == "vendkit-watch-docs"
     # Dry-run: no findings, exit 0 (PR self-test, no network).
     dry = vk("watch", "--dry-run", cwd=con)
@@ -384,9 +388,9 @@ def test_seed_adopts_preexisting_file_without_clobbering(world, tmp_path):
     (con2 / "templates").mkdir(parents=True)
     own = "# Contributing\n\nPredates the slice; must survive onboarding.\n"
     (con2 / "templates" / "CONTRIBUTING.md").write_text(own)
-    vk("onboard", "--target-platform", "github", "--version", "v0.1.0",
-       "--profile", "code-repo", "--publisher-root", str(pub),
-       "--consumer-root", str(con2), cwd=pub)
+    vk("onboard", "--ci", "github-actions", "--scm", "github",
+       "--version", "v0.1.0", "--profile", "code-repo",
+       "--publisher-root", str(pub), "--consumer-root", str(con2), cwd=pub)
     assert (con2 / "templates" / "CONTRIBUTING.md").read_text() == own
     manifest = json.loads((con2 / ".vendkit" / "docs-manifest.json").read_text())
     assert any(e["path"] == "templates/CONTRIBUTING.md" and e.get("seed")
@@ -410,9 +414,9 @@ def test_template_update_never_touches_copy_and_notes_in_pr(world, tmp_path):
        env={"VENDKIT_NEUTRAL_JOURNAL": str(journal)})
     assert (con / "templates" / "CONTRIBUTING.md").read_text() == ours
     pr = next(json.loads(l) for l in journal.read_text().splitlines()
-              if json.loads(l)["op"] == "open_pr")
-    assert "upstream template changed" in pr["body"]
-    assert "templates/CONTRIBUTING.md" in pr["body"]
+              if json.loads(l)["kind"] == "pr")
+    assert "upstream template changed" in pr["body_md"]
+    assert "templates/CONTRIBUTING.md" in pr["body_md"]
     vk("gate", "--strict", cwd=con)                       # INV-1 still holds
 
 
@@ -477,6 +481,107 @@ def test_seed_retirement_is_patch_grade(world):
     assert not any(e["path"] == "templates/CONTRIBUTING.md"
                    for e in manifest["entries"])              # no longer tracked
     vk("gate", "--strict", cwd=con)
+
+
+# -- handler protocol / axes (DR-0014, DR-0015) --------------------------------------
+
+def test_ci_none_is_fully_manual(world, tmp_path):
+    """ci: none — no pipelines, provenance is the pin, PR delivery unwired:
+    sync stops at 'branch pushed, intent emitted' and the human takes over."""
+    pub, _ = world
+    con = tmp_path / "manual-consumer"
+    con.mkdir()
+    git("init", "-q", "-b", "main", cwd=con)
+    vk("init", "--ci", "none", "--scm", "github", "--version", "v0.1.0",
+       "--profile", "code-repo", "--publisher-root", str(pub),
+       "--consumer-root", str(con), cwd=pub)
+    assert not (con / ".github").exists()          # nothing scaffolded
+    cfg = con / ".vendkit" / "docs.yml"
+    assert "ci: none" in cfg.read_text()
+    cfg.write_text(cfg.read_text().replace("repo: example-org/pub",
+                                           f"repo: {pub}"))
+    git("add", "-A", cwd=con)
+    git("commit", "-q", "-m", "manual onboard", cwd=con)
+    origin = tmp_path / "manual-origin.git"
+    git("init", "-q", "--bare", str(origin), cwd=tmp_path)
+    git("remote", "add", "origin", str(origin), cwd=con)
+    git("push", "-q", "origin", "main", cwd=con)
+
+    vk("gate", "--strict", cwd=con)                # the lanes still run by hand
+    proc = vk("conformance", "--slice", "docs", cwd=con)
+    assert "skipped" in proc.stdout and "gate-wired" in proc.stdout
+    proc = vk("watch", "--no-handoff", cwd=con)    # pin read from provenance
+    assert "findings=0" in proc.stdout
+
+    (pub / "docs" / "guide.md").write_text("# Guide v2\n")
+    _release(pub, "v0.2.0")
+    git("checkout", "-q", "v0.2.0", cwd=pub)
+    proc = vk("sync-pipeline", "--slice", "docs", "--publisher-root", str(pub),
+              "--consumer-root", str(con), cwd=con)
+    git("checkout", "-q", "main", cwd=pub)
+    assert "pr-delivered=false" in proc.stdout     # unwired: intent emitted
+    intent_line = next(l for l in proc.stdout.splitlines()
+                       if l.startswith("pr-intent="))
+    intent = json.loads(intent_line[len("pr-intent="):])
+    assert intent["head_branch"] == "vendkit/docs/sync-v0.1.0-to-v0.2.0"
+    branches = subprocess.run(
+        ["git", "ls-remote", "--heads", str(origin)],
+        capture_output=True, text=True).stdout
+    assert "vendkit/docs/sync-v0.1.0-to-v0.2.0" in branches  # pushed for review
+
+
+def test_stray_vendkit_yaml_is_loud(world):
+    """The .vendkit/ namespace is strict: a YAML file that is not a slice
+    config is a usage error, never a silent skip (DR-0012)."""
+    _, con = world
+    (con / ".vendkit" / "notes.yml").write_text("just: notes\n")
+    proc = vk("watch", "--dry-run", cwd=con, check=False)
+    assert proc.returncode == 2
+
+
+def test_init_infers_scm_from_remote(world, tmp_path):
+    pub, _ = world
+    con = tmp_path / "inferred-consumer"
+    con.mkdir()
+    git("init", "-q", "-b", "main", cwd=con)
+    git("remote", "add", "origin", "https://github.com/example-org/thing.git",
+        cwd=con)
+    vk("init", "--ci", "github-actions", "--version", "v0.1.0",
+       "--profile", "code-repo", "--publisher-root", str(pub),
+       "--consumer-root", str(con), cwd=pub)      # no --scm: inferred
+    assert "scm: github" in (con / ".vendkit" / "docs.yml").read_text()
+    # No remote and no --scm: loud usage error, never a guess.
+    con2 = tmp_path / "no-remote-consumer"
+    con2.mkdir()
+    git("init", "-q", "-b", "main", cwd=con2)
+    proc = vk("init", "--ci", "github-actions", "--version", "v0.1.0",
+              "--publisher-root", str(pub), "--consumer-root", str(con2),
+              cwd=pub, check=False)
+    assert proc.returncode == 2 and "--scm" in proc.stderr
+
+
+def test_codeowners_is_opt_in_and_github_only(world, tmp_path):
+    pub, con = world
+    # The world consumer wrote its own CODEOWNERS; init added no stanza.
+    assert "@example-org/owners" in (con / "CODEOWNERS").read_text()
+    co = tmp_path / "codeowners-consumer"
+    co.mkdir()
+    git("init", "-q", "-b", "main", cwd=co)
+    vk("init", "--ci", "github-actions", "--scm", "github",
+       "--version", "v0.1.0", "--profile", "code-repo",
+       "--codeowners", "@example-org/platform",
+       "--publisher-root", str(pub), "--consumer-root", str(co), cwd=pub)
+    assert "/.vendkit/ @example-org/platform" in (co / "CODEOWNERS").read_text()
+    # Azure Repos does not honour CODEOWNERS: refuse rather than scaffold
+    # a dead file (points at the required-reviewers policy instead).
+    ado = tmp_path / "ado-consumer"
+    ado.mkdir()
+    git("init", "-q", "-b", "main", cwd=ado)
+    proc = vk("init", "--ci", "azure-pipelines", "--scm", "azure-repos",
+              "--version", "v0.1.0", "--codeowners", "@x",
+              "--publisher-root", str(pub), "--consumer-root", str(ado),
+              cwd=pub, check=False)
+    assert proc.returncode == 2 and "required-reviewers" in proc.stderr
 
 
 def test_gate_path_is_stdlib_only(world):

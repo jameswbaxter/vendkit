@@ -55,8 +55,9 @@ applicable entries + aggregated verification.
 
 ## 3. Handoff
 
-Resolved migrations render into one work item (port `workitem/issue.upsert`,
-dedup key `vendkit-migrate-<slice>-<target>`): per-migration summary, kind,
+Resolved migrations render into one `handoff` intent for the configured
+handler (handler-protocol spec §3, dedup key
+`vendkit-migrate-<slice>-<target>`): per-migration summary, kind,
 rationale, detection hits from the consumer tree, instructions, and the
 aggregated **definition of done** — the verification obligations plus the exact
 verifier invocation. Platforms with AI coding agents may assign the item; the

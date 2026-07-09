@@ -16,10 +16,12 @@ the spec.
   of slice identity; the tools carry none.
 - **Release** — an immutable, annotated SemVer tag (`vMAJOR.MINOR.PATCH`) on the
   publisher repository. The tag *is* the release; there is no separate artefact.
-- **Pin** — the consumer's record of which release it has vendored. Lives in
-  exactly one place per slice (the platform-native reference line in the
-  consumer's sync pipeline), located via `pin.file` + `pin.pattern` in the
-  consumer slice config.
+- **Pin** — the consumer's record of which release it has vendored. The
+  manifest's `source.release` provenance is authoritative; the
+  platform-native reference line in the consumer's sync pipeline (located
+  via `pin.pattern` + `pin.files` in the slice config) is the bootstrap
+  fallback and the intent watch reads. Under `ci: none` the provenance is
+  the only pin.
 - **Manifest** — JSON record of the exported (publisher-side) or vendored
   (consumer-side) file set: per-file normalised checksum, consumer path, exec
   bit; plus source provenance (publisher, release, commit) on the consumer side.
@@ -57,18 +59,28 @@ the spec.
 - **Migration** — a declarative payload shipped with a release describing a
   structural or convention change to *consumer-owned* content that mechanical
   sync cannot perform, with machine-checkable verification obligations.
-- **Handoff** — converting resolved migrations (or watch findings) into a work
-  item on the consumer's platform (ADO work item / GitHub issue), deduplicated,
-  optionally assigned to an AI coding agent.
+- **Handoff** — delivering resolved migrations (or watch findings) as a
+  deduplicated work item, via the consumer's configured handoff handler.
+  Core composes the intent; the handler owns the ticket system.
 - **Conformance** — evaluation of a consumer tree + config against the rule spec
   shipped in the pinned release ("is this consumer correctly wired?"). Rules are
-  data; detectors are code; platform-specific detector bindings live in the
-  ports.
+  data; detectors are code; pipeline-dialect parsing is keyed by the slice
+  config's `ci:` axis.
 - **Watch** — the scheduled collector that compares each vendored slice's pin
-  against the publisher's latest release and hands findings off for remediation.
-- **Platform port** — the small interface (release listing, PR creation, work
-  item upsert, CI output/summary emission, trigger wiring, credential model)
-  implemented per CI platform. ADO and GitHub Actions are peer backends.
+  against the publisher's latest release (git protocol) and hands findings to
+  the handoff handler.
+- **Handler** — a consumer-configured executable that receives an intent
+  document (PR, handoff, fact-verify) on stdin and delivers it to a vendor
+  service, honouring the protocol's idempotency obligations. The only place
+  vendor services appear (DR-0014); reference handlers for GitHub and Azure
+  DevOps ship with the framework.
+- **SCM / CI axes** — the two recorded environment facts (DR-0015): `scm`
+  (github | azure-repos — where the repo is hosted) and `ci`
+  (github-actions | azure-pipelines | none — what runs the pipelines).
+  Independent; `ci: none` is fully manual orchestration.
+- **CI output surface** — the in-process adapter for the host CI's output
+  dialect (step outputs, summaries, error annotations) — the only
+  platform-specific code inside the engine.
 - **Tier chain** — publishers consuming other publishers' slices (framework →
   doctrine publisher → domain publisher → leaf). Identity copies at every hop.
 - **Retraction** — publisher-side declaration that a released version must not

@@ -165,7 +165,7 @@ def materialise(
             "profile": profile or "*",
             "normalisation": RECIPE,
             "source": {
-                "platform": decl.publisher_platform,
+                "scm": decl.publisher_scm,
                 "repo": decl.publisher_repo,
                 "release": target,
                 "commit": run_git(["rev-parse", "HEAD"], publisher_root),

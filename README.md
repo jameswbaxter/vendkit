@@ -18,9 +18,13 @@ vendor a pinned copy of that slice and wire in machinery that:
 - **checks conformance** of a consumer against the publisher's adoption rules.
 
 It targets **Azure DevOps Pipelines and GitHub Actions as peer, first-class
-backends** behind a small platform-port interface. The core engine is
-platform-agnostic Python; the consumer-side integrity path is dependency-free
-(standard library only).
+backends** — and a fully manual mode (`ci: none`) with no CI at all. The
+core engine is vendor-service-free (git + filesystem only): upstream reads
+use the git protocol, and every delivery (sync PR, work item, platform-fact
+verification) goes through an exec **handler protocol** with GitHub/ADO
+reference handlers shipped in-tree — any executable honouring the protocol
+extends support without an engine change. The consumer-side integrity path
+is dependency-free (standard library only).
 
 ## Why not X?
 
@@ -70,7 +74,8 @@ See [GLOSSARY.md](GLOSSARY.md) for precise terms.
 | [docs/specs/release-watch.md](docs/specs/release-watch.md) | Upstream watch config and collector contract |
 | [docs/specs/migrations.md](docs/specs/migrations.md) | Migration payload schema and lifecycle |
 | [docs/specs/conformance.md](docs/specs/conformance.md) | Conformance spec schema and detector kinds |
-| [docs/specs/platform-ports.md](docs/specs/platform-ports.md) | The port interface; ADO and GHA bindings |
+| [docs/specs/handler-protocol.md](docs/specs/handler-protocol.md) | The delivery boundary: intents, handlers, idempotency |
+| [docs/specs/platform-integration.md](docs/specs/platform-integration.md) | CI surfaces, credentials, differences ledger |
 | [docs/specs/onboarding.md](docs/specs/onboarding.md) | Scaffolder behaviour; consumer configuration file |
 | [docs/specs/security-model.md](docs/specs/security-model.md) | Threat model, credentials, tag protection |
 | [docs/specs/cli.md](docs/specs/cli.md) | The `vendkit` CLI surface |
@@ -80,16 +85,17 @@ See [GLOSSARY.md](GLOSSARY.md) for precise terms.
 
 ## Status
 
-**Implemented and self-hosting.** The `vendkit` package (core engine, neutral/
-GitHub/ADO ports, CLI), both scaffold sets, the core conformance rules, and the
-scenario test kit are in place; this repository generates and freshness-checks
-its own manifest from its own `vendkit-export.yml`. See `tests/` for the
-executable invariants and [ROADMAP.md](ROADMAP.md) for what remains before a
-public 1.0 (Layer 2 wrapper packaging, live platform-matrix CI, fleet audit,
-API-verified attestations).
+**Implemented and self-hosting.** The `vendkit` package (core engine, CI
+output surfaces, GitHub/ADO/journal reference handlers, CLI), both scaffold
+sets, the core conformance rules, and the scenario test kit are in place;
+this repository generates and freshness-checks its own manifest from its own
+`vendkit-export.yml`. See `tests/` for the executable invariants and
+[ROADMAP.md](ROADMAP.md) for what remains before a public 1.0 (Layer 2
+wrapper packaging, live platform-matrix CI, fleet audit, API-backed
+fact-verify handlers).
 
-Try it end to end without any CI platform (the neutral port drives everything
-against local git repos):
+Try it end to end without any CI platform (everything runs against local git
+repos, deliveries land in the journal handler):
 
 ```sh
 python3 -m pytest                      # unit + scenario kit

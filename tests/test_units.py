@@ -82,6 +82,19 @@ def test_path_match_crosses_segments():
     assert not path_match("docs/x.md", "src/*")
 
 
+# -- upstream coordinates (DR-0015) -------------------------------------------------
+
+def test_clone_url_shorthand_and_verbatim():
+    from vendkit.core.upstream import clone_url
+    assert clone_url("github", "o/r") == "https://github.com/o/r.git"
+    assert (clone_url("azure-repos", "org/proj/repo")
+            == "https://dev.azure.com/org/proj/_git/repo")
+    assert clone_url("github", "/local/path") == "/local/path"
+    assert clone_url("github", "https://example.com/r.git") == "https://example.com/r.git"
+    with pytest.raises(UsageError):
+        clone_url("azure-repos", "o/r")  # needs org/project/repo
+
+
 # -- declaration / adapters --------------------------------------------------------
 
 def _decl(tmp_path, extra=""):
@@ -91,7 +104,7 @@ def _decl(tmp_path, extra=""):
     (tmp_path / "vendkit-export.yml").write_text(f"""\
 schema_version: 1
 slice: {{name: docs, title: Docs}}
-publisher: {{platform: github, repo: example-org/pub}}
+publisher: {{scm: github, repo: example-org/pub}}
 include: ["docs/**/*.md"]
 exclude: ["**/TEMPLATE.md"]
 {extra}

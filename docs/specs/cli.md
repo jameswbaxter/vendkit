@@ -24,6 +24,29 @@ Removed pre-1.0: `is-newer` (an artefact of step-wise wrappers; the compare
 is internal to `sync-pipeline` and `watch`, and remains unit-tested as
 `core.versions.is_newer`).
 
+## Human tier
+
+Human-first verbs, layered strictly as **compositions of the machine tier**
+— never a parallel code path, so the invariants cover what humans actually
+run. Their formatting is exempt from the `key=value` stability promise (the
+machine tier keeps it); scripts must not parse them.
+
+| Command | Does |
+|---|---|
+| `vendkit status [--slice <s>]` | per-slice rollup: pinned vs latest (git protocol), update/bump class, drift finding count, ci mode. THE entry point. |
+| `vendkit diff [--slice <s>] [--target <v>]` | unified diff of every file `update` would write, against a throwaway depth-1 checkout of the target (default: latest). Read-only. |
+| `vendkit update [--slice <s>] [--target <v>] [--local\|--pr]` | the whole upgrade. `--local` (default): materialise + manifest + pin advance in the working tree; you review and commit. `--pr`: delegates to `sync-pipeline` against the fetched checkout. |
+| `vendkit explain [<topic>\|list]` | what a finding / refusal / status token means and the sanctioned fix. |
+| `vendkit init` (§ machine table) | prompts for `--ci`, `--version`, profile, and un-inferable `--scm` on a TTY; fully flag-driven (and loudly failing) when non-interactive. |
+
+`--slice` may be omitted when exactly one slice is configured.
+
+**INV-6 relaxation (documented):** the human tier runs the *installed*
+engine against a fetched target tree, unlike the CI sync lane where the
+pinned checkout supplies both content and engine. The declaration/manifest
+schema-version gates make skew loud rather than silent; consumers wanting
+the strict property use the scheduled lane.
+
 ## Conventions (uniform across commands)
 
 - **Exit codes:** 0 success; 1 findings-in-strict-mode; 2 usage/config error;

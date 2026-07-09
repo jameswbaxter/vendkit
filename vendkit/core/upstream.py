@@ -77,6 +77,21 @@ def list_release_tags(url: str) -> list[Tag]:
     return [Tag(name=n, commit=s) for n, s in sorted(shas.items())]
 
 
+def fetch_publisher(url: str, ref: str, dest: str) -> None:
+    """A working checkout of the publisher at `ref` in `dest` (human-tier
+    diff/update). Depth-1 clone of just that tag; works for URLs and local
+    paths alike. NOTE: the human tier runs the *installed* engine against
+    this tree — a documented relaxation of INV-6, guarded by schema-version
+    gating (cli spec, human tier)."""
+    proc = subprocess.run(
+        ["git", "clone", "-q", "--depth", "1", "--branch", ref, url, dest],
+        capture_output=True, text=True,
+    )
+    if proc.returncode != 0:
+        raise VendkitError(
+            f"cloning {url} at {ref} failed: {proc.stderr.strip()}")
+
+
 def read_file_at(url: str, ref: str, path: str) -> bytes:
     """One file's bytes at a ref, without a full clone.
 

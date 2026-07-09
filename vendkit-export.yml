@@ -16,6 +16,11 @@ publisher:
 
 include:
   - "vendkit/**/*.py"
+  - "cmd/**/*.go"
+  - "internal/**/*.go"
+  - "assets.go"
+  - "go.mod"
+  - "go.sum"
   - "conformance/core-rules.yml"
   - "scaffold/*/*.tmpl"
   - "pyproject.toml"
@@ -23,6 +28,7 @@ include:
 
 exclude:
   - "tests/**"
+  - "**/*_test.go"
   - "**/__pycache__/**"
 
 profiles:

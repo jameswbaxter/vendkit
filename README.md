@@ -85,22 +85,29 @@ See [GLOSSARY.md](GLOSSARY.md) for precise terms.
 
 ## Status
 
-**Implemented and self-hosting.** The `vendkit` package (core engine, CI
-output surfaces, GitHub/ADO/journal reference handlers, CLI), both scaffold
-sets, the core conformance rules, and the scenario test kit are in place;
-this repository generates and freshness-checks its own manifest from its own
-`vendkit-export.yml`. See `tests/` for the executable invariants and
-[ROADMAP.md](ROADMAP.md) for what remains before a public 1.0 (Layer 2
-wrapper packaging, live platform-matrix CI, fleet audit, API-backed
-fact-verify handlers).
+**Implemented and self-hosting, twice.** Two engines currently coexist
+(DR-0017 transition): the Python reference (`vendkit/` package) and the Go
+engine (`cmd/vendkit/` + `internal/`, one static binary, embedded scaffolds).
+Both pass the identical scenario matrix and generate byte-identical
+manifests — the golden vectors under `tests/vectors/` and the
+`VENDKIT_CLI`-parameterised kit are the parity ratchet; the Go engine is the
+intended single implementation, with Python retiring once the transition
+completes. CI output surfaces, GitHub/ADO/journal reference handlers, both
+scaffold sets, the core conformance rules, and the human-tier CLI
+(`status`/`diff`/`update`/`explain`) are in place; this repository generates
+and freshness-checks its own manifest from its own `vendkit-export.yml` with
+either engine. See [ROADMAP.md](ROADMAP.md) for what remains before a public
+1.0 (release-attached binaries per DR-0016, Layer 2 wrapper packaging, live
+platform-matrix CI, fleet audit, API-backed fact-verify handlers).
 
 Try it end to end without any CI platform (everything runs against local git
 repos, deliveries land in the journal handler):
 
 ```sh
-python3 -m pytest                      # unit + scenario kit
-python3 -m vendkit.cli generate --check
-python3 -m vendkit.cli --help
+python3 -m pytest                      # unit + scenario kit (reference engine)
+go build -o vendkit-go ./cmd/vendkit   # the Go engine
+VENDKIT_CLI=./vendkit-go python3 -m pytest tests/test_scenarios.py   # parity
+./vendkit-go generate --check          # self-host freshness, Go engine
 ```
 
 Schemas are versioned from `1` and there are **no** compatibility obligations

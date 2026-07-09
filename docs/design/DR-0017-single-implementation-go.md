@@ -67,9 +67,11 @@ language-agnostic exec protocol lets migrate independently.
 ## Consequences
 
 - INV-6 must be restated for a compiled engine — split into DR-0016.
-- The repo hosts `go/` alongside `vendkit/` during transition; the export
-  declaration ships the Go sources (and later, releases attach binaries per
-  DR-0016). Python retirement is a MAJOR release with a migration entry.
+- The repo hosts the Go module (root `go.mod`, `cmd/vendkit/`,
+  `internal/`, embedded assets) alongside `vendkit/` during transition; the
+  export declaration ships the Go sources (and later, releases attach
+  binaries per DR-0016). Python retirement is a MAJOR release with a
+  migration entry.
 - Handlers may remain Python (or anything) indefinitely: the exec protocol
   is the boundary, though shipping Go reference handlers alongside the
   engine keeps the zero-prerequisite story whole.

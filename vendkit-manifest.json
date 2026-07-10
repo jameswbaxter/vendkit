@@ -19,21 +19,21 @@
       "exec": false,
       "path": "cmd/vendkit/cmds.go",
       "raw": false,
-      "sha256": "efd886ccbba0cf66db605e5b1ee391147814d7d4563df50dbb0978a587c77cfc"
+      "sha256": "62bacb1c50b8e8bfff32e92a0338e5ca0367506b20fb54fd4126550214846eb8"
     },
     {
       "consumer_path": "cmd/vendkit/human.go",
       "exec": false,
       "path": "cmd/vendkit/human.go",
       "raw": false,
-      "sha256": "52cac5c7fde3644b1c5d1c9078efdff94a5699f15dd172aa06e6f866c3503e04"
+      "sha256": "89df461976d11a338e89987886730e2947228fa8fb1029d4deed609765677838"
     },
     {
       "consumer_path": "cmd/vendkit/main.go",
       "exec": false,
       "path": "cmd/vendkit/main.go",
       "raw": false,
-      "sha256": "1f30c76b9c44e73a6d2d81b3300b973945742b6d1812a6d8453b1dff0176e6b2"
+      "sha256": "fd443ad61504a87036959cd29a9ab665bdbbe2764bd1fe7f958b67c3cbcd2fb4"
     },
     {
       "consumer_path": "conformance/core-rules.yml",
@@ -47,7 +47,7 @@
       "exec": false,
       "path": "go.mod",
       "raw": false,
-      "sha256": "51f3893c52726fbbd8a5bb064b9e54c18bbda9c51fd34fe522fab24e41c421da"
+      "sha256": "afe47a0778a2d81534c7baf36d4e0ebadbbe8b3f707b96984868ac34c285f867"
     },
     {
       "consumer_path": "go.sum",
@@ -197,13 +197,6 @@
       "sha256": "dc33461152d6a93e5378c3b71e84a6277a2199b0a0f34d320bb9ef2a6a652b6f"
     },
     {
-      "consumer_path": "pyproject.toml",
-      "exec": false,
-      "path": "pyproject.toml",
-      "raw": false,
-      "sha256": "abef23011bc471ca07b629c432276dff13851c9bfc08ceda753236cbd29bec93"
-    },
-    {
       "consumer_path": "scaffold/azure-pipelines/conformance.yml.tmpl",
       "exec": false,
       "path": "scaffold/azure-pipelines/conformance.yml.tmpl",
@@ -258,174 +251,6 @@
       "path": "scaffold/github-actions/watch.yml.tmpl",
       "raw": false,
       "sha256": "dea9680d4ff0e1c6bf0326b7774272876d3ee145adabf602241464acf1c17461"
-    },
-    {
-      "consumer_path": "vendkit/__init__.py",
-      "exec": false,
-      "path": "vendkit/__init__.py",
-      "raw": false,
-      "sha256": "c5e3cf8a7652e4bbbef53ce3d27ef06ccdae3ff6d284cdbec1436b471db5b758"
-    },
-    {
-      "consumer_path": "vendkit/ci.py",
-      "exec": false,
-      "path": "vendkit/ci.py",
-      "raw": false,
-      "sha256": "3102ee235d7648549a453fef6493845ffdd393156641b480ec26e0bb4c944ce0"
-    },
-    {
-      "consumer_path": "vendkit/cli.py",
-      "exec": false,
-      "path": "vendkit/cli.py",
-      "raw": false,
-      "sha256": "869383cdba464fa05d41f03a51a3eb75051cf40f5b0b139daf57721127cb75e8"
-    },
-    {
-      "consumer_path": "vendkit/core/__init__.py",
-      "exec": false,
-      "path": "vendkit/core/__init__.py",
-      "raw": false,
-      "sha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b"
-    },
-    {
-      "consumer_path": "vendkit/core/adapters.py",
-      "exec": false,
-      "path": "vendkit/core/adapters.py",
-      "raw": false,
-      "sha256": "251fb20bb4b57989b850eb0c7bebbf02fb0429059a6808ee40cb53b9826ff823"
-    },
-    {
-      "consumer_path": "vendkit/core/conformance.py",
-      "exec": false,
-      "path": "vendkit/core/conformance.py",
-      "raw": false,
-      "sha256": "659fa8f9d7f2d6110316d070dd1d2b144462ede93525298d2718a33992e20a72"
-    },
-    {
-      "consumer_path": "vendkit/core/declaration.py",
-      "exec": false,
-      "path": "vendkit/core/declaration.py",
-      "raw": false,
-      "sha256": "ba19af057d469ee72b4bda8cbfc616c2584f9b9f94851d3df39d491fa7b982c7"
-    },
-    {
-      "consumer_path": "vendkit/core/handlers.py",
-      "exec": false,
-      "path": "vendkit/core/handlers.py",
-      "raw": false,
-      "sha256": "f87c204fa4a985401c99f3a2fcd595f5d7f20e27c020ca5e6aacfdfe80eebc71"
-    },
-    {
-      "consumer_path": "vendkit/core/manifest.py",
-      "exec": false,
-      "path": "vendkit/core/manifest.py",
-      "raw": false,
-      "sha256": "679728460ce8331bb75627d61aaf4ea1b2e22e7e0d153a73c1078fef1424eae6"
-    },
-    {
-      "consumer_path": "vendkit/core/materialise.py",
-      "exec": false,
-      "path": "vendkit/core/materialise.py",
-      "raw": false,
-      "sha256": "f9ce4a5278dd20ead2af6075e0151360f37ee6af70af1569525427b9b38c44cd"
-    },
-    {
-      "consumer_path": "vendkit/core/migrations.py",
-      "exec": false,
-      "path": "vendkit/core/migrations.py",
-      "raw": false,
-      "sha256": "f5fe4f398a30f31376a6aa5d585f659d23352e9ac7f684830a0cc0a03190c811"
-    },
-    {
-      "consumer_path": "vendkit/core/normalise.py",
-      "exec": false,
-      "path": "vendkit/core/normalise.py",
-      "raw": false,
-      "sha256": "3f543f1cb484119eca61981d039272fa769505027461c8562fc0bc94769f9821"
-    },
-    {
-      "consumer_path": "vendkit/core/onboard.py",
-      "exec": false,
-      "path": "vendkit/core/onboard.py",
-      "raw": false,
-      "sha256": "88e05f293f0a4c6595265ed3e4581d20b32b5f4dd673475a32b397aa32156066"
-    },
-    {
-      "consumer_path": "vendkit/core/release.py",
-      "exec": false,
-      "path": "vendkit/core/release.py",
-      "raw": false,
-      "sha256": "737875c36cf1e63c0dcbe1d178acc897f59faece2ef543db51547f10e2bd630a"
-    },
-    {
-      "consumer_path": "vendkit/core/sliceconfig.py",
-      "exec": false,
-      "path": "vendkit/core/sliceconfig.py",
-      "raw": false,
-      "sha256": "79a2e0c2c14481c9276ea95a4b51fff0901ba21be490191c0a61eaf5f46f35f7"
-    },
-    {
-      "consumer_path": "vendkit/core/upstream.py",
-      "exec": false,
-      "path": "vendkit/core/upstream.py",
-      "raw": false,
-      "sha256": "9f6fe3a22d054d3eb1a6f623b6553f01224d6cd0d8598b1be09ff3c1479bb88d"
-    },
-    {
-      "consumer_path": "vendkit/core/util.py",
-      "exec": false,
-      "path": "vendkit/core/util.py",
-      "raw": false,
-      "sha256": "ed7b5f8a637ed9287b4310273daa45a3e21a48936f7d598c18bdcd8f73192d00"
-    },
-    {
-      "consumer_path": "vendkit/core/versions.py",
-      "exec": false,
-      "path": "vendkit/core/versions.py",
-      "raw": false,
-      "sha256": "44909475304b4d60045cf019fe52e14a655408455ba936482d6045bc34a5af42"
-    },
-    {
-      "consumer_path": "vendkit/core/watch.py",
-      "exec": false,
-      "path": "vendkit/core/watch.py",
-      "raw": false,
-      "sha256": "8f882adcba0cd413764a3fb0579168359c0d45e6d13e82d0d657204b5d95dfec"
-    },
-    {
-      "consumer_path": "vendkit/handlers/__init__.py",
-      "exec": false,
-      "path": "vendkit/handlers/__init__.py",
-      "raw": false,
-      "sha256": "e21cd7c0297a2785dbf88a5de1fda1a2d88dde6ce150c717ef5cab658c16c10b"
-    },
-    {
-      "consumer_path": "vendkit/handlers/_shared.py",
-      "exec": false,
-      "path": "vendkit/handlers/_shared.py",
-      "raw": false,
-      "sha256": "499de7cdfee05360d0e5e8a259a980575b1ba4593544c877189cd12ea8f9cc62"
-    },
-    {
-      "consumer_path": "vendkit/handlers/ado.py",
-      "exec": false,
-      "path": "vendkit/handlers/ado.py",
-      "raw": false,
-      "sha256": "dd56ee302f43c5247a88c9f7f67c37d23c2180c7632b6b734657a26242afbe8e"
-    },
-    {
-      "consumer_path": "vendkit/handlers/github.py",
-      "exec": false,
-      "path": "vendkit/handlers/github.py",
-      "raw": false,
-      "sha256": "65f913145ccf79396fdbc979ed125206c4902b25313643339f429bff07c2aecd"
-    },
-    {
-      "consumer_path": "vendkit/handlers/journal.py",
-      "exec": false,
-      "path": "vendkit/handlers/journal.py",
-      "raw": false,
-      "sha256": "917bd3e4baed01a8daf0e44419143aaebe54f00af84c99d41de91f506d787dc0"
     }
   ],
   "normalisation": "utf8;lf;strip-trailing-ws;single-final-newline;sha256",

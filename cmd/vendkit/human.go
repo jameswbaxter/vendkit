@@ -13,9 +13,9 @@ import (
 	"strings"
 	"unicode/utf8"
 
-	vendkitassets "example.org/vendkit"
-	"example.org/vendkit/internal/ci"
-	"example.org/vendkit/internal/core"
+	vendkitassets "github.com/jameswbaxter/vendkit"
+	"github.com/jameswbaxter/vendkit/internal/ci"
+	"github.com/jameswbaxter/vendkit/internal/core"
 )
 
 // -- init ------------------------------------------------------------------------

@@ -1,9 +1,5 @@
 # VendKit
 
-> **Working title.** "VendKit" is provisional; rename before first public release.
-> No code exists yet — this repository currently holds the design and specification
-> set from which the framework will be implemented. See [ROADMAP.md](ROADMAP.md).
-
 VendKit is a framework for **vendoring curated slices of files across repositories,
 with provenance, integrity gates, and governed upgrades**. A *publisher* repository
 declares which of its files form a distributable **slice**; *consumer* repositories
@@ -85,29 +81,25 @@ See [GLOSSARY.md](GLOSSARY.md) for precise terms.
 
 ## Status
 
-**Implemented and self-hosting, twice.** Two engines currently coexist
-(DR-0017 transition): the Python reference (`vendkit/` package) and the Go
-engine (`cmd/vendkit/` + `internal/`, one static binary, embedded scaffolds).
-Both pass the identical scenario matrix and generate byte-identical
-manifests — the golden vectors under `tests/vectors/` and the
-`VENDKIT_CLI`-parameterised kit are the parity ratchet; the Go engine is the
-intended single implementation, with Python retiring once the transition
-completes. CI output surfaces, GitHub/ADO/journal reference handlers, both
-scaffold sets, the core conformance rules, and the human-tier CLI
+**Implemented and self-hosting.** A single Go engine (`cmd/vendkit/` +
+`internal/`) builds to one static binary with embedded scaffolds (DR-0017).
+CI output surfaces, GitHub/ADO/journal reference handlers, both scaffold sets,
+the core conformance rules, and the human-tier CLI
 (`status`/`diff`/`update`/`explain`) are in place; this repository generates
-and freshness-checks its own manifest from its own `vendkit-export.yml` with
-either engine. See [ROADMAP.md](ROADMAP.md) for what remains before a public
-1.0 (release-attached binaries per DR-0016, Layer 2 wrapper packaging, live
-platform-matrix CI, fleet audit, API-backed fact-verify handlers).
+and freshness-checks its own manifest from its own `vendkit-export.yml`. The
+golden vectors under `tests/vectors/` and the end-to-end scenario kit
+(`internal/e2e/`) are the correctness ratchet. See [ROADMAP.md](ROADMAP.md) for
+what remains before a public 1.0 (release-attached binaries per DR-0016, Layer 2
+wrapper packaging, live platform-matrix CI, fleet audit, API-backed fact-verify
+handlers).
 
 Try it end to end without any CI platform (everything runs against local git
 repos, deliveries land in the journal handler):
 
 ```sh
-python3 -m pytest                      # unit + scenario kit (reference engine)
-go build -o vendkit-go ./cmd/vendkit   # the Go engine
-VENDKIT_CLI=./vendkit-go python3 -m pytest tests/test_scenarios.py   # parity
-./vendkit-go generate --check          # self-host freshness, Go engine
+go build -o vendkit ./cmd/vendkit   # the engine, one static binary
+go test ./...                       # unit + end-to-end scenario kit
+./vendkit generate --check          # self-host manifest freshness
 ```
 
 Schemas are versioned from `1` and there are **no** compatibility obligations
@@ -115,4 +107,4 @@ to any prior system: this is a clean-room design.
 
 ## License
 
-Intended license: Apache-2.0 (to be added before first public release).
+[Apache-2.0](LICENSE).

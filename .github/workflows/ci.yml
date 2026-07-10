@@ -1,0 +1,45 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  build-test:
+    name: build · vet · test · self-host gate
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.22'
+          cache: true
+
+      - name: gofmt (must be clean)
+        run: |
+          unformatted=$(gofmt -l $(git ls-files '*.go'))
+          if [ -n "$unformatted" ]; then
+            echo "These files are not gofmt-clean:"
+            echo "$unformatted"
+            exit 1
+          fi
+
+      - name: go vet
+        run: go vet ./...
+
+      - name: build
+        run: go build -o vendkit ./cmd/vendkit
+
+      - name: test (unit + end-to-end scenario kit)
+        run: go test ./...
+
+      - name: self-host manifest freshness gate
+        # VendKit is its own first publisher: the checked-in manifest must match
+        # what the engine generates from vendkit-export.yml. A drifted manifest
+        # fails the build (non-zero exit).
+        run: ./vendkit generate --check

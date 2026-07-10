@@ -1,4 +1,4 @@
-module example.org/vendkit
+module github.com/jameswbaxter/vendkit
 
 go 1.22
 

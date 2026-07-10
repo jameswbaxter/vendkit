@@ -723,7 +723,7 @@ func TestSeedScaffoldedOnceAndFreeToDiverge(t *testing.T) {
 		t.Fatalf("templates/CONTRIBUTING.md entry seed flag = %v", entry)
 	}
 	write(t, seeded, "# Contributing\n\nOur own rules.\n") // diverge
-	vk(t, con, nil, true, "gate", "--strict")             // gate never checks seeds
+	vk(t, con, nil, true, "gate", "--strict")              // gate never checks seeds
 }
 
 func TestSeedAdoptsPreexistingFileWithoutClobbering(t *testing.T) {

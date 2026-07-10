@@ -1,0 +1,66 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 880 368" role="img" aria-label="Two-lane diagram: publisher releases flow through the sync lane as one reviewed PR into the consumer; the gate lane runs on every consumer PR and blocks hand-edits of vendored files. Composition invariant: the sync lane&#39;s output always passes the gate lane." font-family="ui-monospace,SFMono-Regular,Menlo,Consolas,&#39;Liberation Mono&#39;,monospace">
+<defs>
+<marker id="ao" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L8 4L0 8z" fill="#4fbf85"></path></marker>
+<marker id="aw" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L8 4L0 8z" fill="#d2a04a"></path></marker>
+</defs>
+<rect width="880" height="368" rx="14" fill="#0a1110"></rect>
+
+<rect x="28" y="96" width="148" height="150" rx="12" fill="#101917" stroke="#1d2926"></rect>
+<text x="102" y="124" text-anchor="middle" font-size="10" letter-spacing="1.6" font-weight="600" fill="#5c716a">PUBLISHER</text>
+<text x="102" y="147" text-anchor="middle" font-size="13" font-weight="700" fill="#e9efec">agent-docs</text>
+<rect x="52" y="162" width="100" height="24" rx="12" fill="rgba(79,191,133,.1)" stroke="#23503b"></rect>
+<text x="102" y="178" text-anchor="middle" font-size="11" fill="#4fbf85">tag v1.4.0</text>
+<text x="102" y="210" text-anchor="middle" font-size="10" fill="#8da39b">immutable SemVer</text>
+<text x="102" y="224" text-anchor="middle" font-size="10" fill="#8da39b">release</text>
+
+<rect x="704" y="64" width="148" height="272" rx="12" fill="#101917" stroke="#1d2926"></rect>
+<text x="778" y="92" text-anchor="middle" font-size="10" letter-spacing="1.6" font-weight="600" fill="#5c716a">CONSUMER</text>
+<text x="778" y="115" text-anchor="middle" font-size="13" font-weight="700" fill="#e9efec">product repo</text>
+<rect x="720" y="132" width="116" height="24" rx="7" fill="#18241f"></rect>
+<text x="778" y="148" text-anchor="middle" font-size="10.5" fill="#8da39b">CLAUDE.md</text>
+<rect x="720" y="162" width="116" height="24" rx="7" fill="#18241f"></rect>
+<text x="778" y="178" text-anchor="middle" font-size="10.5" fill="#8da39b">agent-rules/**</text>
+<rect x="720" y="192" width="116" height="24" rx="7" fill="#18241f" stroke="#23503b"></rect>
+<text x="778" y="208" text-anchor="middle" font-size="10.5" fill="#4fbf85">manifest · v1.3.2</text>
+<text x="778" y="300" text-anchor="middle" font-size="10" fill="#8da39b">owned like</text>
+<text x="778" y="314" text-anchor="middle" font-size="10" fill="#8da39b">first-party code</text>
+
+<rect x="196" y="64" width="488" height="124" rx="12" fill="rgba(79,191,133,.05)" stroke="#23503b"></rect>
+<text x="216" y="88" font-size="10.5" font-weight="700" letter-spacing="1.4" fill="#4fbf85">SYNC LANE</text>
+<text x="664" y="88" text-anchor="end" font-size="10" fill="#8da39b">one reviewed PR per upgrade</text>
+<rect x="224" y="129" width="84" height="34" rx="9" fill="#101917" stroke="#2b3a36"></rect>
+<text x="266" y="150" text-anchor="middle" font-size="12" fill="#e9efec">watch</text>
+<text x="266" y="180" text-anchor="middle" font-size="9.5" fill="#5c716a">sees v1.4.0</text>
+<rect x="344" y="129" width="76" height="34" rx="9" fill="#101917" stroke="#2b3a36"></rect>
+<text x="382" y="150" text-anchor="middle" font-size="12" fill="#e9efec">sync</text>
+<text x="382" y="180" text-anchor="middle" font-size="9.5" fill="#5c716a">adds · updates · removals</text>
+<rect x="470" y="129" width="160" height="34" rx="9" fill="#101917" stroke="#2b3a36"></rect>
+<text x="550" y="150" text-anchor="middle" font-size="12" fill="#e9efec">reviewed PR</text>
+<text x="550" y="180" text-anchor="middle" font-size="9.5" fill="#5c716a">never silent</text>
+<g stroke="#4fbf85" stroke-opacity=".75" stroke-width="1.5">
+<line x1="176" y1="146" x2="219" y2="146" marker-end="url(#ao)"></line>
+<line x1="308" y1="146" x2="340" y2="146" marker-end="url(#ao)"></line>
+<line x1="420" y1="146" x2="466" y2="146" marker-end="url(#ao)"></line>
+<line x1="630" y1="146" x2="700" y2="146" marker-end="url(#ao)"></line>
+</g>
+
+<text x="440" y="205" text-anchor="middle" font-size="10.5" fill="#5c716a">⇅ <tspan fill="#8da39b" font-weight="600">composition invariant</tspan> — the sync lane&#39;s output always passes the gate lane</text>
+
+<rect x="196" y="212" width="488" height="124" rx="12" fill="rgba(210,160,74,.05)" stroke="#4a3a1e"></rect>
+<text x="216" y="236" font-size="10.5" font-weight="700" letter-spacing="1.4" fill="#d2a04a">GATE LANE</text>
+<text x="664" y="236" text-anchor="end" font-size="10" fill="#8da39b">runs on every consumer PR</text>
+<rect x="220" y="277" width="140" height="34" rx="9" fill="#101917" stroke="#2b3a36"></rect>
+<text x="290" y="298" text-anchor="middle" font-size="12" fill="#e9efec">consumer PR</text>
+<rect x="396" y="277" width="112" height="34" rx="9" fill="#101917" stroke="#4a3a1e"></rect>
+<text x="452" y="298" text-anchor="middle" font-size="12" font-weight="600" fill="#d2a04a">vendkit gate</text>
+<text x="452" y="328" text-anchor="middle" font-size="9.5" fill="#5c716a">verifies checksum manifest</text>
+<rect x="546" y="250" width="132" height="30" rx="8" fill="rgba(79,191,133,.1)" stroke="#23503b"></rect>
+<text x="612" y="269" text-anchor="middle" font-size="10.5" fill="#4fbf85">✓ sync PR merges</text>
+<rect x="546" y="296" width="132" height="30" rx="8" fill="rgba(217,106,85,.08)" stroke="#3a2622"></rect>
+<text x="612" y="315" text-anchor="middle" font-size="10.5" fill="#d96a55">✗ hand-edit blocked</text>
+<g stroke="#d2a04a" stroke-opacity=".75" stroke-width="1.5" fill="none">
+<line x1="360" y1="294" x2="391" y2="294" marker-end="url(#aw)"></line>
+<polyline points="508,294 526,294 526,265 541,265" marker-end="url(#aw)"></polyline>
+<polyline points="508,294 526,294 526,311 541,311" marker-end="url(#aw)"></polyline>
+</g>
+</svg>

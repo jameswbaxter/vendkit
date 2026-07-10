@@ -13,20 +13,28 @@ and GHA (testing.md §3).
 > scaffolded consumer pipelines invoke the CLI directly from the pinned
 > publisher checkout instead of going through `platforms/` wrapper files —
 > same guarantees, fewer moving parts; wrappers remain M4 packaging polish.
-> Go engine (DR-0017): implemented at the repo root (cmd/vendkit, internal/,
-> embedded assets); full scenario-kit parity with the Python reference
-> (VENDKIT_CLI ratchet) and byte-identical self-host manifests both ways.
-> Still to do for the cutover: release-attached checksummed binaries +
-> engine pin (DR-0016), Go reference handlers, Python retirement (MAJOR).
+> Go engine (DR-0017): the **single implementation** (cmd/vendkit, internal/,
+> embedded assets, one static binary). A Go-native unit + end-to-end scenario
+> kit (internal/e2e) is the correctness ratchet; the self-host manifest is
+> generated and freshness-checked by the Go binary. The Python reference
+> engine, handlers, and pytest suite have been **removed**, and the name is
+> locked to VendKit. CI (lint + build + test + self-host gate) and a SemVer
+> release workflow now run under `.github/workflows/`.
+> Still to do for the cutover: **Go-native reference handlers + consumer
+> scaffold templates** — `internal/core/onboard.go` and `scaffold/*/*.tmpl`
+> still emit `python3 -m vendkit.cli` / `vendkit.handlers.*` and must be ported
+> to invoke the `vendkit` binary; release-attached checksummed binaries + engine
+> pin (DR-0016) are wired in the release workflow and need a first tagged cut.
 >
 > Still open: live platform-matrix CI (testing §3), REST-fixture contract
 > tests for the GitHub/ADO reference handlers, push-hint dispatch step, fleet audit,
-> API-verified attestations, public-repo hygiene.
+> API-verified attestations, remaining public-repo hygiene (SECURITY.md,
+> issue templates, docs site).
 
 ## M0 — Skeleton and invariants (foundation)
 
 - Repo scaffold per architecture §4; CI for lint + unit tests; license
-  (Apache-2.0) and project naming decision (drop the provisional name).
+  (Apache-2.0) and project naming decision (name locked: **VendKit**).
 - Layer 0: export-declaration parser + validation; normalisation + manifest
   build (`generate`, `generate --check`); version grammar + `is-newer`.
 - Neutral CI surface + journal handler; CLI skeleton with the exit-code/output conventions (cli.md).

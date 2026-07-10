@@ -1,0 +1,60 @@
+name: Release
+
+# Cut a release by pushing a SemVer tag, e.g.:
+#   git tag v0.1.0 && git push origin v0.1.0
+# Builds static binaries for every supported platform, checksums them, and
+# publishes a GitHub Release with the binaries + SHA256SUMS.txt attached
+# (DR-0016: the engine ships as a checksummed, pinnable artefact).
+
+on:
+  push:
+    tags:
+      - 'v[0-9]+.[0-9]+.[0-9]+'
+      - 'v[0-9]+.[0-9]+.[0-9]+-*'   # pre-releases: v1.2.3-rc.1
+
+permissions:
+  contents: write   # required to create the GitHub Release
+
+jobs:
+  release:
+    name: build · checksum · publish
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.22'
+          cache: true
+
+      - name: Verify (build · vet · test) before releasing
+        run: |
+          go vet ./...
+          go test ./...
+
+      - name: Cross-compile release binaries
+        env:
+          VERSION: ${{ github.ref_name }}
+          CGO_ENABLED: '0'
+        run: |
+          mkdir -p dist
+          targets="linux/amd64 linux/arm64 darwin/amd64 darwin/arm64 windows/amd64 windows/arm64"
+          for t in $targets; do
+            os=${t%/*}; arch=${t#*/}
+            out="dist/vendkit_${VERSION}_${os}_${arch}"
+            [ "$os" = "windows" ] && out="${out}.exe"
+            echo "building $out"
+            GOOS=$os GOARCH=$arch go build -trimpath -ldflags='-s -w' -o "$out" ./cmd/vendkit
+          done
+
+      - name: Checksums
+        working-directory: dist
+        run: sha256sum vendkit_* > SHA256SUMS.txt
+
+      - name: Publish GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            dist/vendkit_*
+            dist/SHA256SUMS.txt
+          generate_release_notes: true

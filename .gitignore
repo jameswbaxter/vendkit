@@ -1,7 +1,5 @@
-__pycache__/
-*.pyc
-.pytest_cache/
-*.egg-info/
-dist/
-build/
-.venv/
+# Go build output
+/vendkit
+/vendkit-go
+/dist/
+*.test

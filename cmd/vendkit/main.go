@@ -13,8 +13,8 @@ import (
 	"path/filepath"
 	"strings"
 
-	"example.org/vendkit/internal/ci"
-	"example.org/vendkit/internal/core"
+	"github.com/jameswbaxter/vendkit/internal/ci"
+	"github.com/jameswbaxter/vendkit/internal/core"
 )
 
 func main() {

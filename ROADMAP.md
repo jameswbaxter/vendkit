@@ -20,11 +20,15 @@ and GHA (testing.md §3).
 > engine, handlers, and pytest suite have been **removed**, and the name is
 > locked to VendKit. CI (lint + build + test + self-host gate) and a SemVer
 > release workflow now run under `.github/workflows/`.
-> Still to do for the cutover: **Go-native reference handlers + consumer
-> scaffold templates** — `internal/core/onboard.go` and `scaffold/*/*.tmpl`
-> still emit `python3 -m vendkit.cli` / `vendkit.handlers.*` and must be ported
-> to invoke the `vendkit` binary; release-attached checksummed binaries + engine
-> pin (DR-0016) are wired in the release workflow and need a first tagged cut.
+> The consumer-facing cutover is **done**: the Go-native reference handlers
+> (`vendkit handler <scm>` for github/ado, in-binary) and all consumer scaffold
+> templates now run the compiled `vendkit` binary — `scaffold/*/*.tmpl` fetch +
+> checksum-verify the pinned engine (DR-0016), the slice config carries the
+> `engine: {version, sha256}` pin advanced in lockstep by the sync PR, and
+> `vendkit self-verify` re-asserts the running binary against it. No Python
+> runtime residue remains in shipped code or scaffolds. Release-attached
+> checksummed binaries + engine pin (DR-0016) are wired in the release workflow
+> and still need a **first tagged cut** to exercise them end-to-end.
 >
 > Still open: live platform-matrix CI (testing §3), REST-fixture contract
 > tests for the GitHub/ADO reference handlers, push-hint dispatch step, fleet audit,

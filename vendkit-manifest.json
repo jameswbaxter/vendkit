@@ -19,7 +19,14 @@
       "exec": false,
       "path": "cmd/vendkit/cmds.go",
       "raw": false,
-      "sha256": "62bacb1c50b8e8bfff32e92a0338e5ca0367506b20fb54fd4126550214846eb8"
+      "sha256": "34d0f4836ec520fe23eef3f85f90242a1ffe6d3c01d2dccf6099e0f15bec1b23"
+    },
+    {
+      "consumer_path": "cmd/vendkit/handler.go",
+      "exec": false,
+      "path": "cmd/vendkit/handler.go",
+      "raw": false,
+      "sha256": "f142e062fcca0b1f04efebf62a0a335d4cbc8d1e7552637d4df367532ecc4e38"
     },
     {
       "consumer_path": "cmd/vendkit/human.go",
@@ -33,7 +40,14 @@
       "exec": false,
       "path": "cmd/vendkit/main.go",
       "raw": false,
-      "sha256": "fd443ad61504a87036959cd29a9ab665bdbbe2764bd1fe7f958b67c3cbcd2fb4"
+      "sha256": "31169b682324e0f580ecb3c0b20f8542f7ffcf5e0d3d8dc338c8714ab1830c3f"
+    },
+    {
+      "consumer_path": "cmd/vendkit/selfverify.go",
+      "exec": false,
+      "path": "cmd/vendkit/selfverify.go",
+      "raw": false,
+      "sha256": "bca0d46a48f0562e1544681b381a95cfbbc2ff5b253673fc0b33c9b7935f109c"
     },
     {
       "consumer_path": "conformance/core-rules.yml",
@@ -99,6 +113,13 @@
       "sha256": "d0f40996c5c3c56e2ce4bd575444e73e81711c2eb90157aa821a27703d3ea819"
     },
     {
+      "consumer_path": "internal/core/enginepin.go",
+      "exec": false,
+      "path": "internal/core/enginepin.go",
+      "raw": false,
+      "sha256": "47e797563721164d309d688ef0801af7418e18a08f23767713480ca6988e1d1f"
+    },
+    {
       "consumer_path": "internal/core/handlers.go",
       "exec": false,
       "path": "internal/core/handlers.go",
@@ -138,7 +159,7 @@
       "exec": false,
       "path": "internal/core/onboard.go",
       "raw": false,
-      "sha256": "920003c1fc1e98f9dd3eded35f5a3f5f8414640c0524563cc9921ce0b05d11fe"
+      "sha256": "3388da26dbdc1c1745b19811497711c8ad99dad10ed5b376963a6e49f91f7bf5"
     },
     {
       "consumer_path": "internal/core/release.go",
@@ -152,7 +173,7 @@
       "exec": false,
       "path": "internal/core/sliceconfig.go",
       "raw": false,
-      "sha256": "6a2ceaa7b5c8e6cad2c51912233fe44b77d78eb601ca1e5b496ed8b10d209fd7"
+      "sha256": "37d12f44906b5f48510e5e8f0ad9288449c774dbc500fc40c856419cc46a0f2a"
     },
     {
       "consumer_path": "internal/core/treeglob.go",
@@ -201,56 +222,56 @@
       "exec": false,
       "path": "scaffold/azure-pipelines/conformance.yml.tmpl",
       "raw": false,
-      "sha256": "b0390882888ac801e0a8ff432315ec44b0302eec1727af3f02c7ee037f51eb60"
+      "sha256": "bb3b7eecb47ff6448bc69fa25c592b2582ddea765a419de9d970a09aff4b0331"
     },
     {
       "consumer_path": "scaffold/azure-pipelines/gate.yml.tmpl",
       "exec": false,
       "path": "scaffold/azure-pipelines/gate.yml.tmpl",
       "raw": false,
-      "sha256": "0ddadf2231612ab1a6a6cb2eba48a0e9cc5a1a6d8a0396553ce99a16dd9cd806"
+      "sha256": "0207bcb7260d5efe87911cbda842c69ed3ebbc60aca34e8edc4a976dd26a0608"
     },
     {
       "consumer_path": "scaffold/azure-pipelines/sync.yml.tmpl",
       "exec": false,
       "path": "scaffold/azure-pipelines/sync.yml.tmpl",
       "raw": false,
-      "sha256": "010d5abd5e6898520402daf10e09815f38d97e19f37e362e3d525f989134d342"
+      "sha256": "4330338965301321852228f7ab68e78c96da1854c7642a46035c7915f58be19b"
     },
     {
       "consumer_path": "scaffold/azure-pipelines/watch.yml.tmpl",
       "exec": false,
       "path": "scaffold/azure-pipelines/watch.yml.tmpl",
       "raw": false,
-      "sha256": "f56148a70e5a2c3cd926b8b36bc750d3181dede86631fa033707343ad1dfa462"
+      "sha256": "d4361b664f155f2d7bb74eb77435ae545ab1f91ec8a60f71d9b09dc5e5850ef1"
     },
     {
       "consumer_path": "scaffold/github-actions/conformance.yml.tmpl",
       "exec": false,
       "path": "scaffold/github-actions/conformance.yml.tmpl",
       "raw": false,
-      "sha256": "1c63c1526f63a9c8b7f387146e76f1031b8872121a203a5b7d1ef52f265d77c3"
+      "sha256": "bb93e396c1a95f4d3a1137e00d316ee2b52a7f4ea26d5bb6f43f474bba82cab8"
     },
     {
       "consumer_path": "scaffold/github-actions/gate.yml.tmpl",
       "exec": false,
       "path": "scaffold/github-actions/gate.yml.tmpl",
       "raw": false,
-      "sha256": "ef2d9887977dd8b7a4fbab7444678f2999ca568d1dac7734aa5ca3f8e8ea7465"
+      "sha256": "358d7b6463da169e0cbd4ac9d1b03ea4702256671439e50680ef512d8760c1e3"
     },
     {
       "consumer_path": "scaffold/github-actions/sync.yml.tmpl",
       "exec": false,
       "path": "scaffold/github-actions/sync.yml.tmpl",
       "raw": false,
-      "sha256": "79356787f46029c8788cd8e146ad60a9298d2196e915a872976adfbdf8d7b0d1"
+      "sha256": "1146e07bb5aed76b964eac27efa18aa1e849ff74ddbae02ebfb3b03cd79f0a4b"
     },
     {
       "consumer_path": "scaffold/github-actions/watch.yml.tmpl",
       "exec": false,
       "path": "scaffold/github-actions/watch.yml.tmpl",
       "raw": false,
-      "sha256": "dea9680d4ff0e1c6bf0326b7774272876d3ee145adabf602241464acf1c17461"
+      "sha256": "647a1f28b2e144f7358959773ba86d57b0a97b0da9015d5abe14e77df31db62d"
     }
   ],
   "normalisation": "utf8;lf;strip-trailing-ws;single-final-newline;sha256",

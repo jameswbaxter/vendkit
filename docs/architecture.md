@@ -14,7 +14,7 @@ Layer 1  Platform adaptation   CI output surface (in-process dialects) +
 Layer 0  Core engine           declaration parsing, manifest, materialise,
                                gate verification, version compare, migrations,
                                conformance evaluation, git-protocol upstream
-                               reads  (pure Python; git + filesystem only)
+                               reads  (one static Go binary; git + filesystem only)
 ```
 
 Rules that keep the layers honest:
@@ -110,9 +110,11 @@ Numbered; other specs cite them as INV-n. The conformance kit
   engine (the pinned platform reference resolves the same tree that supplies
   both content and engine). Gate verification always runs against the *pinned*
   release's manifest. There is no version skew inside either operation.
-  *Forward note:* when the compiled engine ships, this restates as an
-  explicit engine pin with schema-competence gating — see DR-0016. The
-  human-tier CLI documents its own relaxation (cli spec).
+  With the compiled engine shipped (DR-0017), this holds as an explicit,
+  checksummed engine pin with schema-competence gating (DR-0016): the
+  scaffolded lane fetches and `self-verify`s the pinned binary, and the sync
+  PR advances the engine pin in lockstep with content. The human-tier CLI
+  documents its own relaxation (cli spec).
 - **INV-7 (Disjointness).** Across all slices vendored by one consumer, the
   `consumer_path` sets are pairwise disjoint. Checked by the gate lane on every
   PR.
@@ -121,9 +123,10 @@ Numbered; other specs cite them as INV-n. The conformance kit
   Platform behaviour differences are confined to Layer 1 (CI surface,
   handlers, dialect parsing) and are enumerated in the platform-integration
   spec's differences ledger.
-- **INV-9 (Dependency-free gate).** The consumer-side gate path runs on a stock
-  Python standard library — no third-party packages, no YAML parsing (the gate
-  reads only the JSON manifest).
+- **INV-9 (Dependency-free gate).** The consumer-side gate path runs a single
+  static binary with no runtime prerequisites at all (DR-0016) — no
+  interpreter, no third-party packages, no YAML parsing (the gate reads only
+  the JSON manifest).
 - **INV-10 (Review sovereignty).** No machinery ever merges, pushes to a
   protected branch, or mutates consumer-owned content directly. Every change
   lands as a PR under the consumer's normal review rules.
@@ -131,34 +134,37 @@ Numbered; other specs cite them as INV-n. The conformance kit
 ## 4. Repository layout
 
 ```
-vendkit/
-  vendkit/                  # Layer 0+1 Python package
-    core/                   #   engine: declaration, manifest, materialise,
+vendkit/                    # one Go module, one static binary (DR-0017)
+  cmd/vendkit/              # single entrypoint `vendkit` + subcommand dispatch:
+    main.go                 #   dispatch, flag plumbing, exit-code conventions
+    cmds.go / human.go      #   CI-tier and human-tier commands
+    handler.go              #   Layer 1: `vendkit handler <scm>` reference
+    │                       #   PR/handoff/fact delivery (github, ado)
+    selfverify.go           #   `vendkit self-verify` engine-pin check (DR-0016)
+  internal/core/            # Layer 0 engine: declaration, manifest, materialise,
     │                       #   verify, versions, migrations, conformance,
-    │                       #   upstream (git-protocol reads), handlers
-    │                       #   (invocation side of the handler protocol)
-    handlers/               #   reference handler executables (Layer 1):
-      github.py             #     GitHub PR/issue/fact delivery
-      ado.py                #     Azure DevOps PR/work-item/fact delivery
-      journal.py            #     neutral journal (tests, local runs)
-    ci.py                   #   CI output surface — the one in-process
-    │                       #   platform adaptation (DR-0014)
-    cli.py                  #   single entrypoint `vendkit`
-  platforms/                # Layer 2 wrapper packaging (DEFERRED, see roadmap):
-    azure-pipelines/templates/*.yml       # the scaffolded consumer pipelines
-    github-actions/actions/*/action.yml   # currently invoke the CLI directly
-    github-actions/workflows/*.yml        # from the pinned publisher checkout —
-                            #   same guarantees, fewer moving parts
+    │                       #   upstream (git-protocol reads), handler invocation
+  internal/ci/              # Layer 1 CI output surface — in-process dialects
+  internal/e2e/             # Go unit + end-to-end scenario kit; journalhandler
+    │                       #   is the neutral reference handler for tests
+  assets.go                 # embeds scaffold/ + conformance rules into the binary
   scaffold/
     azure-pipelines/*.tmpl  # Layer 3: consumer pipeline scaffolds (ADO)
     github-actions/*.tmpl   # Layer 3: consumer pipeline scaffolds (GHA)
-                            #   (ci: none scaffolds no pipelines at all)
+                            #   fetch + checksum-verify the pinned engine binary,
+                            #   then run it (DR-0016); ci: none scaffolds none
   conformance/
     core-rules.yml          # platform-neutral wiring rules shipped by default
-  migrations/               # this repo's own migration payloads (self-hosted)
+  .github/workflows/        # this repo's CI + SemVer release (checksummed
+    │                       #   per-platform binaries + SHA256SUMS.txt, DR-0016)
   vendkit-export.yml        # this repo's own export declaration (self-hosted)
+  vendkit-manifest.json     # generated + freshness-checked by the binary
   docs/                     # this spec set, maintained as the docs of record
 ```
+
+Layer 2 wrapper packaging (`platforms/`) is deferred (see roadmap): the
+scaffolded consumer pipelines invoke the pinned `vendkit` binary directly —
+same guarantees, fewer moving parts.
 
 **Self-hosting.** The framework repository is its own first publisher: it
 exports the engine, handlers, templates and scaffolder as a slice, cuts releases

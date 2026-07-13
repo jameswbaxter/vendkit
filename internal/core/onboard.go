@@ -34,11 +34,12 @@ var scaffoldOutputs = map[string][]scaffoldOutput{
 	"none": {},
 }
 
-// HandlerModules: consumer-scm → reference handler module — just a default
-// string in a config file (handler-protocol spec §6).
+// HandlerModules: consumer-scm → the `vendkit handler <arg>` reference
+// handler built into the binary (handler-protocol spec §6, DR-0016). Any
+// protocol-honouring executable can replace it in the slice config.
 var HandlerModules = map[string]string{
-	"github":      "vendkit.handlers.github",
-	"azure-repos": "vendkit.handlers.ado",
+	"github":      "github",
+	"azure-repos": "ado",
 }
 
 var placeholderRx = regexp.MustCompile(`__[A-Z][A-Z0-9_]*__`)
@@ -202,6 +203,12 @@ func manualSteps(decl *ExportDecl, p OnboardParams) string {
 		decl.PublisherRepo))
 	if p.CI != "none" {
 		steps = append(steps, fmt.Sprintf(
+			"Record the engine checksums in .vendkit/%s.yml under engine.sha256 "+
+				"from the %s release's SHA256SUMS.txt (one hex per platform "+
+				"asset). Until filled, `vendkit self-verify` is advisory; the "+
+				"fetch step still verifies each download against SHA256SUMS.txt "+
+				"(DR-0016).", decl.SliceName, p.Version))
+		steps = append(steps, fmt.Sprintf(
 			"Provision the PR-capable sync credential as secret %s for the "+
 				"PR handler (GitHub: PAT/App token, NOT GITHUB_TOKEN; "+
 				"Azure DevOps: PR-create-capable identity).", p.PRTokenSecret))
@@ -256,23 +263,45 @@ func sliceConfigYAML(decl *ExportDecl, p OnboardParams, pinFiles []string) strin
 	} else {
 		pinBlock = "# ci is 'none': no pin lines — the manifest's source.release is the pin.\n"
 	}
-	handlerModule := HandlerModules[p.SCM]
+	handlerArg := HandlerModules[p.SCM]
 	var handlersBlock string
 	if p.CI == "none" {
 		handlersBlock = "# handlers: deliberately unwired (fully manual). Wire any executable that\n" +
 			"# honours the handler protocol, e.g.:\n" +
-			"#   pr: {exec: [python3, -m, " + handlerModule + "]}\n"
+			"#   pr: {exec: [vendkit, handler, " + handlerArg + "]}\n"
 	} else {
 		handlersBlock = "handlers:\n" +
 			"  # Delivery handlers (handler protocol, DR-0014): any executable honouring\n" +
-			"  # the protocol can replace these reference commands.\n" +
+			"  # the protocol can replace these reference commands. `vendkit handler <scm>`\n" +
+			"  # is the built-in reference implementation (same binary, DR-0016).\n" +
 			"  pr:\n" +
-			"    exec: [python3, -m, " + handlerModule + "]\n" +
+			"    exec: [vendkit, handler, " + handlerArg + "]\n" +
 			"  handoff:\n" +
-			"    exec: [python3, -m, " + handlerModule + "]\n" +
+			"    exec: [vendkit, handler, " + handlerArg + "]\n" +
 			"    dedup_key: vendkit-watch-" + decl.SliceName + "\n" +
 			"  fact-verify:\n" +
-			"    exec: [python3, -m, " + handlerModule + "]\n"
+			"    exec: [vendkit, handler, " + handlerArg + "]\n"
+	}
+	var engineBlock string
+	if p.CI == "none" {
+		engineBlock = "# ci is 'none': the human tier runs its installed engine against fetched\n" +
+			"# trees (DR-0016 §4) — there is no engine pin to fetch and verify.\n"
+	} else {
+		engineBlock = "engine:\n" +
+			"  # DR-0016: the engine is a pinned, checksummed release binary — the\n" +
+			"  # scaffolded pipeline fetches it, verifies it against SHA256SUMS.txt,\n" +
+			"  # then `vendkit self-verify` re-asserts it against the sha256 below.\n" +
+			"  # Advanced with the content pin by the sync PR; refill sha256 from the\n" +
+			"  # target release's SHA256SUMS.txt when the version moves (a blank value\n" +
+			"  # is advisory-only — self-verify skips it).\n" +
+			"  version: " + p.Version + "\n" +
+			"  sha256:\n" +
+			"    linux/amd64: \"\"\n" +
+			"    linux/arm64: \"\"\n" +
+			"    darwin/amd64: \"\"\n" +
+			"    darwin/arm64: \"\"\n" +
+			"    windows/amd64: \"\"\n" +
+			"    windows/arm64: \"\"\n"
 	}
 	return "schema_version: 1\n" +
 		"slice: " + decl.SliceName + "\n" +
@@ -283,6 +312,7 @@ func sliceConfigYAML(decl *ExportDecl, p OnboardParams, pinFiles []string) strin
 		"ci: " + p.CI + "\n" +
 		profileLine + "\n" +
 		pinBlock +
+		engineBlock +
 		"watch:\n" +
 		"  channel: stable\n" +
 		handlersBlock +

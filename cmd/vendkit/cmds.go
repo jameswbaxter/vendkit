@@ -369,6 +369,11 @@ func syncPipeline(opts syncPipelineOpts, surface ci.Surface) (int, error) {
 			return 0, core.Errf("advance pin in %s: %v", rel, err)
 		}
 	}
+	// Advance the engine pin in lockstep (DR-0016 §3): version → target,
+	// sha256 blanked for the reviewer to refill from the target release.
+	if err := core.AdvanceEnginePin(cfg, target); err != nil {
+		return 0, err
+	}
 
 	branch := fmt.Sprintf("vendkit/%s/sync-%s-to-%s", cfg.SliceName, pinned, target)
 	entries, err := core.LoadMigrationEntries(opts.PublisherRoot)
@@ -386,7 +391,7 @@ func syncPipeline(opts syncPipelineOpts, surface ci.Surface) (int, error) {
 	}
 	sourceMap, _ := freshManifest["source"].(map[string]any)
 	body := prBody(cfg.SliceName, pinned, target, report, applicable,
-		sourceMap, cfg.SeedNotes)
+		sourceMap, cfg.SeedNotes, cfg.EngineVersion != "")
 
 	git := func(a ...string) error {
 		cmd := exec.Command("git", append([]string{
@@ -446,7 +451,8 @@ func syncPipeline(opts syncPipelineOpts, surface ci.Surface) (int, error) {
 }
 
 func prBody(sliceName, pinned, target string, report *core.SyncReport,
-	applicable []map[string]any, source map[string]any, seedNotes string) string {
+	applicable []map[string]any, source map[string]any, seedNotes string,
+	engineAdvanced bool) string {
 	commit := ""
 	if source != nil {
 		if c, ok := source["commit"].(string); ok && len(c) >= 12 {
@@ -496,6 +502,12 @@ func prBody(sliceName, pinned, target string, report *core.SyncReport,
 			summary, _ := m["summary"].(string)
 			lines = append(lines, fmt.Sprintf("- `%s` (%s): %s", id, kind, summary))
 		}
+	}
+	if engineAdvanced {
+		lines = append(lines, "", "**Engine pin advanced** to this release "+
+			fmt.Sprintf("(`.vendkit/%s.yml` engine.version → `%s`).", sliceName, target)+
+			" Refill engine.sha256 from the target release's SHA256SUMS.txt to "+
+			"re-arm `vendkit self-verify` (blank values are advisory — DR-0016).")
 	}
 	lines = append(lines, "", "Review per your normal rules; the gate lane "+
 		"re-verifies this PR (INV-1). Never auto-merged (INV-10).")

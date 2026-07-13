@@ -37,7 +37,13 @@ type SliceConfig struct {
 	SeedNotes       string
 	Attestations    map[string]bool
 	Waivers         []map[string]any
-	Path            string
+	// EngineVersion / EngineSHA256: the pinned, checksummed engine binary
+	// (DR-0016). EngineSHA256 keys are "<goos>/<goarch>"; an empty value is
+	// an unrecorded (advisory) pin. Absent under ci: none — the human tier
+	// runs its installed engine (DR-0016 §4).
+	EngineVersion string
+	EngineSHA256  map[string]string
+	Path          string
 }
 
 func contains(list []string, v string) bool {
@@ -115,6 +121,20 @@ func LoadSliceConfig(path string) (*SliceConfig, error) {
 		}
 		handlers[kind] = HandlerSpec{Exec: command, DedupKey: getStr(spec, "dedup_key")}
 	}
+	// engine: the pinned artefact (DR-0016). Optional in the grammar so
+	// hand-written / ci: none configs stay valid; onboard emits it for
+	// pipeline-backed slices. When present, a version is mandatory.
+	engine := getMap(data, "engine")
+	engineVersion := getStr(engine, "version")
+	engineSHA := map[string]string{}
+	for plat, v := range getMap(engine, "sha256") {
+		if s, ok := v.(string); ok {
+			engineSHA[plat] = s
+		}
+	}
+	if len(engine) > 0 && engineVersion == "" {
+		errs = append(errs, "engine.version is required when an engine pin is set")
+	}
 	seeds := getMap(data, "seeds")
 	seedNotes := getStr(seeds, "notes")
 	if seedNotes == "" {
@@ -152,6 +172,7 @@ func LoadSliceConfig(path string) (*SliceConfig, error) {
 		PinPattern: pinPattern, PinFiles: pinFiles,
 		Channel: channel, Handlers: handlers, HandoffDedupKey: dedup,
 		SeedNotes: seedNotes, Attestations: attest, Waivers: waivers,
+		EngineVersion: engineVersion, EngineSHA256: engineSHA,
 		Path: path,
 	}, nil
 }

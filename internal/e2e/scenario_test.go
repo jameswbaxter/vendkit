@@ -709,6 +709,55 @@ func TestConformanceReportsAndAttestations(t *testing.T) {
 	vk(t, con, nil, true, "conformance", "--slice", "docs", "--strict")
 }
 
+// TestConformanceJSONFleetShapeAndAggregation exercises the fleet-view
+// interchange (conformance spec §5): `conformance --json` emits the widened
+// document, and `fleet` aggregates several such documents read-only.
+func TestConformanceJSONFleetShapeAndAggregation(t *testing.T) {
+	_, con := world(t)
+	so, _, _ := vk(t, con, nil, true, "conformance", "--slice", "docs", "--json")
+	realDoc := parseDocFrom(t, so)
+	if realDoc["slice"] != "docs" {
+		t.Fatalf("slice = %v, want docs", realDoc["slice"])
+	}
+	if _, ok := realDoc["rules"].([]any); !ok {
+		t.Fatalf("rules is not an array: %v", realDoc["rules"])
+	}
+	if _, ok := realDoc["gap_count"]; !ok {
+		t.Fatal("document has no gap_count")
+	}
+	if v, ok := realDoc["pin_lag"]; !ok || v != nil {
+		t.Fatalf("pin_lag = %v (present=%v), want null offline", v, ok)
+	}
+
+	// Aggregate the real (gapped) document plus a synthetic clean consumer.
+	dir := t.TempDir()
+	writeJSON(t, filepath.Join(dir, "consumer-docs.json"), realDoc)
+	writeJSON(t, filepath.Join(dir, "consumer-clean.json"), map[string]any{
+		"slice": "widgets", "profile": "code-repo",
+		"pin": map[string]any{"version": "v1.0.0"}, "pin_lag": nil, "gap_count": 0,
+		"rules": []any{map[string]any{"rule_id": "x", "title": "t",
+			"severity": "advisory", "status": "pass", "detail": ""}},
+	})
+
+	fo, _, _ := vk(t, con, nil, true, "fleet", "--json", dir)
+	mustContain(t, fo, "consumers=2")
+	agg := parseDocFrom(t, fo)
+	if n := agg["total_consumers"].(float64); n != 2 {
+		t.Fatalf("total_consumers = %v, want 2", n)
+	}
+	consumers := agg["consumers"].([]any)
+	if len(consumers) != 2 {
+		t.Fatalf("aggregated %d consumers, want 2", len(consumers))
+	}
+	// The gapped docs slice is the worst offender → sorts first.
+	if asMap(consumers[0])["slice"] != "docs" {
+		t.Fatalf("worst offender not first: %v", consumers)
+	}
+	if asMap(consumers[1])["slice"] != "widgets" {
+		t.Fatalf("clean consumer not last: %v", consumers)
+	}
+}
+
 // -- seeded files (DR-0013) -----------------------------------------------------------
 
 func TestSeedScaffoldedOnceAndFreeToDiverge(t *testing.T) {

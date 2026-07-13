@@ -26,8 +26,11 @@ jobs:
 
       - uses: actions/setup-go@v6
         with:
-          go-version: '1.22'
-          cache: true
+          go-version-file: go.mod
+          # Match ci.yml: install the go.mod toolchain (setup-go sets
+          # GOTOOLCHAIN=local, so a stale pin can't build a newer module),
+          # newest patch of the minor line.
+          check-latest: true
 
       - name: surface dialect tests
         run: go test ./internal/ci/... -run 'Surface|GitHubActions|Detect'

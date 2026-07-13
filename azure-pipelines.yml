@@ -24,8 +24,8 @@ pool:
 steps:
   - task: GoTool@0
     inputs:
-      version: '1.22'
-    displayName: install Go 1.22
+      version: '1.25'
+    displayName: install Go 1.25
 
   - script: go test ./internal/ci/... -run 'Surface|AzurePipelines|Detect'
     displayName: surface dialect tests

@@ -1,0 +1,58 @@
+# Platform matrix — Azure Pipelines half (testing.md §3).
+#
+# DORMANT until wired: this repo is hosted on GitHub, so running this pipeline
+# needs an Azure DevOps project with a GitHub service connection pointing at
+# jameswbaxter/vendkit, and a pipeline created from this file. Until then it is
+# the authored, in-tree parity counterpart to .github/workflows/platform-matrix.yml
+# (parity rule: platform-visible behaviour ships for ADO and GHA together).
+#
+# It proves the azure-pipelines dialect of the Layer 1 CI output surface
+# (internal/ci) on a real agent: the ##vso[task.setvariable] mapping and its
+# isOutput round-trip. Neutral behaviour is covered by the scenario kit.
+
+trigger:
+  branches:
+    include: [main]
+
+pr:
+  branches:
+    include: ['*']
+
+pool:
+  vmImage: ubuntu-latest
+
+steps:
+  - task: GoTool@0
+    inputs:
+      version: '1.22'
+    displayName: install Go 1.22
+
+  - script: go test ./internal/ci/... -run 'Surface|AzurePipelines|Detect'
+    displayName: surface dialect tests
+
+  - script: go build -o vendkit ./cmd/vendkit
+    displayName: build
+
+  - script: |
+      set -euo pipefail
+      # On a real ADO agent TF_BUILD=True, so ci.Detect() resolves to
+      # azure-pipelines and EmitOutput prints the ##vso setvariable directive.
+      # tee captures raw stdout (including the directive bytes) so we can assert
+      # it was emitted, independent of the agent consuming it.
+      ./vendkit generate --check | tee vendkit-out.txt
+      if ! grep -qF '##vso[task.setvariable variable=fresh;isOutput=true]true' vendkit-out.txt; then
+        echo "##vso[task.logissue type=error]##vso setvariable mapping missing for 'fresh'"
+        exit 1
+      fi
+      echo "##vso output mapping OK"
+    name: emit
+    displayName: live ##vso mapping smoke
+
+  - script: |
+      set -euo pipefail
+      # Proves the agent honoured isOutput=true — the variable set by the
+      # 'emit' step above is consumable here, the way a scaffolded consumer
+      # pipeline reads sync/gate outputs across steps.
+      echo "emit.fresh = '$(emit.fresh)'"
+      test "$(emit.fresh)" = "true"
+    displayName: assert consumed output variable

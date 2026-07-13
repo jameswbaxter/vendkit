@@ -18,8 +18,12 @@ and GHA (testing.md §3).
 > kit (internal/e2e) is the correctness ratchet; the self-host manifest is
 > generated and freshness-checked by the Go binary. The Python reference
 > engine, handlers, and pytest suite have been **removed**, and the name is
-> locked to VendKit. CI (lint + build + test + self-host gate) and a SemVer
-> release workflow now run under `.github/workflows/`.
+> locked to VendKit. CI (lint + build + test + self-host gate + a blocking
+> govulncheck vuln gate) and a SemVer release workflow run under
+> `.github/workflows/`, with the build toolchain pinned to a supported Go
+> release through `go.mod` (single source of truth via `go-version-file` +
+> `check-latest`) and third-party actions + Go modules kept current by grouped
+> Dependabot PRs.
 > The consumer-facing cutover is **done**: the Go-native reference handlers
 > (`vendkit handler <scm>` for github/ado, in-binary) and all consumer scaffold
 > templates now run the compiled `vendkit` binary — `scaffold/*/*.tmpl` fetch +

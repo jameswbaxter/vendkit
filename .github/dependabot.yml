@@ -1,0 +1,29 @@
+version: 2
+
+# VendKit is a governed-upgrade tool; its own repo practices the same —
+# dependencies arrive as reviewed PRs, never silent drift. The runtime
+# surface is deliberately tiny (one module dep, stdlib otherwise), so these
+# updates are near-silent and easy to review.
+updates:
+  # Third-party GitHub Actions used across CI, Pages, and Release. Grouped so
+  # a weekly bump is a single reviewable PR rather than one per action.
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    groups:
+      actions:
+        patterns: ['*']
+    commit-message:
+      prefix: ci
+
+  # Go module dependencies (currently just gopkg.in/yaml.v3).
+  - package-ecosystem: gomod
+    directory: /
+    schedule:
+      interval: weekly
+    groups:
+      gomod:
+        patterns: ['*']
+    commit-message:
+      prefix: chore

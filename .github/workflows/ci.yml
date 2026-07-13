@@ -18,6 +18,10 @@ jobs:
       - uses: actions/setup-go@v6
         with:
           go-version-file: go.mod
+          # Pull the newest patch of the go.mod minor line rather than the
+          # runner's cached one — the cache can lag a patch, and govulncheck
+          # gates on stdlib CVEs fixed in the latest patch.
+          check-latest: true
           cache: true
 
       - name: gofmt (must be clean)
@@ -53,6 +57,10 @@ jobs:
       - uses: actions/setup-go@v6
         with:
           go-version-file: go.mod
+          # Pull the newest patch of the go.mod minor line rather than the
+          # runner's cached one — the cache can lag a patch, and govulncheck
+          # gates on stdlib CVEs fixed in the latest patch.
+          check-latest: true
           cache: true
 
       # Scans the code's actual call graph against the Go vulnerability

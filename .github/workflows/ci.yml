@@ -17,7 +17,7 @@ jobs:
 
       - uses: actions/setup-go@v6
         with:
-          go-version: '1.22'
+          go-version-file: go.mod
           cache: true
 
       - name: gofmt (must be clean)
@@ -43,3 +43,23 @@ jobs:
         # what the engine generates from vendkit-export.yml. A drifted manifest
         # fails the build (non-zero exit).
         run: ./vendkit generate --check
+
+  govulncheck:
+    name: govulncheck (stdlib + deps)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-go@v6
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      # Scans the code's actual call graph against the Go vulnerability
+      # database — stdlib/toolchain and the one module dep. Blocking: a
+      # reachable vulnerability fails the build. If this ever fires on a fresh
+      # stdlib CVE, the fix is to bump the Go version in go.mod.
+      - name: govulncheck
+        run: |
+          go install golang.org/x/vuln/cmd/govulncheck@latest
+          govulncheck ./...

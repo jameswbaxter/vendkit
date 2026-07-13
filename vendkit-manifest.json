@@ -61,7 +61,7 @@
       "exec": false,
       "path": "go.mod",
       "raw": false,
-      "sha256": "afe47a0778a2d81534c7baf36d4e0ebadbbe8b3f707b96984868ac34c285f867"
+      "sha256": "cd7a38b1cfb87ba75e0b2949da27f3b696ac9ee6515053d67df5e25560a015a3"
     },
     {
       "consumer_path": "go.sum",

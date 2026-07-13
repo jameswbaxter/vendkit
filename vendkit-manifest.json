@@ -54,7 +54,7 @@
       "exec": false,
       "path": "conformance/core-rules.yml",
       "raw": false,
-      "sha256": "6d75862c604f95799b8077bfc7fa2e42a657585d95893e3bd8784eb95482c8ee"
+      "sha256": "321190d2127e9a2824ae7874f4686328263e26c462af38a535f0ebacb6c95551"
     },
     {
       "consumer_path": "go.mod",

@@ -21,8 +21,8 @@ A **publisher** repo declares which of its files form a distributable
 copy honest:
 
 <picture>
-  <source media="(prefers-color-scheme: dark)" srcset="docs/two-lane-dark.svg">
-  <img src="docs/two-lane-light.svg" alt="Two-lane diagram. The publisher cuts an immutable SemVer release. Sync lane (top): watch sees the new release, sync stages adds, updates and removals, and one reviewed PR lands in the consumer repo — never silent. Gate lane (bottom): every consumer PR runs the gate, which verifies the checksum manifest; a sync PR merges, a hand-edit of a vendored file is blocked. Composition invariant: the sync lane's output always passes the gate lane.">
+  <source media="(prefers-color-scheme: dark)" srcset="docs/assets/two-lane-dark.svg">
+  <img src="docs/assets/two-lane-light.svg" alt="Two-lane diagram. The publisher cuts an immutable SemVer release. Sync lane (top): watch sees the new release, sync stages adds, updates and removals, and one reviewed PR lands in the consumer repo — never silent. Gate lane (bottom): every consumer PR runs the gate, which verifies the checksum manifest; a sync PR merges, a hand-edit of a vendored file is blocked. Composition invariant: the sync lane's output always passes the gate lane.">
 </picture>
 
 - **Sync lane** — watches the publisher for releases; each upgrade arrives as

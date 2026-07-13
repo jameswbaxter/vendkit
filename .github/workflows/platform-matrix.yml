@@ -1,0 +1,63 @@
+name: Platform matrix
+
+# Proves the Layer 1 CI output surface (internal/ci) on a *real* runner, not
+# just with self-injected env — testing.md §3. The neutral behaviour is already
+# covered by the scenario kit (which pins VENDKIT_PLATFORM=neutral); this
+# workflow is where the github-actions dialect's live wiring is exercised.
+#
+# ADO parity is authored in ../../azure-pipelines.yml (dormant until an Azure
+# DevOps project + GitHub service connection exist). Per the parity rule
+# (testing.md §3), any behaviour difference must land as a test on both.
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  github-actions-surface:
+    name: github-actions surface · live wiring
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-go@v6
+        with:
+          go-version: '1.22'
+          cache: true
+
+      - name: surface dialect tests
+        run: go test ./internal/ci/... -run 'Surface|GitHubActions|Detect'
+
+      - name: build
+        run: go build -o vendkit ./cmd/vendkit
+
+      - name: live $GITHUB_OUTPUT wiring smoke
+        # Under a real GHA runner, ci.Detect() resolves to github-actions, so
+        # EmitOutput must append key=value to the runner-provided $GITHUB_OUTPUT
+        # file (not merely print the greppable line). generate --check emits
+        # fresh=true on a fresh self-host manifest — assert it lands in the file.
+        run: |
+          ./vendkit generate --check
+          echo "---- \$GITHUB_OUTPUT contents ----"
+          cat "$GITHUB_OUTPUT"
+          if ! grep -qx 'fresh=true' "$GITHUB_OUTPUT"; then
+            echo "::error::GITHUB_OUTPUT wiring failed: 'fresh=true' not found in \$GITHUB_OUTPUT"
+            exit 1
+          fi
+          echo "GITHUB_OUTPUT wiring OK"
+
+      - name: live step-outputs round-trip
+        id: emit
+        # A second step consuming the first proves isOutput wiring end-to-end
+        # through the runner, the way a scaffolded consumer pipeline reads
+        # sync/gate outputs.
+        run: ./vendkit generate --check
+
+      - name: assert consumed output
+        run: |
+          echo "steps.emit.outputs.fresh = '${{ steps.emit.outputs.fresh }}'"
+          test "${{ steps.emit.outputs.fresh }}" = "true"

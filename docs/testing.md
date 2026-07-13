@@ -52,18 +52,43 @@ the journal handler. Core scenario matrix:
 
 ## 3. Platform matrix (Layer 1/2)
 
-The same scenario kit re-run per platform, in real CI:
+The scenario kit (§2) pins `VENDKIT_PLATFORM=neutral` by construction, so it
+proves *behaviour* platform-free but never touches the two live output
+dialects. The platform matrix closes that gap. It runs in real CI per platform
+and has two layers:
 
-- **GHA:** kit runs inside a workflow; asserts `GITHUB_OUTPUT`/step-summary
-  wiring, composite-action parameter passthrough, and the reference PR
-  handler's `GITHUB_TOKEN` refusal (difference #2).
-- **ADO:** kit runs inside a pipeline; asserts `##vso` output mapping, template
-  parameter passthrough, base64-safe transport of JSON outputs.
-- The reference handlers' REST paths get contract tests against recorded
-  HTTP fixtures plus a small live smoke suite in the framework repo's own CI
-  (it is its own publisher — self-hosting is the permanent integration
-  environment). The handler *protocol* itself is covered platform-free via
-  the journal handler.
+- **Surface dialect tests** (`internal/ci`, run on every platform and locally):
+  the `github-actions` and `azure-pipelines` `Surface` implementations —
+  `GITHUB_OUTPUT` append, `::error::` annotation, step-summary; `##vso`
+  `setvariable`/`logissue`/`uploadsummary` mapping — plus `Detect` precedence.
+- **Live wiring smoke** (real runner/agent, not self-injected env):
+  - **GHA** — [`.github/workflows/platform-matrix.yml`](../.github/workflows/platform-matrix.yml):
+    under a real runner `Detect()` resolves to `github-actions`, so
+    `generate --check` must append `fresh=true` to the runner-provided
+    `$GITHUB_OUTPUT`, and a downstream step must consume it via
+    `steps.<id>.outputs.fresh` (isOutput round-trip). **Live and green.**
+  - **ADO** — [`azure-pipelines.yml`](../azure-pipelines.yml): the mirror,
+    asserting the `##vso[task.setvariable …;isOutput=true]` directive is emitted
+    and consumed across steps. **Authored but dormant** — this repo is on
+    GitHub, so it needs an Azure DevOps project + GitHub service connection
+    before it can run.
+
+Still owed (tracked here, not yet built):
+
+- The **full scenario kit re-run per platform** (un-pinning the neutral
+  surface) — the smoke above covers the load-bearing wiring, not every scenario.
+- Composite-action / template **parameter passthrough** assertions and the
+  reference PR handler's **`GITHUB_TOKEN` refusal** (difference #2, present at
+  `handler.go` but untested).
+- The reference handlers' REST paths: **contract tests against recorded HTTP
+  fixtures** plus a small **live smoke suite** in the framework repo's own CI.
+  The handler *protocol* itself is already covered platform-free via the
+  journal handler.
+- **`base64-safe transport of JSON outputs` on ADO is not implemented** — the
+  `azure-pipelines` surface emits raw values, so a multi-line/JSON output value
+  would break the `##vso` line. All current outputs are single-line scalars, so
+  this is latent; land it with the full-kit matrix (and a differences-ledger
+  entry) before any output value can carry JSON.
 
 **Parity rule:** a scenario or behaviour difference discovered on one platform
 must land as (a) a ledger entry (platform-integration spec §6) and (b) a

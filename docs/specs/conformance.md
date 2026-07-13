@@ -116,3 +116,81 @@ watch compare locally, and publishes one aggregated dashboard — is the intende
 consumer of this format. It requires only read access (no inversion of the
 trust model) and is specified as a Layer 3 optional component in the roadmap
 (M4), not core.
+
+### 5.1 The `conformance --json` document
+
+`--json` emits a single object (not a bare rule array) — the fleet-view
+interchange format:
+
+```json
+{
+  "slice": "docs",
+  "profile": "code-repo",
+  "pin": { "version": "v1.4.2", "sha256": "…" },
+  "pin_lag": null,
+  "gap_count": 2,
+  "rules": [
+    { "rule_id": "gate-wired", "title": "…", "severity": "mandatory",
+      "status": "fail", "detail": "…" }
+  ]
+}
+```
+
+- `slice`, `profile` — from the consumer slice config.
+- `pin` — the **engine** pin from the slice config (DR-0016): `version`, and
+  the recorded `sha256` for the audit host's own platform (`<goos>/<goarch>`).
+  Omitted when the slice records no engine pin (e.g. `ci: none`); `sha256` is
+  omitted when unrecorded (an advisory pin).
+- `pin_lag` — how far behind the latest release the pin is. **Not determinable
+  offline**: computing it needs the publisher's release list, and core issues
+  no network/SCM call. It is therefore emitted as JSON `null`. A fleet audit
+  running in a network-capable scheduled job may fill it before aggregating.
+- `gap_count` — number of rules whose status is a gap (`fail`/`error`).
+- `rules` — the per-rule results (`rule_id`, `title`, `severity`, `status`,
+  `detail`), unchanged from earlier releases.
+
+This replaces the pre-existing `--json` output (a bare array of rule results):
+the array is now the `rules` field. The human (non-`--json`) output is
+unchanged.
+
+### 5.2 The `fleet` command
+
+`vendkit fleet [--json] [<path>…]` is the read-only aggregation half of the
+fleet audit. The clone-and-run over many repos is the scheduled external job
+(Layer 3, optional); `fleet` folds the resulting `conformance --json`
+documents into one aggregated report. It clones nothing, fetches nothing, and
+calls no network or SCM API.
+
+**Input.** Each positional `<path>` is either a file — one document, or a JSON
+array of documents — or a directory, in which case every `*.json` file inside
+it (sorted) is read. With no paths, documents are read from **stdin**: a JSON
+array, or one-or-more JSON objects (newline-delimited or concatenated). Flags
+and paths may be given in any order. A source that is not valid conformance
+JSON, or an object lacking `slice`, fails loudly, named, with exit 2.
+
+**Output.** A human summary always (fleet size, a census of consumers by worst
+status, total gaps, and a per-consumer table sorted worst offenders first),
+plus the machine facts `consumers=` and `total-gaps=` on the CI surface. With
+`--json`, the fleet-level interchange document is additionally emitted:
+
+```json
+{
+  "total_consumers": 2,
+  "by_worst_status": { "fail": 1, "pass": 1 },
+  "total_gaps": 2,
+  "consumers": [
+    { "slice": "docs", "profile": "code-repo",
+      "pin": { "version": "v0.9.0" }, "pin_lag": null,
+      "gap_count": 2, "worst_status": "fail" }
+  ]
+}
+```
+
+Each consumer row carries `slice`, `profile`, `pin`, `pin_lag`, `gap_count`,
+and `worst_status`. **Worst status** is the most severe rule status in a
+document, ranked (worst → best) `error` > `fail` > `attested` > `skipped` >
+`waived` > `pass`: gaps first, then unverified assertions, then forfeited
+enforcement (`ci: none`), then deliberately accepted, then clean. Rows are
+sorted by that rank (desc), then gap count (desc), then slice name — so the
+worst offenders lead the dashboard. `fleet` is advisory: it aggregates and
+reports, exiting 0 (usage/parse failures aside).

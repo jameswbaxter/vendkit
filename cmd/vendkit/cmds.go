@@ -703,7 +703,10 @@ func cmdConformance(args []string, surface ci.Surface) (int, error) {
 	gaps := report.Gaps()
 	surface.EmitOutput("gap-count", fmt.Sprint(len(gaps)))
 	if c.JSON {
-		doc, _ := json.Marshal(report.Results)
+		// The fleet-view interchange document (conformance spec §5): a single
+		// object carrying slice, profile, engine pin, pin lag, gap count, and
+		// per-rule status — the shape a fleet audit aggregates.
+		doc, _ := json.Marshal(report.Document(cfg))
 		fmt.Println(string(doc))
 	}
 	if len(gaps) > 0 && *strict {

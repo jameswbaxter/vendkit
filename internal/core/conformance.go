@@ -10,6 +10,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"regexp"
+	"runtime"
 	"sort"
 	"strings"
 )
@@ -38,6 +39,83 @@ func (r *ConformanceReport) Gaps() []*RuleResult {
 		}
 	}
 	return out
+}
+
+// PinDoc is the engine pin recorded in the slice config (DR-0016). SHA256 is
+// the checksum recorded for the audit host's own platform (an empty value is
+// an unrecorded/advisory pin) — the fleet interchange carries it per-consumer.
+type PinDoc struct {
+	Version string `json:"version"`
+	SHA256  string `json:"sha256,omitempty"`
+}
+
+// ConformanceDoc is the `conformance --json` interchange document (conformance
+// spec §5): the fleet-view shape a fleet audit aggregates. PinLag is a *int so
+// it serialises as JSON null when it cannot be determined offline (no network):
+// core never calls a vendor/SCM API to compute it (spec §5).
+type ConformanceDoc struct {
+	Slice    string        `json:"slice"`
+	Profile  string        `json:"profile"`
+	Pin      *PinDoc       `json:"pin,omitempty"`
+	PinLag   *int          `json:"pin_lag"`
+	GapCount int           `json:"gap_count"`
+	Rules    []*RuleResult `json:"rules"`
+}
+
+// Document renders the evaluated report into the fleet-view interchange
+// document for a given slice config. pin_lag is left nil (JSON null): it is not
+// determinable offline and core issues no network call to find it (spec §5).
+func (r *ConformanceReport) Document(cfg *SliceConfig) *ConformanceDoc {
+	rules := r.Results
+	if rules == nil {
+		rules = []*RuleResult{}
+	}
+	doc := &ConformanceDoc{
+		Slice:    cfg.SliceName,
+		Profile:  cfg.Profile,
+		GapCount: len(r.Gaps()),
+		Rules:    rules,
+	}
+	if cfg.EngineVersion != "" {
+		doc.Pin = &PinDoc{
+			Version: cfg.EngineVersion,
+			SHA256:  cfg.EngineSHA256[runtime.GOOS+"/"+runtime.GOARCH],
+		}
+	}
+	return doc
+}
+
+// WorstStatus is the most severe rule status in the document, by the
+// conformance status ranking (see StatusRank). Empty documents rank as "pass".
+func (d *ConformanceDoc) WorstStatus() string {
+	worst := "pass"
+	for _, r := range d.Rules {
+		if StatusRank(r.Status) > StatusRank(worst) {
+			worst = r.Status
+		}
+	}
+	return worst
+}
+
+// StatusRank orders conformance statuses from clean (0) to worst. Gaps
+// (error, fail) rank highest so fleet audits surface worst offenders first;
+// unverified assertions (attested) and forfeited enforcement (skipped) rank
+// above deliberately accepted (waived) and clean (pass).
+func StatusRank(status string) int {
+	switch status {
+	case "error":
+		return 5
+	case "fail":
+		return 4
+	case "attested":
+		return 3
+	case "skipped":
+		return 2
+	case "waived":
+		return 1
+	default: // pass and any unknown status
+		return 0
+	}
 }
 
 type RuleSource struct {

@@ -1,0 +1,38 @@
+name: Feature request
+description: Propose a change to VendKit's behaviour or surface.
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Before filing: behaviour lives in `docs/specs/`, rationale in
+        `docs/design/` (DRs), and the plan is in [ROADMAP.md](../blob/main/ROADMAP.md).
+        A change that weakens an invariant (architecture §3) needs a DR, not
+        just a feature request. Please check those first.
+  - type: textarea
+    id: problem
+    attributes:
+      label: The problem
+      description: What can't you do today, or what's harder than it should be?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed change
+      description: What should VendKit do instead? Sketch the CLI / config / behaviour.
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: Existing commands, workarounds, or other tools you looked at.
+  - type: textarea
+    id: impact
+    attributes:
+      label: Invariants / compatibility
+      description: >-
+        Does this touch an invariant (INV-1..10), the manifest/schema, or an
+        accepted DR? Would it be a breaking (MAJOR) change? Note it here if you
+        know; leave blank if unsure.

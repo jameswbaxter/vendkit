@@ -1,0 +1,79 @@
+name: Bug report
+description: Something VendKit does that it shouldn't, or a guarantee that didn't hold.
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting. **If this is a security vulnerability, stop** — do
+        not file it here. Report it privately via the Security tab (see
+        [SECURITY.md](../blob/main/SECURITY.md)).
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened
+      description: What did you observe, and what did you expect instead?
+      placeholder: |
+        `vendkit gate` passed a PR that hand-edited a vendored file...
+    validations:
+      required: true
+  - type: textarea
+    id: repro
+    attributes:
+      label: Steps to reproduce
+      description: Minimal steps. A trimmed export declaration / slice config helps a lot.
+      placeholder: |
+        1. Publisher exports slice `docs` with `include: ["CLAUDE.md"]`
+        2. Consumer onboards at v1.2.0 (`vendkit init --ci github-actions --version v1.2.0`)
+        3. Hand-edit the vendored `CLAUDE.md`, open a PR
+        4. Gate reports `verified` instead of failing
+    validations:
+      required: true
+  - type: dropdown
+    id: side
+    attributes:
+      label: Which side
+      description: Where does the problem occur?
+      options:
+        - Consumer — gate / sync / watch
+        - Publisher — export / generate / release
+        - Both / not sure
+    validations:
+      required: true
+  - type: input
+    id: command
+    attributes:
+      label: Command
+      description: The `vendkit` subcommand involved, if any.
+      placeholder: "vendkit gate --all"
+  - type: input
+    id: version
+    attributes:
+      label: VendKit version
+      description: "`vendkit version`, or the release tag / commit you built from."
+      placeholder: "v0.1.0"
+    validations:
+      required: true
+  - type: dropdown
+    id: scm
+    attributes:
+      label: SCM axis
+      options:
+        - github
+        - azure-repos
+        - not applicable
+  - type: dropdown
+    id: ci
+    attributes:
+      label: CI axis
+      options:
+        - github-actions
+        - azure-pipelines
+        - none (manual)
+        - not applicable
+  - type: textarea
+    id: logs
+    attributes:
+      label: Relevant output
+      description: Command output, gate findings, or logs. Redact anything sensitive.
+      render: shell

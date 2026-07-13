@@ -672,3 +672,283 @@ func TestAdoPushHint_IsPullTriggerNoop(t *testing.T) {
 	wantFact(t, facts, "dispatched", "false")
 	wantFact(t, facts, "skipped", "ado-pull-trigger")
 }
+
+// -- GitHub fact-verify (branch-protection API) --------------------------------
+//
+// These assert the --verify-attestations verification path: the handler maps a
+// STABLE fact key to a concrete branch-protection API check and emits
+// verdict=true|false|unknown. Method + path + Bearer auth are asserted, then a
+// recorded protection fixture drives the verdict.
+
+func TestGithubFactVerify_RequiredCheckEnforced(t *testing.T) {
+	t.Setenv("VENDKIT_TOKEN_FACT_VERIFY", "verify-tok")
+
+	var sawGET bool
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		wantBearer(t, r, "verify-tok")
+		switch {
+		case r.Method == "GET" && r.URL.Path == "/repos/octo/demo/branches/main/protection":
+			sawGET = true
+			_, _ = w.Write([]byte(`{"required_status_checks":{"strict":true,"contexts":["vendkit-gate"]}}`))
+		default:
+			t.Errorf("unexpected request %s %s", r.Method, r.URL.Path)
+			http.Error(w, "unexpected", http.StatusInternalServerError)
+		}
+	}))
+	defer srv.Close()
+
+	intent := map[string]any{
+		"fact": "required_check_enforced", "repo": "octo/demo", "branch": "main",
+	}
+	out, err := captureFacts(t, func() error { return githubFactVerify(srv.URL, intent) })
+	if err != nil {
+		t.Fatalf("githubFactVerify: %v", err)
+	}
+	if !sawGET {
+		t.Fatal("expected a GET to the branch-protection endpoint")
+	}
+	wantFact(t, parseFacts(out), "verdict", "true")
+}
+
+// A named check must be a member of the required contexts for a true verdict.
+func TestGithubFactVerify_NamedCheckMembership(t *testing.T) {
+	t.Setenv("VENDKIT_TOKEN_FACT_VERIFY", "verify-tok")
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		_, _ = w.Write([]byte(`{"required_status_checks":{"checks":[{"context":"other"}]}}`))
+	}))
+	defer srv.Close()
+
+	intent := map[string]any{
+		"fact": "required_check_enforced", "repo": "octo/demo", "branch": "main",
+		"check": "vendkit-gate",
+	}
+	out, err := captureFacts(t, func() error { return githubFactVerify(srv.URL, intent) })
+	if err != nil {
+		t.Fatalf("githubFactVerify: %v", err)
+	}
+	wantFact(t, parseFacts(out), "verdict", "false") // required check present, but not the named one
+}
+
+// Protection exists but requires no status checks → the control is not enforced.
+func TestGithubFactVerify_NotEnforced(t *testing.T) {
+	t.Setenv("VENDKIT_TOKEN_FACT_VERIFY", "verify-tok")
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		_, _ = w.Write([]byte(`{"required_pull_request_reviews":{"require_code_owner_reviews":true}}`))
+	}))
+	defer srv.Close()
+
+	intent := map[string]any{"fact": "required_check_enforced", "repo": "octo/demo", "branch": "main"}
+	out, err := captureFacts(t, func() error { return githubFactVerify(srv.URL, intent) })
+	if err != nil {
+		t.Fatalf("githubFactVerify: %v", err)
+	}
+	wantFact(t, parseFacts(out), "verdict", "false")
+}
+
+// A 404 from the protection endpoint means the branch is unprotected → false.
+func TestGithubFactVerify_Unprotected404(t *testing.T) {
+	t.Setenv("VENDKIT_TOKEN_FACT_VERIFY", "verify-tok")
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		http.Error(w, `{"message":"Branch not protected"}`, http.StatusNotFound)
+	}))
+	defer srv.Close()
+
+	intent := map[string]any{"fact": "required_check_enforced", "repo": "octo/demo", "branch": "main"}
+	out, err := captureFacts(t, func() error { return githubFactVerify(srv.URL, intent) })
+	if err != nil {
+		t.Fatalf("githubFactVerify: %v", err)
+	}
+	wantFact(t, parseFacts(out), "verdict", "false")
+}
+
+// A 403 (insufficient scope) is unknown — NOT false — so the rule stays attested.
+func TestGithubFactVerify_ForbiddenIsUnknown(t *testing.T) {
+	t.Setenv("VENDKIT_TOKEN_FACT_VERIFY", "verify-tok")
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		http.Error(w, `{"message":"Resource not accessible"}`, http.StatusForbidden)
+	}))
+	defer srv.Close()
+
+	intent := map[string]any{"fact": "required_check_enforced", "repo": "octo/demo", "branch": "main"}
+	out, err := captureFacts(t, func() error { return githubFactVerify(srv.URL, intent) })
+	if err != nil {
+		t.Fatalf("githubFactVerify: %v", err)
+	}
+	wantFact(t, parseFacts(out), "verdict", "unknown")
+}
+
+// With no --base-branch, the handler resolves the repo's default branch first.
+func TestGithubFactVerify_ResolvesDefaultBranch(t *testing.T) {
+	t.Setenv("VENDKIT_TOKEN_FACT_VERIFY", "verify-tok")
+	var sawRepoGET, sawProtGET bool
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch {
+		case r.Method == "GET" && r.URL.Path == "/repos/octo/demo":
+			sawRepoGET = true
+			_, _ = w.Write([]byte(`{"default_branch":"trunk"}`))
+		case r.Method == "GET" && r.URL.Path == "/repos/octo/demo/branches/trunk/protection":
+			sawProtGET = true
+			_, _ = w.Write([]byte(`{"required_status_checks":{"contexts":["vendkit-gate"]}}`))
+		default:
+			t.Errorf("unexpected request %s %s", r.Method, r.URL.Path)
+			http.Error(w, "unexpected", http.StatusInternalServerError)
+		}
+	}))
+	defer srv.Close()
+
+	intent := map[string]any{"fact": "required_check_enforced", "repo": "octo/demo"}
+	out, err := captureFacts(t, func() error { return githubFactVerify(srv.URL, intent) })
+	if err != nil {
+		t.Fatalf("githubFactVerify: %v", err)
+	}
+	if !sawRepoGET || !sawProtGET {
+		t.Fatalf("expected repo + protection GETs, got repo=%v prot=%v", sawRepoGET, sawProtGET)
+	}
+	wantFact(t, parseFacts(out), "verdict", "true")
+}
+
+// An unrecognised fact key is unknown and makes NO network call (forward-compat).
+func TestGithubFactVerify_UnknownFactKey(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		t.Errorf("no network call expected for an unrecognised fact: %s %s", r.Method, r.URL.Path)
+	}))
+	defer srv.Close()
+
+	intent := map[string]any{"fact": "some_future_fact", "repo": "octo/demo", "branch": "main"}
+	out, err := captureFacts(t, func() error { return githubFactVerify(srv.URL, intent) })
+	if err != nil {
+		t.Fatalf("githubFactVerify: %v", err)
+	}
+	wantFact(t, parseFacts(out), "verdict", "unknown")
+}
+
+// -- Azure DevOps fact-verify (branch-policy API) ------------------------------
+
+func TestAdoFactVerify_RequiredReviewersPresent(t *testing.T) {
+	const token = "ado-verify"
+	t.Setenv("VENDKIT_TOKEN_FACT_VERIFY", token)
+
+	var sawGET bool
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		wantBasic(t, r, token)
+		switch {
+		case r.Method == "GET" && r.URL.Path == "/proj/_apis/policy/configurations":
+			sawGET = true
+			if got := r.URL.Query().Get("api-version"); got != "7.1" {
+				t.Errorf("api-version = %q, want 7.1", got)
+			}
+			_, _ = w.Write([]byte(`{"value":[{"isEnabled":true,"isBlocking":true,` +
+				`"type":{"displayName":"Minimum number of reviewers"},` +
+				`"settings":{"scope":[{"refName":"refs/heads/main","matchKind":"Exact"}]}}]}`))
+		default:
+			t.Errorf("unexpected request %s %s", r.Method, r.URL.Path)
+			http.Error(w, "unexpected", http.StatusInternalServerError)
+		}
+	}))
+	defer srv.Close()
+
+	t.Setenv("VENDKIT_ADO_ORG_URL", srv.URL)
+	intent := map[string]any{"fact": "required_reviewers_policy", "repo": "proj/repo", "branch": "main"}
+	out, err := captureFacts(t, func() error { return adoFactVerify(intent) })
+	if err != nil {
+		t.Fatalf("adoFactVerify: %v", err)
+	}
+	if !sawGET {
+		t.Fatal("expected a GET to the policy-configurations endpoint")
+	}
+	wantFact(t, parseFacts(out), "verdict", "true")
+}
+
+// No matching policy in the list → the control is definitively absent → false.
+func TestAdoFactVerify_PolicyAbsent(t *testing.T) {
+	t.Setenv("VENDKIT_TOKEN_FACT_VERIFY", "ado-verify")
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		_, _ = w.Write([]byte(`{"value":[]}`))
+	}))
+	defer srv.Close()
+
+	t.Setenv("VENDKIT_ADO_ORG_URL", srv.URL)
+	intent := map[string]any{"fact": "required_reviewers_policy", "repo": "proj/repo", "branch": "main"}
+	out, err := captureFacts(t, func() error { return adoFactVerify(intent) })
+	if err != nil {
+		t.Fatalf("adoFactVerify: %v", err)
+	}
+	wantFact(t, parseFacts(out), "verdict", "false")
+}
+
+// required_check_enforced demands a *blocking* Build-validation policy: a
+// non-blocking build policy is not enough → false.
+func TestAdoFactVerify_RequiredCheckNeedsBlocking(t *testing.T) {
+	t.Setenv("VENDKIT_TOKEN_FACT_VERIFY", "ado-verify")
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		_, _ = w.Write([]byte(`{"value":[{"isEnabled":true,"isBlocking":false,` +
+			`"type":{"displayName":"Build"},"settings":{"scope":[]}}]}`))
+	}))
+	defer srv.Close()
+
+	t.Setenv("VENDKIT_ADO_ORG_URL", srv.URL)
+	intent := map[string]any{"fact": "required_check_enforced", "repo": "proj/repo"}
+	out, err := captureFacts(t, func() error { return adoFactVerify(intent) })
+	if err != nil {
+		t.Fatalf("adoFactVerify: %v", err)
+	}
+	wantFact(t, parseFacts(out), "verdict", "false")
+}
+
+// A build-validation policy that IS blocking satisfies required_check_enforced.
+func TestAdoFactVerify_BuildValidationBlocking(t *testing.T) {
+	t.Setenv("VENDKIT_TOKEN_FACT_VERIFY", "ado-verify")
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		_, _ = w.Write([]byte(`{"value":[{"isEnabled":true,"isBlocking":true,` +
+			`"type":{"displayName":"Build"},"settings":{"scope":[]}}]}`))
+	}))
+	defer srv.Close()
+
+	t.Setenv("VENDKIT_ADO_ORG_URL", srv.URL)
+	intent := map[string]any{"fact": "required_check_enforced", "repo": "proj/repo"}
+	out, err := captureFacts(t, func() error { return adoFactVerify(intent) })
+	if err != nil {
+		t.Fatalf("adoFactVerify: %v", err)
+	}
+	wantFact(t, parseFacts(out), "verdict", "true")
+}
+
+// A 403 from the policy endpoint is unknown (scope), not false.
+func TestAdoFactVerify_ForbiddenIsUnknown(t *testing.T) {
+	t.Setenv("VENDKIT_TOKEN_FACT_VERIFY", "ado-verify")
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		http.Error(w, `{"message":"TF401027"}`, http.StatusForbidden)
+	}))
+	defer srv.Close()
+
+	t.Setenv("VENDKIT_ADO_ORG_URL", srv.URL)
+	intent := map[string]any{"fact": "pull_request_enforcement", "repo": "proj/repo"}
+	out, err := captureFacts(t, func() error { return adoFactVerify(intent) })
+	if err != nil {
+		t.Fatalf("adoFactVerify: %v", err)
+	}
+	wantFact(t, parseFacts(out), "verdict", "unknown")
+}
+
+// Missing org/token coordinate → unknown, with no network call.
+func TestAdoFactVerify_MissingCoordinateIsUnknown(t *testing.T) {
+	t.Setenv("VENDKIT_ADO_ORG_URL", "")
+	t.Setenv("VENDKIT_TOKEN_FACT_VERIFY", "ado-verify")
+	intent := map[string]any{"fact": "required_reviewers_policy", "repo": "proj/repo"}
+	out, err := captureFacts(t, func() error { return adoFactVerify(intent) })
+	if err != nil {
+		t.Fatalf("adoFactVerify: %v", err)
+	}
+	wantFact(t, parseFacts(out), "verdict", "unknown")
+}
+
+// An unrecognised fact key is unknown for ADO too.
+func TestAdoFactVerify_UnknownFactKey(t *testing.T) {
+	t.Setenv("VENDKIT_ADO_ORG_URL", "https://example.invalid")
+	intent := map[string]any{"fact": "some_future_fact", "repo": "proj/repo"}
+	out, err := captureFacts(t, func() error { return adoFactVerify(intent) })
+	if err != nil {
+		t.Fatalf("adoFactVerify: %v", err)
+	}
+	wantFact(t, parseFacts(out), "verdict", "unknown")
+}

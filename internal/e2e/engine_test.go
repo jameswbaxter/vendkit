@@ -87,7 +87,10 @@ func TestSelfVerifyEnforcesTheEnginePin(t *testing.T) {
 
 func TestHandlerProtocolDispatch(t *testing.T) {
 	dir := t.TempDir()
-	// fact-verify needs no network or credentials and is post-1.0 "unknown".
+	// An UNRECOGNISED fact key needs no network or credentials and yields the
+	// neutral verdict=unknown (forward-compatible non-failing path). Real
+	// per-fact API verification is covered by the httptest contract tests in
+	// handler_test.go (github required-check, ado branch policies).
 	for _, scm := range []string{"github", "ado"} {
 		intent := `{"vendkit_handler_protocol":1,"kind":"fact-verify","fact":"x","slice":"docs"}`
 		so, _, code := vkStdin(t, dir, nil, intent, "handler", scm)

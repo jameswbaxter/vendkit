@@ -27,13 +27,16 @@ and GHA (testing.md §3).
 > `engine: {version, sha256}` pin advanced in lockstep by the sync PR, and
 > `vendkit self-verify` re-asserts the running binary against it. No Python
 > runtime residue remains in shipped code or scaffolds. Release-attached
-> checksummed binaries + engine pin (DR-0016) are wired in the release workflow
-> and still need a **first tagged cut** to exercise them end-to-end.
+> checksummed binaries + engine pin (DR-0016) are wired in the release workflow,
+> and the **first tagged cut is done** — `v0.1.0` (annotated, surface-delta
+> +0 -0) is on the remote. What's still unexercised is a live
+> download-and-run of the release-attached binaries end-to-end on both platforms.
 >
 > Still open: live platform-matrix CI (testing §3), REST-fixture contract
 > tests for the GitHub/ADO reference handlers, push-hint dispatch step, fleet audit,
 > API-verified attestations, remaining public-repo hygiene (SECURITY.md,
-> issue templates, docs site).
+> issue templates). A GitHub Pages landing page (`site/`) and its deploy
+> workflow have shipped; a *versioned* docs site is still open.
 
 ## M0 — Skeleton and invariants (foundation)
 

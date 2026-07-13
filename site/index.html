@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>VendKit — vendor curated slices of files across repos</title>
+<meta name="description" content="VendKit vendors curated slices of files across repos — with provenance, integrity gates, and governed upgrades. One reviewed PR per upgrade; hand-edits of vendored files can't merge.">
+<meta property="og:title" content="VendKit">
+<meta property="og:description" content="Vendor curated slices of files across repos — with provenance, integrity gates, and governed upgrades.">
+<meta property="og:type" content="website">
+<meta property="og:image" content="https://jameswbaxter.github.io/vendkit/og-image.png">
+<meta name="twitter:card" content="summary_large_image">
+<style>
+:root{--bg:#f7faf9;--sf:#ffffff;--sf2:#edf2f0;--bd:#dfe7e3;--ink:#1a2420;--tx:#3a4a44;--mut:#52655e;--lab:#7c8d86;--g:#1e8a5c;--a:#9a721f;--r:#bf4a34;--gbg:rgba(30,138,92,.07);--gbd:#b9dcc9;--abg:rgba(154,114,31,.06);--abd:#e2d3ab;--rbg:rgba(191,74,52,.06);--rbd:#ecd0c8;--lgbg:rgba(30,138,92,.04);--labg:rgba(154,114,31,.04);--hdr:rgba(247,250,249,.85);--mono:ui-monospace,SFMono-Regular,Menlo,Consolas,'Liberation Mono',monospace;--sans:system-ui,-apple-system,'Segoe UI',Helvetica,Arial,sans-serif;--cycle:10s}
+:root[data-theme=dark]{--bg:#0c1412;--sf:#18241f;--sf2:#1d2926;--bd:#2b3a36;--ink:#e9efec;--tx:#b3c2bb;--mut:#8da39b;--lab:#7c9189;--g:#4fbf85;--a:#d2a04a;--r:#d96a55;--gbg:rgba(79,191,133,.1);--gbd:rgba(79,191,133,.35);--abg:rgba(210,160,74,.1);--abd:rgba(210,160,74,.35);--rbg:rgba(217,106,85,.12);--rbd:rgba(217,106,85,.4);--lgbg:rgba(79,191,133,.05);--labg:rgba(210,160,74,.05);--hdr:rgba(12,20,18,.85)}
+@media (prefers-color-scheme:dark){:root:not([data-theme=light]){--bg:#0c1412;--sf:#18241f;--sf2:#1d2926;--bd:#2b3a36;--ink:#e9efec;--tx:#b3c2bb;--mut:#8da39b;--lab:#7c9189;--g:#4fbf85;--a:#d2a04a;--r:#d96a55;--gbg:rgba(79,191,133,.1);--gbd:rgba(79,191,133,.35);--abg:rgba(210,160,74,.1);--abd:rgba(210,160,74,.35);--rbg:rgba(217,106,85,.12);--rbd:rgba(217,106,85,.4);--lgbg:rgba(79,191,133,.05);--labg:rgba(210,160,74,.05);--hdr:rgba(12,20,18,.85)}}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--tx);font-family:var(--sans);font-size:16px;line-height:1.6;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+a{color:var(--g);text-decoration:none}
+a:hover{text-decoration:underline}
+:focus-visible{outline:2px solid var(--g);outline-offset:2px;border-radius:4px}
+code,pre,kbd{font-family:var(--mono)}
+.wrap{max-width:1060px;margin:0 auto;padding:0 24px}
+.skip{position:absolute;left:-9999px;top:0;background:var(--sf);color:var(--ink);padding:8px 14px;z-index:99;border:1px solid var(--bd);border-radius:0 0 8px 0}
+.skip:focus{left:0}
+.top{position:sticky;top:0;z-index:50;background:var(--hdr);backdrop-filter:blur(8px);border-bottom:1px solid var(--bd)}
+.topbar{display:flex;align-items:center;gap:18px;height:54px}
+.brand{font-family:var(--mono);font-weight:700;font-size:15px;color:var(--ink);display:flex;align-items:center;gap:8px}
+.bdot{width:9px;height:9px;border-radius:3px;background:var(--g);display:inline-block}
+.nav{display:flex;gap:18px;margin-left:auto;align-items:center}
+.nav a{color:var(--mut);font-size:13.5px;white-space:nowrap}
+.nav a:hover{color:var(--ink);text-decoration:none}
+.tbtn{width:32px;height:32px;border-radius:8px;border:1px solid var(--bd);background:var(--sf);color:var(--mut);cursor:pointer;display:inline-flex;align-items:center;justify-content:center;padding:0}
+.tbtn:hover{color:var(--ink);border-color:var(--lab)}
+.ic-moon{display:none}
+:root[data-theme=dark] .ic-sun{display:none}
+:root[data-theme=dark] .ic-moon{display:block}
+@media (prefers-color-scheme:dark){:root:not([data-theme=light]) .ic-sun{display:none}:root:not([data-theme=light]) .ic-moon{display:block}}
+.hero{padding-top:64px;padding-bottom:40px}
+.h1{font-size:clamp(40px,6.5vw,60px);line-height:1.04;margin:0 0 14px;color:var(--ink);font-weight:800;letter-spacing:-.02em}
+.oneliner{font-size:clamp(18px,2.4vw,23px);line-height:1.45;color:var(--ink);max-width:44em;margin:0 0 14px;font-weight:500}
+.drift{font-size:16.5px;max-width:42em;margin:0 0 20px;color:var(--mut)}
+.tagriff{font-family:var(--mono);font-size:13px;color:var(--lab)}
+.tagriff b{color:var(--g);font-weight:600}
+.badges{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 26px;padding:0;list-style:none}
+.badges img{height:20px;display:block}
+.ctarow{display:flex;gap:14px;align-items:center;flex-wrap:wrap;margin-bottom:12px}
+.install{display:flex;align-items:center;gap:10px;background:var(--sf);border:1px solid var(--gbd);border-radius:10px;padding:11px 14px;font-family:var(--mono);font-size:13.5px;color:var(--ink);max-width:100%;box-shadow:0 1px 2px rgba(26,36,32,.04)}
+.install code{overflow-x:auto;white-space:nowrap;scrollbar-width:none}
+.dollar{color:var(--lab);user-select:none}
+.ghlink{font-family:var(--mono);font-size:13.5px;color:var(--mut);white-space:nowrap}
+.cbtn{font-family:var(--mono);font-size:11px;border:1px solid var(--bd);background:var(--sf);color:var(--mut);border-radius:6px;padding:4px 10px;cursor:pointer;flex-shrink:0}
+.cbtn:hover{color:var(--ink);border-color:var(--lab)}
+.cbtn.ok{color:var(--g);border-color:var(--gbd)}
+.sec{padding-top:64px;padding-bottom:64px}
+.sec-tight{padding-top:48px;padding-bottom:48px}
+.kick{font-family:var(--mono);font-size:11px;font-weight:600;letter-spacing:1.6px;text-transform:uppercase;color:var(--lab);margin:0 0 10px}
+.h2{font-size:clamp(26px,3.6vw,34px);line-height:1.15;color:var(--ink);margin:0 0 12px;font-weight:700;letter-spacing:-.01em}
+.lede{font-size:17px;max-width:46em;margin:0 0 28px}
+.lede b{color:var(--ink)}
+.rv{opacity:1}
+.js .rv{opacity:0;transform:translateY(12px);transition:opacity .55s ease,transform .55s ease}
+.js .in{opacity:1;transform:none}
+@media (prefers-reduced-motion:reduce){.js .rv{opacity:1;transform:none;transition:none}html{scroll-behavior:auto}}
+.dgm{margin:0;font-family:var(--mono);background:var(--bg);border:1px solid var(--bd);border-radius:14px;padding:20px}
+.dg-grid{display:grid;grid-template-columns:158px 1fr 172px;gap:16px;align-items:stretch}
+.dg-card{display:flex;flex-direction:column;align-items:center;gap:8px;background:var(--sf);border:1px solid var(--bd);border-radius:12px;padding:18px 14px;text-align:center;justify-content:center}
+.dg-pub{align-self:center}
+.dg-lab{font-size:10px;font-weight:600;letter-spacing:1.6px;color:var(--lab)}
+.dg-name{font-size:13px;font-weight:700;color:var(--ink)}
+.dg-cap{font-size:10px;color:var(--mut);line-height:1.5}
+.chip{font-size:11px;border-radius:12px;padding:4px 12px;white-space:nowrap}
+.chip-g{background:var(--gbg);border:1px solid var(--gbd);color:var(--g)}
+.fchip{font-size:10.5px;background:var(--sf2);border-radius:7px;padding:5px 12px;color:var(--mut);align-self:stretch}
+.dg-lanes{display:flex;flex-direction:column;gap:0;min-width:0}
+.lane{border-radius:12px;padding:14px 16px 16px}
+.lane-sync{background:var(--lgbg);border:1px solid var(--gbd)}
+.lane-gate{background:var(--labg);border:1px solid var(--abd)}
+.lane-hd{display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin-bottom:12px}
+.lane-t{font-size:10.5px;font-weight:700;letter-spacing:1.4px;white-space:nowrap}
+.lt-g{color:var(--g)}
+.lt-a{color:var(--a)}
+.lane-note{font-size:10px;color:var(--mut);text-align:right}
+.lane-flow{position:relative;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.stp{display:flex;flex-direction:column;align-items:center;gap:2px;background:var(--sf);border:1px solid var(--bd);border-radius:9px;padding:8px 13px;min-width:0}
+.stp b{font-size:12.5px;color:var(--ink);font-weight:600;white-space:nowrap}
+.stp i{font-style:normal;font-size:9.5px;color:var(--lab);white-space:nowrap}
+.stp-gate b{color:var(--a)}
+.arw{font-size:13px;flex-shrink:0;user-select:none}
+.flowgrp{display:flex;align-items:center;gap:8px}
+@media (max-width:1000px){.arw-out{display:none}}
+.arw-g{color:var(--g)}
+.arw-a{color:var(--a)}
+.outs{display:flex;flex-direction:column;gap:8px}
+.out{font-size:10.5px;border-radius:8px;padding:6px 12px;white-space:nowrap}
+.out-ok{background:var(--gbg);border:1px solid var(--gbd);color:var(--g)}
+.out-no{background:var(--rbg);border:1px solid var(--rbd);color:var(--r)}
+.inv{text-align:center;font-size:11.5px;color:var(--mut);padding:12px 8px;line-height:1.5}
+.inv b{color:var(--ink);font-weight:600}
+.inv-gl{color:var(--g)}
+.dot{position:absolute;top:22px;left:0;width:9px;height:9px;border-radius:50%;background:var(--g);box-shadow:0 0 0 3px var(--gbg);opacity:0;pointer-events:none}
+.anim .tag-p{animation:kTag var(--cycle) infinite}
+.anim .s-watch{animation:kWatch var(--cycle) infinite}
+.anim .s-sync{animation:kSync var(--cycle) infinite}
+.anim .s-pr{animation:kPr var(--cycle) infinite}
+.anim .dg-con{animation:kCon var(--cycle) infinite}
+.anim .s-gate{animation:kGate var(--cycle) infinite}
+.anim .out-ok{animation:kOk var(--cycle) infinite}
+.anim .out-no{animation:kNo var(--cycle) infinite}
+.anim .dot{animation:kDot var(--cycle) infinite}
+@keyframes kTag{0%,2%{box-shadow:0 0 0 0 rgba(30,138,92,0)}6%{box-shadow:0 0 0 6px var(--gbg)}12%,100%{box-shadow:0 0 0 0 rgba(30,138,92,0)}}
+@keyframes kWatch{0%,11%{border-color:var(--bd)}14%,20%{border-color:var(--g);box-shadow:0 0 0 3px var(--gbg)}26%,100%{border-color:var(--bd);box-shadow:none}}
+@keyframes kSync{0%,23%{border-color:var(--bd)}26%,32%{border-color:var(--g);box-shadow:0 0 0 3px var(--gbg)}38%,100%{border-color:var(--bd);box-shadow:none}}
+@keyframes kPr{0%,35%{border-color:var(--bd)}38%,46%{border-color:var(--g);box-shadow:0 0 0 3px var(--gbg)}52%,100%{border-color:var(--bd);box-shadow:none}}
+@keyframes kCon{0%,46%{border-color:var(--bd)}50%,56%{border-color:var(--gbd);box-shadow:0 0 0 3px var(--gbg)}62%,100%{border-color:var(--bd);box-shadow:none}}
+@keyframes kGate{0%,58%{border-color:var(--bd)}62%,70%{border-color:var(--a);box-shadow:0 0 0 3px var(--abg)}76%,100%{border-color:var(--bd);box-shadow:none}}
+@keyframes kOk{0%,64%{box-shadow:0 0 0 0 rgba(30,138,92,0)}68%,74%{box-shadow:0 0 0 4px var(--gbg)}80%,100%{box-shadow:0 0 0 0 rgba(30,138,92,0)}}
+@keyframes kNo{0%,82%{box-shadow:0 0 0 0 rgba(191,74,52,0)}86%,92%{box-shadow:0 0 0 4px var(--rbg)}98%,100%{box-shadow:0 0 0 0 rgba(191,74,52,0)}}
+@keyframes kDot{0%,9%{left:0;opacity:0}12%{left:1%;opacity:1}44%{left:96%;opacity:1}48%,100%{left:96%;opacity:0}}
+@media (prefers-reduced-motion:reduce){.anim .tag-p,.anim .s-watch,.anim .s-sync,.anim .s-pr,.anim .dg-con,.anim .s-gate,.anim .out-ok,.anim .out-no,.anim .dot{animation:none}.dot{display:none}}
+.noanim .tag-p,.noanim .s-watch,.noanim .s-sync,.noanim .s-pr,.noanim .dg-con,.noanim .s-gate,.noanim .out-ok,.noanim .out-no{animation:none}
+.noanim .dot{display:none;animation:none}
+.lanepts{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;margin-top:26px}
+.lpt{font-size:14.5px;line-height:1.55}
+.lpt b{display:block;color:var(--ink);font-weight:600;margin-bottom:2px}
+.lpt-g b{color:var(--g)}
+.lpt-a b{color:var(--a)}
+.steps{display:flex;flex-direction:column;gap:36px}
+.step{display:grid;grid-template-columns:200px 1fr;gap:24px;align-items:start}
+.stephd{position:sticky;top:70px}
+.stepnum{font-family:var(--mono);font-size:11px;color:var(--g);font-weight:600;letter-spacing:1px;display:block;margin-bottom:4px}
+.steptitle{font-size:18px;font-weight:700;color:var(--ink);margin:0 0 6px}
+.stepp{font-size:14px;color:var(--mut);margin:0;line-height:1.55}
+.codewrap{position:relative;min-width:0}
+.code{background:var(--sf);border:1px solid var(--bd);border-radius:10px;padding:14px 16px;margin:0;overflow-x:auto;font-size:13px;line-height:1.65;color:var(--ink)}
+.code .tk-c{color:var(--lab)}
+.code .tk-s{color:var(--g)}
+.code .tk-k{color:var(--a)}
+.code .tk-m{color:var(--mut)}
+.ccopy{position:absolute;top:8px;right:8px}
+.outcomes{display:flex;flex-direction:column;gap:10px}
+.oc{display:flex;gap:12px;align-items:baseline;background:var(--sf);border:1px solid var(--bd);border-radius:10px;padding:12px 16px;font-size:14px}
+.oc-mk{font-family:var(--mono);font-size:13px;font-weight:700;flex-shrink:0}
+.oc-g{color:var(--g)}
+.oc-r{color:var(--r)}
+.oc b{color:var(--ink)}
+.oc code{font-size:12.5px;background:var(--sf2);border-radius:5px;padding:1px 6px}
+.usehero{display:grid;grid-template-columns:1.15fr 1fr;gap:28px;background:var(--sf);border:1px solid var(--gbd);border-radius:14px;padding:26px 28px;margin-bottom:16px;align-items:center}
+.usehero h3{margin:0 0 8px;font-size:19px;color:var(--ink)}
+.usehero p{margin:0;font-size:14.5px;line-height:1.6}
+.uh-badge{font-family:var(--mono);font-size:10px;letter-spacing:1.4px;font-weight:600;color:var(--g);text-transform:uppercase;display:block;margin-bottom:8px}
+.fanviz{display:grid;grid-template-columns:auto auto 1fr;gap:14px;align-items:center;font-family:var(--mono)}
+.fan-files{display:flex;flex-direction:column;gap:6px}
+.fan-arw{color:var(--g);font-size:15px}
+.repogrid{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+.repo{height:26px;border-radius:6px;background:var(--sf2);border:1px solid var(--bd);position:relative}
+.repo::after{content:"";position:absolute;right:4px;top:4px;width:5px;height:5px;border-radius:50%;background:var(--g)}
+.fan-cap{grid-column:1/-1;font-size:10px;color:var(--lab);text-align:center;margin-top:2px}
+.usegrid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+.usecard{background:var(--sf);border:1px solid var(--bd);border-radius:12px;padding:20px 22px}
+.usecard h3{margin:0 0 6px;font-size:15px;color:var(--ink)}
+.usecard p{margin:0;font-size:13.5px;color:var(--mut);line-height:1.55}
+.cmp{border:1px solid var(--bd);border-radius:12px;overflow:hidden;background:var(--sf)}
+.cmprow{display:grid;grid-template-columns:190px 1fr 1.25fr;gap:16px;padding:16px 20px;border-top:1px solid var(--bd);font-size:14px;line-height:1.55}
+.cmphd{border-top:none;background:var(--sf2);padding:10px 20px;font-family:var(--mono);font-size:10.5px;letter-spacing:1.2px;text-transform:uppercase;color:var(--lab);font-weight:600}
+.cmp-tool{font-family:var(--mono);font-size:13px;font-weight:600;color:var(--ink)}
+.cmp-why b{color:var(--ink)}
+.trust{display:grid;grid-template-columns:1fr 1fr;gap:18px 32px}
+.tr-i{display:flex;gap:12px;font-size:14.5px;line-height:1.55}
+.tr-mk{width:8px;height:8px;border-radius:2.5px;background:var(--g);flex-shrink:0;margin-top:7px}
+.tr-i b{color:var(--ink)}
+.docs{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.doc{display:flex;flex-direction:column;gap:2px;background:var(--sf);border:1px solid var(--bd);border-radius:10px;padding:12px 16px;color:var(--tx)}
+.doc:hover{border-color:var(--gbd);text-decoration:none}
+.doc code{font-size:12.5px;color:var(--g)}
+.doc span{font-size:13px;color:var(--mut)}
+.foot{border-top:1px solid var(--bd);padding:40px 0 48px;margin-top:24px}
+.footrow{display:flex;gap:20px;align-items:center;flex-wrap:wrap;margin-bottom:20px}
+.footlinks{display:flex;gap:18px;flex-wrap:wrap;font-size:13.5px;margin-bottom:14px}
+.footlinks a{color:var(--mut);white-space:nowrap}
+.footnote{font-size:13px;color:var(--lab);margin:0;font-family:var(--mono)}
+@media (max-width:840px){.dg-grid{grid-template-columns:1fr}.dg-card{flex-direction:row;flex-wrap:wrap;justify-content:center;align-items:center;gap:10px;padding:12px 14px}.fchip{align-self:auto}.dg-cap{width:100%}.step{grid-template-columns:1fr;gap:10px}.stephd{position:static}.lanepts{grid-template-columns:1fr}.usehero{grid-template-columns:1fr}.usegrid{grid-template-columns:1fr}.cmprow{grid-template-columns:1fr;gap:6px}.trust{grid-template-columns:1fr}.docs{grid-template-columns:1fr}.nav a{display:none}.nav a.nav-gh{display:inline}.dot{display:none}}
+</style>
+<script>
+(function(){var d=document.documentElement;d.classList.add('js');
+try{var t=localStorage.getItem('vk-theme');if(t==='dark'||t==='light')d.setAttribute('data-theme',t);}catch(e){}
+var io=null;
+var iofired=false;
+function sweep(){document.querySelectorAll('.rv:not(.in)').forEach(function(el){var r=el.getBoundingClientRect();if(r.top<innerHeight*.92&&r.bottom>0){el.classList.add('in');}});}
+window.__vkInit=function(){var els=document.querySelectorAll('.rv:not(.rv-o)');if(!els.length)return;
+var rm=window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches;
+if(!('IntersectionObserver' in window)||rm){els.forEach(function(el){el.classList.add('rv-o','in');});return;}
+if(!io){io=new IntersectionObserver(function(es){iofired=true;es.forEach(function(e){if(e.isIntersecting){e.target.classList.add('in');io.unobserve(e.target);}});},{rootMargin:'0px 0px -6% 0px'});
+window.addEventListener('scroll',sweep,{passive:true});window.addEventListener('resize',sweep,{passive:true});
+setTimeout(function(){if(!iofired){document.querySelectorAll('.rv').forEach(function(el){el.classList.add('in');});}},1200);}
+els.forEach(function(el){el.classList.add('rv-o');if(el.getBoundingClientRect().top<innerHeight*.92){el.classList.add('in');}else{io.observe(el);}});};
+function ok(b){b.classList.add('ok');var s=b.querySelector('.cb-l');if(s){s.textContent='copied';}setTimeout(function(){b.classList.remove('ok');if(s)s.textContent='copy';},1400);}
+if(!window.__vkWired){window.__vkWired=1;
+document.addEventListener('click',function(ev){
+var b=ev.target&&ev.target.closest?ev.target.closest('.cbtn'):null;
+if(b){var txt=b.getAttribute('data-copy');if(!txt){var w=b.closest('.codewrap');var c=w?w.querySelector('code'):null;txt=c?c.textContent:'';}
+var p=(navigator.clipboard&&navigator.clipboard.writeText)?navigator.clipboard.writeText(txt):Promise.reject();
+p.then(function(){ok(b);}).catch(function(){var ta=document.createElement('textarea');ta.value=txt;ta.setAttribute('readonly','');ta.style.position='fixed';ta.style.left='-9999px';document.body.appendChild(ta);ta.select();try{document.execCommand('copy');ok(b);}catch(e){}document.body.removeChild(ta);});return;}
+var t=ev.target&&ev.target.closest?ev.target.closest('.tbtn'):null;
+if(t){var cur=d.getAttribute('data-theme');if(!cur){cur=(window.matchMedia&&matchMedia('(prefers-color-scheme: dark)').matches)?'dark':'light';}
+var nx=cur==='dark'?'light':'dark';d.setAttribute('data-theme',nx);try{localStorage.setItem('vk-theme',nx);}catch(e){}}});
+}
+if(document.readyState!=='loading'){setTimeout(window.__vkInit,0);}else{document.addEventListener('DOMContentLoaded',window.__vkInit);}
+})();
+</script>
+<meta property="og:url" content="https://jameswbaxter.github.io/vendkit/">
+</head>
+<body>
+<div id="vkroot">
+<a class="skip" href="#main">Skip to content</a>
+<header class="top"><div class="wrap topbar">
+<a class="brand" href="#" aria-label="VendKit home"><span class="bdot" aria-hidden="true"></span>vendkit</a>
+<nav class="nav" aria-label="Page sections">
+<a href="#model">The model</a><a href="#quickstart">Quickstart</a><a href="#uses">Use cases</a><a href="#compare">Why not…</a><a href="#docs">Docs</a>
+<a class="nav-gh" href="https://github.com/jameswbaxter/vendkit">GitHub</a>
+<button class="tbtn" type="button" aria-label="Toggle color scheme" title="Toggle color scheme">
+<svg class="ic-sun" width="15" height="15" viewBox="0 0 15 15" fill="none" stroke="currentColor" stroke-width="1.4" aria-hidden="true"><circle cx="7.5" cy="7.5" r="3.2"></circle><line x1="7.5" y1="0.5" x2="7.5" y2="2.5"></line><line x1="7.5" y1="12.5" x2="7.5" y2="14.5"></line><line x1="0.5" y1="7.5" x2="2.5" y2="7.5"></line><line x1="12.5" y1="7.5" x2="14.5" y2="7.5"></line><line x1="2.6" y1="2.6" x2="4" y2="4"></line><line x1="11" y1="11" x2="12.4" y2="12.4"></line><line x1="12.4" y1="2.6" x2="11" y2="4"></line><line x1="4" y1="11" x2="2.6" y2="12.4"></line></svg>
+<svg class="ic-moon" width="15" height="15" viewBox="0 0 15 15" fill="none" stroke="currentColor" stroke-width="1.4" aria-hidden="true"><path d="M12.5 9.5A5.5 5.5 0 0 1 5.5 2.5a5.5 5.5 0 1 0 7 7z"></path></svg>
+</button>
+</nav>
+</div></header>
+<main id="main">
+<section class="hero wrap" data-screen-label="Hero">
+<h1 class="h1">VendKit</h1>
+<p class="oneliner">Vendor curated slices of files across repos — with provenance, integrity gates, and governed upgrades.</p>
+<p class="drift">Some files have to be identical in every repo that uses them — agent instructions, CI workflow templates, lint configs, design tokens. Copy-pasted, they drift silently until the one repo nobody updated breaks. VendKit vendors them instead: plain files in your tree, reviewed and greppable.</p>
+<ul class="badges">
+<li><a href="https://github.com/jameswbaxter/vendkit/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/jameswbaxter/vendkit/ci.yml?branch=main&label=ci" alt="CI status" height="20"></a></li>
+<li><a href="https://github.com/jameswbaxter/vendkit/releases"><img src="https://img.shields.io/github/v/release/jameswbaxter/vendkit?label=release" alt="Latest release" height="20"></a></li>
+<li><a href="https://github.com/jameswbaxter/vendkit/blob/main/LICENSE"><img src="https://img.shields.io/github/license/jameswbaxter/vendkit" alt="License: Apache-2.0" height="20"></a></li>
+<li><a href="https://pkg.go.dev/github.com/jameswbaxter/vendkit"><img src="https://pkg.go.dev/badge/github.com/jameswbaxter/vendkit.svg" alt="Go Reference" height="20"></a></li>
+</ul>
+<div class="ctarow">
+<div class="install"><span class="dollar" aria-hidden="true">$</span><code>go install github.com/jameswbaxter/vendkit/cmd/vendkit@latest</code><button class="cbtn" type="button" data-copy="go install github.com/jameswbaxter/vendkit/cmd/vendkit@latest" aria-label="Copy install command"><span class="cb-l">copy</span></button></div>
+<a class="ghlink" href="https://github.com/jameswbaxter/vendkit">view on GitHub →</a>
+</div>
+<p class="tagriff"><b>owned like first-party code</b> · faithful to upstream</p>
+</section>
+<section class="sec-tight wrap" id="model" data-screen-label="Two-lane model">
+<p class="kick">The two-lane model</p>
+<h2 class="h2">Two lanes keep a vendored copy honest</h2>
+<p class="lede">A <b>publisher</b> repo declares which of its files form a distributable <b>slice</b>. <b>Consumer</b> repos vendor a pinned copy — and two lanes keep that copy honest.</p>
+<figure class="dgm anim rv" role="img" aria-label="Two-lane diagram. The publisher cuts an immutable SemVer release. Sync lane (top): watch sees the new release, sync stages adds, updates and removals, and one reviewed PR lands in the consumer repo — never silent. Gate lane (bottom): every consumer PR runs the gate, which verifies the checksum manifest; a sync PR merges, a hand-edit of a vendored file is blocked. Composition invariant: the sync lane's output always passes the gate lane.">
+<div class="dg-grid">
+<div class="dg-card dg-pub"><span class="dg-lab">PUBLISHER</span><strong class="dg-name">agent-docs</strong><span class="chip chip-g tag-p">tag v1.4.0</span><span class="dg-cap">immutable SemVer release</span></div>
+<div class="dg-lanes">
+<div class="lane lane-sync">
+<div class="lane-hd"><span class="lane-t lt-g">SYNC LANE</span><span class="lane-note">one reviewed PR per upgrade</span></div>
+<div class="lane-flow"><span class="stp s-watch"><b>watch</b><i>sees v1.4.0</i></span><span class="arw arw-g" aria-hidden="true">→</span><span class="stp s-sync"><b>sync</b><i>adds · updates · removals</i></span><span class="arw arw-g" aria-hidden="true">→</span><span class="stp s-pr"><b>reviewed PR</b><i>never silent</i></span><span class="arw arw-g arw-out" aria-hidden="true">→</span><span class="dot" aria-hidden="true"></span></div>
+</div>
+<div class="inv"><span class="inv-gl" aria-hidden="true">⇅</span> <b>composition invariant</b> — the sync lane's output always passes the gate lane</div>
+<div class="lane lane-gate">
+<div class="lane-hd"><span class="lane-t lt-a">GATE LANE</span><span class="lane-note">runs on every consumer PR</span></div>
+<div class="lane-flow"><span class="stp s-cpr"><b>consumer PR</b><i>any change</i></span><span class="arw arw-a" aria-hidden="true">→</span><span class="stp s-gate stp-gate"><b>vendkit gate</b><i>verifies checksum manifest</i></span><div class="flowgrp"><span class="arw arw-a" aria-hidden="true">→</span><div class="outs"><span class="out out-ok">✓ sync PR merges</span><span class="out out-no">✗ hand-edit blocked</span></div></div></div>
+</div>
+</div>
+<div class="dg-card dg-con"><span class="dg-lab">CONSUMER</span><strong class="dg-name">product repo</strong><span class="fchip">CLAUDE.md</span><span class="fchip">agent-rules/**</span><span class="chip chip-g">manifest · v1.3.2</span><span class="dg-cap">owned like first-party code</span></div>
+</div>
+</figure>
+<div class="lanepts rv">
+<div class="lpt lpt-g"><b>Sync lane</b>Watches the publisher for releases; each upgrade arrives as one reviewed PR. Adds, updates, removals — never silent.</div>
+<div class="lpt lpt-a"><b>Gate lane</b>Runs on every consumer PR; a hand-edit or delete of a vendored file cannot merge.</div>
+<div class="lpt"><b>Composition invariant</b>The sync lane's output always passes the gate lane. Upgrades flow; drift can't.</div>
+</div>
+</section>
+<section class="sec wrap" id="quickstart" data-screen-label="Quickstart">
+<p class="kick">Quickstart</p>
+<h2 class="h2">From zero to governed upgrades</h2>
+<p class="lede">One static Go binary, scaffolds embedded. Publisher declares a slice, consumer onboards in one command, PRs start flowing.</p>
+<div class="steps">
+<div class="step rv">
+<div class="stephd"><span class="stepnum">01</span><h3 class="steptitle">Publish a slice</h3><p class="stepp">In the repo that owns the canonical files, <code>vendkit-export.yml</code> declares what's distributable. Then cut a release — the tag <em>is</em> the release, and it's immutable.</p></div>
+<div class="codewrap"><pre class="code"><code><span class="tk-k">schema_version:</span> 1
+<span class="tk-k">slice:</span>
+  <span class="tk-k">name:</span> agent-docs
+  <span class="tk-k">title:</span> <span class="tk-s">"Agent instructions"</span>
+<span class="tk-k">publisher:</span>
+  <span class="tk-k">scm:</span> github               <span class="tk-c"># github | azure-repos</span>
+  <span class="tk-k">repo:</span> your-org/agent-docs
+<span class="tk-k">include:</span>
+  - <span class="tk-s">"CLAUDE.md"</span>
+  - <span class="tk-s">"agent-rules/**/*.md"</span></code></pre><button class="cbtn ccopy" type="button" aria-label="Copy export declaration"><span class="cb-l">copy</span></button></div>
+</div>
+<div class="step rv">
+<div class="stephd"><span class="stepnum">02</span><h3 class="steptitle">Cut a release</h3><p class="stepp">Generate the checksum manifest, then tag. Releases are immutable SemVer tags and can carry migration payloads.</p></div>
+<div class="codewrap"><pre class="code"><code>vendkit generate              <span class="tk-c"># writes the checksum manifest</span>
+vendkit release --bump minor  <span class="tk-c"># tags the next minor, e.g. v1.4.0</span></code></pre><button class="cbtn ccopy" type="button" data-copy="vendkit generate
+vendkit release --bump minor" aria-label="Copy release commands"><span class="cb-l">copy</span></button></div>
+</div>
+<div class="step rv">
+<div class="stephd"><span class="stepnum">03</span><h3 class="steptitle">Onboard a consumer</h3><p class="stepp">From a checkout of the publisher at the release you're pinning. One command vendors the slice, writes the manifest, and scaffolds the sync, gate, and watch pipelines. <code>--ci azure-pipelines</code> is a peer, not a port — same machinery, same guarantees. <code>--ci none</code> scaffolds no pipelines; you run the same commands by hand or on cron.</p></div>
+<div class="codewrap"><pre class="code"><code>vendkit init --ci github-actions --version v1.4.0</code></pre><button class="cbtn ccopy" type="button" data-copy="vendkit init --ci github-actions --version v1.4.0" aria-label="Copy init command"><span class="cb-l">copy</span></button></div>
+</div>
+<div class="step rv">
+<div class="stephd"><span class="stepnum">04</span><h3 class="steptitle">The machinery takes over</h3><p class="stepp">Curious where you stand? <code>vendkit status</code> — pinned vs latest, drift findings, per slice. <code>vendkit conformance</code> tells you when you're fully wired.</p></div>
+<div class="outcomes">
+<div class="oc"><span class="oc-mk oc-g" aria-hidden="true">✓</span><span><b>Next publisher release:</b> an upgrade PR appears in your repo. Review, merge, done.</span></div>
+<div class="oc"><span class="oc-mk oc-r" aria-hidden="true">✗</span><span><b>Someone hand-edits a vendored file:</b> the gate fails their PR with the exact finding.</span></div>
+</div>
+</div>
+</div>
+</section>
+<section class="sec-tight wrap" id="uses" data-screen-label="Use cases">
+<p class="kick">What people vendor with it</p>
+<h2 class="h2">One canonical copy, everywhere it counts</h2>
+<div class="usehero rv">
+<div><span class="uh-badge">Hero use case</span><h3>AI instructions across a fleet</h3><p>One canonical set of agent instructions — <code>CLAUDE.md</code>, agent rules, prompt libraries, coding-standard docs, MCP config — vendored into dozens of product repos. Every repo pins a release, hand-edits can't merge, and the next revision of your instructions lands everywhere as a reviewed PR instead of as forty stale copies.</p></div>
+<div class="fanviz" aria-hidden="true"><div class="fan-files"><span class="fchip">CLAUDE.md</span><span class="fchip">agent-rules/**</span><span class="fchip">prompts/**</span><span class="fchip">mcp.json</span></div><span class="fan-arw">→</span><div class="repogrid"><span class="repo"></span><span class="repo"></span><span class="repo"></span><span class="repo"></span><span class="repo"></span><span class="repo"></span><span class="repo"></span><span class="repo"></span><span class="repo"></span><span class="repo"></span><span class="repo"></span><span class="repo"></span></div><span class="fan-cap">one slice, pinned in every consumer</span></div>
+</div>
+<div class="usegrid rv">
+<div class="usecard"><h3>Shared CI/pipeline templates</h3><p>Golden GitHub Actions and Azure Pipelines workflows, upgraded by PR rather than by hope.</p></div>
+<div class="usecard"><h3>Org-wide config & policy</h3><p>Linter configs, .editorconfig, security policies, license headers — byte-faithful across the fleet.</p></div>
+<div class="usecard"><h3>Design-system tokens & schemas</h3><p>Source-of-truth files that must stay byte-identical downstream, reviewed like first-party code.</p></div>
+</div>
+</section>
+<section class="sec wrap" id="compare" data-screen-label="Why not X">
+<p class="kick">Why not…</p>
+<h2 class="h2">You've tried the alternatives</h2>
+<div class="cmp rv">
+<div class="cmprow cmphd" aria-hidden="true">Instead of · what it actually is · why it's not this job</div>
+<div class="cmprow"><span class="cmp-tool">a package manager</span><span>Distributes built artifacts into opaque stores.</span><span class="cmp-why">VendKit puts <b>source files in your tree</b> — reviewed, greppable, owned like first-party code, kept faithful to upstream by a checksum manifest.</span></div>
+<div class="cmprow"><span class="cmp-tool">git submodule / subtree</span><span>Pins whole repositories.</span><span class="cmp-why">Not <b>curated slices</b>; no drift gate, no per-file provenance, no migration lifecycle.</span></div>
+<div class="cmprow"><span class="cmp-tool">Copybara</span><span>Continuous code-motion across a repo boundary.</span><span class="cmp-why">VendKit is <b>release-oriented</b> — immutable SemVer tags, migration payloads — and the consumer controls every change via PR.</span></div>
+<div class="cmprow"><span class="cmp-tool">Renovate / Dependabot</span><span>Update dependency manifests.</span><span class="cmp-why">They don't <b>vendor file trees</b> or carry migrations.</span></div>
+</div>
+</section>
+<section class="sec-tight wrap" id="trust" data-screen-label="How it holds together">
+<p class="kick">How it holds together</p>
+<h2 class="h2">Built so you don't have to take its word for anything</h2>
+<div class="trust rv">
+<div class="tr-i"><span class="tr-mk" aria-hidden="true"></span><span>A <b>checksum manifest</b> records exactly what was vendored, from which release and commit; the gate verifies against it.</span></div>
+<div class="tr-i"><span class="tr-mk" aria-hidden="true"></span><span>Releases that reshape content carry <b>migration payloads</b>, and migrations are <b>verified deterministically</b> — same inputs, same verdict.</span></div>
+<div class="tr-i"><span class="tr-mk" aria-hidden="true"></span><span><b>Conformance checks</b> tell a consumer whether it's correctly wired, against rules the publisher ships with each release.</span></div>
+<div class="tr-i"><span class="tr-mk" aria-hidden="true"></span><span>The <b>composition invariant</b> holds by construction: the sync lane's output always passes the gate lane.</span></div>
+<div class="tr-i"><span class="tr-mk" aria-hidden="true"></span><span>The core engine is <b>vendor-service-free</b> — git and the filesystem only — and the consumer-side integrity path is <b>dependency-free</b>, Go stdlib only.</span></div>
+<div class="tr-i"><span class="tr-mk" aria-hidden="true"></span><span>It's <b>self-hosting</b>: the VendKit repository vendors its own slice and freshness-checks its own manifest in CI.</span></div>
+</div>
+</section>
+<section class="sec-tight wrap" id="docs" data-screen-label="Where next">
+<p class="kick">Where next</p>
+<h2 class="h2">Go deeper</h2>
+<div class="docs rv">
+<a class="doc" href="https://github.com/jameswbaxter/vendkit/blob/main/docs/architecture.md"><code>docs/architecture.md</code><span>How the pieces fit together</span></a>
+<a class="doc" href="https://github.com/jameswbaxter/vendkit/blob/main/docs/specs/export-declaration.md"><code>docs/specs/export-declaration.md</code><span>Publisher side: declaring a slice</span></a>
+<a class="doc" href="https://github.com/jameswbaxter/vendkit/blob/main/docs/specs/onboarding.md"><code>docs/specs/onboarding.md</code><span>Consumer side: init and the slice config</span></a>
+<a class="doc" href="https://github.com/jameswbaxter/vendkit/blob/main/docs/specs/migrations.md"><code>docs/specs/migrations.md</code><span>Authoring and verifying migrations</span></a>
+<a class="doc" href="https://github.com/jameswbaxter/vendkit/blob/main/docs/specs/platform-integration.md"><code>docs/specs/platform-integration.md</code><span>CI setup: GitHub Actions & Azure Pipelines</span></a>
+<a class="doc" href="https://github.com/jameswbaxter/vendkit/blob/main/docs/specs/cli.md"><code>docs/specs/cli.md</code><span>The full vendkit CLI</span></a>
+<a class="doc" href="https://github.com/jameswbaxter/vendkit/blob/main/GLOSSARY.md"><code>GLOSSARY.md</code><span>Precise terms</span></a>
+<a class="doc" href="https://github.com/jameswbaxter/vendkit/blob/main/CONTRIBUTING.md"><code>CONTRIBUTING.md</code><span>How to contribute</span></a>
+</div>
+</section>
+<footer class="foot" data-screen-label="Footer"><div class="wrap">
+<div class="footrow">
+<div class="install"><span class="dollar" aria-hidden="true">$</span><code>go install github.com/jameswbaxter/vendkit/cmd/vendkit@latest</code><button class="cbtn" type="button" data-copy="go install github.com/jameswbaxter/vendkit/cmd/vendkit@latest" aria-label="Copy install command"><span class="cb-l">copy</span></button></div>
+<a class="ghlink" href="https://github.com/jameswbaxter/vendkit">★ star on GitHub</a>
+</div>
+<div class="footlinks"><a href="https://github.com/jameswbaxter/vendkit">GitHub</a><a href="https://github.com/jameswbaxter/vendkit/blob/main/CONTRIBUTING.md">Contributing</a><a href="https://github.com/jameswbaxter/vendkit/blob/main/LICENSE">Apache-2.0</a></div>
+<p class="footnote">VendKit is self-hosting — this machinery vendors its own slice.</p>
+</div></footer>
+</main>
+</div>
+</body>
+</html>

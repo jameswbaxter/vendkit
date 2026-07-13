@@ -33,15 +33,23 @@ and GHA (testing.md §3).
 > runtime residue remains in shipped code or scaffolds. Release-attached
 > checksummed binaries + engine pin (DR-0016) are wired in the release workflow,
 > and the **first tagged cut is done** — `v0.1.0` (annotated, surface-delta
-> +0 -0) is on the remote. What's still unexercised is a live
-> download-and-run of the release-attached binaries end-to-end on both platforms.
+> +0 -0) is on the remote.
 >
-> Still open: REST-fixture contract tests for the GitHub/ADO reference
-> handlers, push-hint dispatch step, fleet audit, API-verified attestations,
-> and a *versioned* docs site. Shipped since v0.1.0: the GitHub Pages landing
-> page (`site/`) and its deploy workflow, live platform-matrix CI (testing §3,
-> GHA surface with a dormant ADO peer in `azure-pipelines.yml`), and
-> public-repo hygiene (SECURITY.md, issue templates).
+> Every feature on the prior Still-open list has now shipped: REST-fixture
+> contract tests for the GitHub/ADO reference handlers; the push-hint
+> subscribers-file dispatch step (with the `--push-hint` receiver scaffold
+> flag); the read-only `fleet` audit (with `conformance --json` widened to
+> the fleet-view interchange document); API-verified attestations (the
+> reference handlers now confirm controls against the SCM API instead of
+> degrading to `unknown`); and a *versioned* docs site (a pure-Go
+> `internal/docsgen` generator + tag-triggered gh-pages deploy, no
+> Python/Node — DR-0018). Also shipped since v0.1.0: the GitHub Pages
+> landing page (`site/`) and its deploy workflow, live platform-matrix CI
+> (testing §3, GHA surface with a dormant ADO peer in `azure-pipelines.yml`),
+> and public-repo hygiene (SECURITY.md, issue templates). What remains are
+> integration exercises rather than new surface: the tier-chain push-hint
+> demo (framework → mid publisher → leaf) and a live download-and-run of
+> the release-attached binaries end-to-end on both platforms.
 
 ## M0 — Skeleton and invariants (foundation)
 

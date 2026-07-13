@@ -8,7 +8,7 @@
 // module wired into the scaffolded slice config — is replaced by an
 // equivalent Go journal-handler binary (internal/e2e/journalhandler), which
 // the world fixture wires into the slice config exactly as the Python fixture
-// swapped in vendkit.handlers.journal.
+// swapped in its neutral journal handler.
 package e2e
 
 import (
@@ -342,7 +342,7 @@ profiles:
 	cfgPath := filepath.Join(con, ".vendkit", "docs.yml")
 	cfg := read(t, cfgPath)
 	cfg = strings.ReplaceAll(cfg, "repo: example-org/pub", "repo: "+pub)
-	cfg = strings.ReplaceAll(cfg, "[python3, -m, vendkit.handlers.github]",
+	cfg = strings.ReplaceAll(cfg, "[vendkit, handler, github]",
 		`["`+journalBin+`"]`)
 	write(t, cfgPath, cfg)
 	git(t, con, "add", "-A")
@@ -467,6 +467,9 @@ func TestSyncUpgradeComposesWithGate(t *testing.T) {
 		text := read(t, filepath.Join(con, ".github", "workflows", wf+".yml"))
 		mustContain(t, text, "refs/tags/v0.2.0")
 	}
+	// Engine pin advanced in lockstep (DR-0016 §3): version → target.
+	mustContain(t, read(t, filepath.Join(con, ".vendkit", "docs.yml")),
+		"version: v0.2.0")
 
 	// Provenance recorded (manifest spec §1).
 	manifest := loadJSON(t, filepath.Join(con, ".vendkit", "docs-manifest.json"))

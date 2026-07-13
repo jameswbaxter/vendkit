@@ -1,6 +1,6 @@
 // journalhandler is the neutral reference PR/handoff/fact-verify handler for
-// the scenario kit — the Go analogue of the deleted vendkit.handlers.journal
-// Python module. It records every intent to VENDKIT_NEUTRAL_JOURNAL (one JSON
+// the scenario kit — the Go analogue of the deleted Python journal handler
+// module. It records every intent to VENDKIT_NEUTRAL_JOURNAL (one JSON
 // object per line) and reports a synthetic URL, so the e2e tests have a
 // no-network delivery assertion point (handler-protocol spec §6, DR-0014).
 package main

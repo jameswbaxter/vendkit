@@ -38,16 +38,17 @@ and only here; every other platform decision reads recorded config
 
 The whole in-process interface:
 
-```python
-class OutputSurface(Protocol):
-    def emit_output(self, key: str, value: str) -> None:
-        """GITHUB_OUTPUT file / ##vso setvariable;isOutput. ALL surfaces
-        also print the plain key=value line, for log-greppability."""
-    def emit_summary(self, markdown: str) -> None:
-        """GITHUB_STEP_SUMMARY / ##vso uploadsummary. Neutral: stderr."""
-    def emit_error(self, message: str) -> None:
-        """::error:: / ##vso logissue. Neutral: stderr; exit codes stay
-        the caller's responsibility."""
+```go
+type Surface interface {
+    // GITHUB_OUTPUT file / ##vso setvariable;isOutput. ALL surfaces also
+    // print the plain key=value line, for log-greppability.
+    EmitOutput(key, value string)
+    // GITHUB_STEP_SUMMARY / ##vso uploadsummary. Neutral: stderr.
+    EmitSummary(markdown string)
+    // ::error:: / ##vso logissue. Neutral: stderr; exit codes stay the
+    // caller's responsibility.
+    EmitError(message string)
+}
 ```
 
 Explicitly **not** here (all removed by DR-0014/DR-0015): release listing,
@@ -62,6 +63,13 @@ Credentials are resolved *by the party that spends them*:
 - **Git operations** (clone/fetch/ls-remote upstream, push the sync branch)
   use ordinary git credentials — the checkout step's token, a credential
   helper, or the URL. The engine adds nothing.
+- **Engine fetch** (DR-0016): the scaffolded lane downloads the pinned
+  engine binary + `SHA256SUMS.txt` from the publisher's release assets
+  (github-actions: the GitHub release; azure-pipelines: the
+  `VENDKIT_ENGINE_BASE_URL` you set — a mirror, feed, or blob store),
+  verifies the checksum, caches it, then runs `vendkit self-verify` against
+  the consumer-held `engine.sha256` pin. A swapped or wrong-version binary
+  fails loudly before it materialises anything.
 - **Handlers** resolve their own API tokens: `VENDKIT_TOKEN_<PURPOSE>`
   overrides, then vendor conventions.
 

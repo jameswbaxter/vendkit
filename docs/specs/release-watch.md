@@ -26,7 +26,7 @@ watch:
   channel: stable             # stable | rc
 handlers:
   handoff:                    # where findings become work; see §3
-    exec: [python3, -m, vendkit.handlers.github]
+    exec: [vendkit, handler, github]
     dedup_key: "vendkit-watch-docs"
 ```
 

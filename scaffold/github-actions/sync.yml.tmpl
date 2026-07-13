@@ -1,7 +1,7 @@
 # VendKit sync lane for slice `__SLICE__` (sync spec §3).
 # Scheduled reconciliation; opens ONE reviewed PR per upgrade. Never merges.
-# The publisher checkout ref below IS the pin — single source of truth,
-# advanced by the sync PR itself.
+# The publisher checkout ref below IS the content pin — single source of truth,
+# advanced by the sync PR itself; the engine ref advances with it in lockstep.
 name: __SLICE__ sync
 on:
   schedule:
@@ -20,12 +20,45 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Check out publisher at target release
+      - name: Check out publisher content at target release
         uses: actions/checkout@v4
         with:
           repository: __PUBLISHER_REPO__
           ref: refs/tags/__VERSION__ # vendkit-pin __SLICE__ (do not duplicate)
           path: .vendkit-publisher
+      - name: Restore cached vendkit engine
+        id: engine-cache
+        uses: actions/cache@v4
+        with:
+          path: ${{ runner.temp }}/vendkit-bin
+          key: vendkit-engine-__VERSION__-${{ runner.os }}-${{ runner.arch }}
+      - name: Fetch + verify pinned vendkit engine (DR-0016)
+        if: steps.engine-cache.outputs.cache-hit != 'true'
+        env:
+          # Engine ref — advanced with the content pin above by the sync PR
+          # (INV-6: one version for engine and content).
+          ENGINE_REF: refs/tags/__VERSION__
+          PUBLISHER: __PUBLISHER_REPO__
+          # Override to a mirror for offline/air-gapped runs; the checksum pin
+          # still decides trust (DR-0016).
+          ENGINE_BASE_URL: ${{ vars.VENDKIT_ENGINE_BASE_URL }}
+        run: |
+          set -euo pipefail
+          version="${ENGINE_REF#refs/tags/}"
+          os=linux; arch=amd64
+          case "$(uname -m)" in aarch64|arm64) arch=arm64 ;; esac
+          asset="vendkit_${version}_${os}_${arch}"
+          base="${ENGINE_BASE_URL:-https://github.com/${PUBLISHER}/releases/download/${version}}"
+          dir="${RUNNER_TEMP}/vendkit-bin"; mkdir -p "$dir"
+          curl -fsSL -o "$dir/vendkit" "${base}/${asset}"
+          curl -fsSL -o "$dir/SHA256SUMS.txt" "${base}/SHA256SUMS.txt"
+          want="$(grep " ${asset}\$" "$dir/SHA256SUMS.txt" | cut -d' ' -f1)"
+          echo "${want}  ${dir}/vendkit" | sha256sum -c -
+          chmod +x "$dir/vendkit"
+      - name: Put vendkit on PATH
+        run: echo "${RUNNER_TEMP}/vendkit-bin" >> "$GITHUB_PATH"
+      - name: Verify the pinned engine (DR-0016 §2)
+        run: vendkit self-verify --slice __SLICE__
       - name: Sync — check and apply
         env:
           # PR credential must NOT be GITHUB_TOKEN: PRs it opens do not
@@ -33,7 +66,7 @@ jobs:
           # (platform-ports spec §3, differences ledger #2).
           VENDKIT_TOKEN_OPEN_PR: ${{ secrets.__PR_TOKEN_SECRET__ }}
         run: |
-          PYTHONPATH=.vendkit-publisher python3 -m vendkit.cli sync-pipeline \
+          vendkit sync-pipeline \
             --publisher-root .vendkit-publisher \
             --slice __SLICE__ \
             --base-branch __BASE_BRANCH__

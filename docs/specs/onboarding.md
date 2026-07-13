@@ -29,16 +29,21 @@ pin:
   files:
     - .github/workflows/docs-sync.yml
     - .github/workflows/vendkit-gate.yml
+engine:                               # the pinned engine binary (DR-0016)
+  version: v1.4.2                     # advanced with the content pin by sync
+  sha256:                             # per-platform; blank = advisory
+    linux/amd64: "…"
+    darwin/arm64: "…"
 watch:
   channel: stable                     # stable | rc
 handlers:                             # delivery handlers (handler protocol)
   pr:
-    exec: [python3, -m, vendkit.handlers.github]
+    exec: [vendkit, handler, github]
   handoff:
-    exec: [python3, -m, vendkit.handlers.github]
+    exec: [vendkit, handler, github]
     dedup_key: vendkit-watch-docs
   fact-verify:
-    exec: [python3, -m, vendkit.handlers.github]
+    exec: [vendkit, handler, github]
 seeds:
   notes: informational                # informational | silent (DR-0013)
 attestations:
@@ -127,28 +132,37 @@ conformance `pipeline-wired` rules keep the wiring honest.
   be set from YAML). The corresponding conformance rules stay red until done
   — the checklist is executable, not prose.
 - **Handlers:** the slice config's default handler commands are keyed by the
-  consumer's `scm` (`vendkit.handlers.github` / `vendkit.handlers.ado`);
-  `ci: none` leaves them unwired with a comment showing how to wire one.
+  consumer's `scm` (`vendkit handler github` / `vendkit handler ado`, built
+  into the engine binary); `ci: none` leaves them unwired with a comment
+  showing how to wire one.
+- **Engine (DR-0016):** the scaffolded lanes' first step fetches the pinned
+  engine binary, verifies it against the release `SHA256SUMS.txt`, caches it,
+  and runs `vendkit self-verify` against the `engine.sha256` pin before the
+  lane proper — no interpreter, no build step on the runner.
 - **Push hint:** `--push-hint` adds the `resources.pipelines` trigger
   (azure-pipelines) or the `repository_dispatch` receiver (github-actions)
   to the sync pipeline (platform-integration spec §4).
 
 ## 4. Irreducible manual steps (reported, never performed)
 
-1. Grant the CI identity read on the publisher repo (checkout + engine
-   resolution).
-2. Provision the PR-capable credential as the named secret for the PR
+1. Grant the CI identity read on the publisher repo (content checkout +
+   engine artefact fetch).
+2. Record the engine checksums in `engine.sha256` from the pinned release's
+   `SHA256SUMS.txt` (one hex per platform). Until filled, `vendkit
+   self-verify` is advisory; the fetch step still verifies each download
+   against `SHA256SUMS.txt` (DR-0016). (Skipped for `ci: none`.)
+3. Provision the PR-capable credential as the named secret for the PR
    handler; on ADO also policy-exempt it for *creation* only, on GitHub
    prefer a GitHub App. (Skipped for `ci: none`.)
-3. Enable branch protection / branch policies; make the gate a required
+4. Enable branch protection / branch policies; make the gate a required
    check (github: ruleset; azure-repos: Build Validation). Under `ci: none`
    this step instead states plainly: there is no PR-time gate — automated
    drift enforcement is forfeited and `vendkit gate --strict` must be run
    by hand.
-4. On azure-repos: add a required-reviewers branch policy covering
+5. On azure-repos: add a required-reviewers branch policy covering
    `.vendkit/**` (the CODEOWNERS equivalent) and record the
    `required_reviewers_policy` attestation.
-5. Record the attestations for the above in the slice config.
+6. Record the attestations for the above in the slice config.
 
 Each maps 1:1 to a conformance rule, so "fully onboarded" is
 `vendkit conformance --strict` passing — the onboarding checklist and the

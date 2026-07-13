@@ -557,3 +557,118 @@ func TestAdoHandoff_CreatesNewWorkItem(t *testing.T) {
 	}
 	wantFact(t, parseFacts(out), "url", srv.URL+"/proj/_workitems/edit/456")
 }
+
+// -- GitHub push-hint (repository_dispatch) ------------------------------------
+
+func TestGithubPushHint_Dispatches(t *testing.T) {
+	const token = "dispatch-token"
+	t.Setenv("VENDKIT_TOKEN_PUSH_HINT", token)
+
+	var sawPOST bool
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		wantBearer(t, r, token)
+		switch {
+		case r.Method == "POST" && r.URL.Path == "/repos/acme/leaf/dispatches":
+			sawPOST = true
+			var body map[string]any
+			decodeBody(t, r, &body)
+			if body["event_type"] != "vendkit-release" {
+				t.Errorf("event_type = %v, want vendkit-release", body["event_type"])
+			}
+			payload, _ := body["client_payload"].(map[string]any)
+			if payload == nil {
+				t.Fatalf("client_payload missing: %v", body)
+			}
+			if payload["version"] != "v1.2.3" || payload["tag"] != "v1.2.3" {
+				t.Errorf("client_payload version/tag = %v", payload)
+			}
+			if payload["publisher"] != "acme/framework" {
+				t.Errorf("client_payload publisher = %v, want acme/framework", payload["publisher"])
+			}
+			w.WriteHeader(http.StatusNoContent) // 204: the dispatch success shape
+		default:
+			t.Errorf("unexpected request %s %s", r.Method, r.URL.Path)
+			http.Error(w, "unexpected", http.StatusInternalServerError)
+		}
+	}))
+	defer srv.Close()
+
+	intent := map[string]any{
+		"repo":       "acme/leaf",
+		"event_type": "vendkit-release",
+		"client_payload": map[string]any{
+			"version": "v1.2.3", "tag": "v1.2.3", "publisher": "acme/framework",
+		},
+	}
+	out, err := captureFacts(t, func() error { return githubPushHint(srv.URL, intent) })
+	if err != nil {
+		t.Fatalf("githubPushHint: %v", err)
+	}
+	if !sawPOST {
+		t.Fatal("expected a POST to /dispatches")
+	}
+	facts := parseFacts(out)
+	wantFact(t, facts, "dispatched", "true")
+	wantFact(t, facts, "event_type", "vendkit-release")
+	wantFact(t, facts, "repo", "acme/leaf")
+}
+
+// TestGithubPushHint_RefusesWithoutToken: the dispatch-scoped token is
+// mandatory; with none in scope the handler errors before any network call.
+func TestGithubPushHint_RefusesWithoutToken(t *testing.T) {
+	t.Setenv("VENDKIT_TOKEN_PUSH_HINT", "")
+
+	called := false
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		called = true
+		t.Errorf("handler must not call the API when refusing: %s %s", r.Method, r.URL.Path)
+	}))
+	defer srv.Close()
+
+	intent := map[string]any{"repo": "acme/leaf"}
+	_, err := captureFacts(t, func() error { return githubPushHint(srv.URL, intent) })
+	if err == nil {
+		t.Fatal("expected refusal error, got nil")
+	}
+	if !strings.Contains(err.Error(), "VENDKIT_TOKEN_PUSH_HINT") {
+		t.Errorf("refusal must name VENDKIT_TOKEN_PUSH_HINT, got: %v", err)
+	}
+	if called {
+		t.Error("refusal must happen before any network call")
+	}
+}
+
+// TestGithubPushHint_APIErrorSurfacesLoudly: a >=400 dispatch response is a
+// loud (nonzero) failure, not a silent no-op.
+func TestGithubPushHint_APIErrorSurfacesLoudly(t *testing.T) {
+	t.Setenv("VENDKIT_TOKEN_PUSH_HINT", "dispatch-token")
+
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		http.Error(w, `{"message":"no such repo"}`, http.StatusNotFound)
+	}))
+	defer srv.Close()
+
+	intent := map[string]any{"repo": "acme/leaf", "event_type": "vendkit-release"}
+	out, err := captureFacts(t, func() error { return githubPushHint(srv.URL, intent) })
+	if err == nil {
+		t.Fatal("expected loud error on HTTP 404, got nil")
+	}
+	if !strings.Contains(err.Error(), "HTTP 404") {
+		t.Errorf("error must surface the status, got: %v", err)
+	}
+	if strings.Contains(out, "dispatched=true") {
+		t.Errorf("no success fact must be emitted on failure, got: %q", out)
+	}
+}
+
+// TestAdoPushHint_IsPullTriggerNoop: on ADO the push hint is the consumer's own
+// resources.pipelines trigger; the publisher does nothing and says so.
+func TestAdoPushHint_IsPullTriggerNoop(t *testing.T) {
+	out, err := captureFacts(t, func() error { return adoPushHint(map[string]any{"repo": "proj/repo"}) })
+	if err != nil {
+		t.Fatalf("adoPushHint: %v", err)
+	}
+	facts := parseFacts(out)
+	wantFact(t, facts, "dispatched", "false")
+	wantFact(t, facts, "skipped", "ado-pull-trigger")
+}

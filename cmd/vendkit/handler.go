@@ -1,7 +1,7 @@
 // Reference delivery handlers, in-binary (DR-0016). `vendkit handler <scm>`
 // reads a handler-protocol intent on stdin and dispatches on its `kind`
-// (pr / handoff / fact-verify), talking to the GitHub or Azure DevOps REST
-// API, then writes `key=value` facts on stdout. Any protocol-honouring
+// (pr / handoff / fact-verify / push-hint), talking to the GitHub or Azure
+// DevOps REST API, then writes `key=value` facts on stdout. Any protocol-honouring
 // executable may replace it (handler-protocol spec §6); this is the built-in
 // reference, ported from the former Python reference-handler modules.
 package main
@@ -42,8 +42,8 @@ func cmdHandler(args []string, _ ci.Surface) (int, error) {
 			intent["vendkit_handler_protocol"])
 	}
 	kind, _ := intent["kind"].(string)
-	if kind != "pr" && kind != "handoff" && kind != "fact-verify" {
-		return 0, core.Errf("handler: this handler serves pr/handoff/fact-verify, got %q", kind)
+	if kind != "pr" && kind != "handoff" && kind != "fact-verify" && kind != "push-hint" {
+		return 0, core.Errf("handler: this handler serves pr/handoff/fact-verify/push-hint, got %q", kind)
 	}
 	switch scm {
 	case "github":
@@ -187,6 +187,8 @@ func githubHandler(kind string, intent map[string]any) error {
 		return githubPR(api, intent)
 	case "handoff":
 		return githubHandoff(api, intent)
+	case "push-hint":
+		return githubPushHint(api, intent)
 	default: // fact-verify
 		// API verification of branch protection / required checks: post-1.0.
 		// "unknown" keeps the conformance status at `attested` (never a fail).
@@ -286,6 +288,43 @@ func githubHandoff(api string, intent map[string]any) error {
 	return nil
 }
 
+// githubPushHint POSTs a repository_dispatch to a subscriber, nudging its sync
+// workflow to run early (platform-integration spec §4, DR-0006). The token
+// purpose is the dispatch-scoped push-hint token — distinct from the PR token
+// and the one publisher-held-credential relaxation (security-model spec §4).
+func githubPushHint(api string, intent map[string]any) error {
+	token := tokenFor("push_hint")
+	if token == "" {
+		return core.Errf("push-hint dispatch needs VENDKIT_TOKEN_PUSH_HINT " +
+			"(a dispatch-scoped token; the one publisher-held credential the " +
+			"model permits — security-model spec §4). Push is a best-effort " +
+			"hint; the consumer's schedule remains the reconciler")
+	}
+	repo, err := githubRepo(intent)
+	if err != nil {
+		return err
+	}
+	eventType := intentStr(intent, "event_type")
+	if eventType == "" {
+		eventType = "vendkit-release"
+	}
+	body := map[string]any{"event_type": eventType}
+	if payload := asObj(intent["client_payload"]); payload != nil {
+		body["client_payload"] = payload
+	}
+	// A successful dispatch is HTTP 204 with no body; httpJSON treats <400 as
+	// success and returns {} for the empty body.
+	if _, err := httpJSON("POST",
+		fmt.Sprintf("%s/repos/%s/dispatches", api, repo),
+		token, "Bearer", body, ""); err != nil {
+		return err
+	}
+	emitFact("dispatched", "true")
+	emitFact("event_type", eventType)
+	emitFact("repo", repo)
+	return nil
+}
+
 // -- Azure DevOps (former Python ado handler) ----------------------------------
 
 func adoOrg() (string, error) {
@@ -324,6 +363,8 @@ func adoHandler(kind string, intent map[string]any) error {
 		return adoPR(intent)
 	case "handoff":
 		return adoHandoff(intent)
+	case "push-hint":
+		return adoPushHint(intent)
 	default: // fact-verify
 		emitFact("verdict", "unknown") // API verification: post-1.0
 		return nil
@@ -436,5 +477,16 @@ func adoHandoff(intent map[string]any) error {
 		wid = numStr(asObj(created)["id"])
 	}
 	emitFact("url", fmt.Sprintf("%s/%s/_workitems/edit/%s", org, project, wid))
+	return nil
+}
+
+// adoPushHint is a deliberate no-op: on Azure DevOps the push hint is
+// consumer-declared (the sync pipeline's own resources.pipelines trigger fires
+// on the publisher's release-pipeline completion). The publisher keeps no
+// registry and takes no sender action — so this kind only records that fact
+// (platform-integration spec §4). Exit 0: a skip is not a failure.
+func adoPushHint(_ map[string]any) error {
+	emitFact("dispatched", "false")
+	emitFact("skipped", "ado-pull-trigger")
 	return nil
 }

@@ -56,6 +56,10 @@ func run() int {
 	case "handoff":
 		dk, _ := intent["dedup_key"].(string)
 		fmt.Printf("url=neutral://item/%s\n", dk)
+	case "push-hint":
+		et, _ := intent["event_type"].(string)
+		fmt.Println("dispatched=true")
+		fmt.Printf("event_type=%s\n", et)
 	default:
 		fmt.Println("verdict=unknown")
 	}

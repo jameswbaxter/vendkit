@@ -2,8 +2,9 @@
 # Scheduled reconciliation; opens ONE reviewed PR per upgrade. Never merges.
 # The publisher `ref:` below IS the content pin — single source of truth,
 # advanced by the sync PR itself; the engine ref advances with it in lockstep.
-# Optional push hint (DR-0006): uncomment resources.pipelines to trigger on the
-# publisher's release-pipeline completion.
+# Optional push hint (DR-0006): the resources.pipelines trigger below (present
+# only when scaffolded with --push-hint) fires this pipeline on the publisher's
+# release-pipeline completion; the schedule above remains the reconciler.
 #
 # Set the pipeline variable VENDKIT_ENGINE_BASE_URL to the publisher's
 # release-asset base (DR-0016).
@@ -23,10 +24,7 @@ resources:
       type: git
       name: __PUBLISHER_REPO__
       ref: refs/tags/__VERSION__ # vendkit-pin __SLICE__ (do not duplicate)
-#  pipelines:
-#    - pipeline: publisher-release
-#      source: <publisher release pipeline name>
-#      trigger: true
+__PUSH_HINT_TRIGGER__
 
 pool:
   vmImage: ubuntu-latest

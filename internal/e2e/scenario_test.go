@@ -1147,3 +1147,99 @@ func TestGatePathIsStandaloneOnly(t *testing.T) {
 		t.Fatalf("gate --strict exit = %d, want 0\n%s", code, se)
 	}
 }
+
+// -- push hints (DR-0006, platform-integration §4) -----------------------------
+
+// TestPushHintDispatchesToGHASubscribersOnly drives the publisher-side dispatch
+// step end-to-end through the neutral journal handler: one push-hint intent per
+// GHA subscriber, ADO/none skipped, no live API. The intent round-trip is the
+// contract — the actual repository_dispatch POST is the handler's job (DR-0014).
+func TestPushHintDispatchesToGHASubscribersOnly(t *testing.T) {
+	pub, _ := world(t)
+	write(t, filepath.Join(pub, ".vendkit", "subscribers.yml"), `schema_version: 1
+subscribers:
+  - repo: acme/leaf-a
+  - repo: acme/leaf-b
+    event_type: custom-release
+  - repo: acme/ado-consumer
+    platform: azure-pipelines
+`)
+	journal := filepath.Join(t.TempDir(), "journal.jsonl")
+	so, _, code := vk(t, pub, map[string]string{
+		"VENDKIT_HANDLER_PUSH_HINT": journalBin,
+		"VENDKIT_NEUTRAL_JOURNAL":   journal,
+	}, true, "push-hint", "--version", "v0.9.0",
+		"--publisher-repo", "acme/framework", "--publisher-root", pub)
+	if code != 0 {
+		t.Fatalf("push-hint exit = %d, want 0\n%s", code, so)
+	}
+	mustContain(t, so, "subscribers=3")
+	mustContain(t, so, "dispatched=2")
+	mustContain(t, so, "skipped=1")
+	mustContain(t, so, "failed=0")
+
+	hints := recordsOfKind(journalRecords(t, journal), "push-hint")
+	if len(hints) != 2 {
+		t.Fatalf("push-hint intents = %d, want 2 (GHA only)", len(hints))
+	}
+	// Each intent carries the release payload and the subscriber's event type.
+	byRepo := map[string]map[string]any{}
+	for _, h := range hints {
+		byRepo[toStr(h["repo"])] = h
+	}
+	a, ok := byRepo["acme/leaf-a"]
+	if !ok {
+		t.Fatalf("no intent for acme/leaf-a: %v", byRepo)
+	}
+	if toStr(a["event_type"]) != "vendkit-release" {
+		t.Errorf("leaf-a event_type = %q, want vendkit-release (default)", a["event_type"])
+	}
+	payload := asMap(a["client_payload"])
+	if toStr(payload["version"]) != "v0.9.0" || toStr(payload["publisher"]) != "acme/framework" {
+		t.Errorf("leaf-a client_payload = %v", payload)
+	}
+	b := byRepo["acme/leaf-b"]
+	if toStr(b["event_type"]) != "custom-release" {
+		t.Errorf("leaf-b event_type = %q, want custom-release", b["event_type"])
+	}
+	if _, ok := byRepo["acme/ado-consumer"]; ok {
+		t.Error("ADO subscriber must be skipped, not dispatched")
+	}
+}
+
+// TestPushHintNoSubscribersFileIsSoftSkip: with no subscribers file the step is
+// a no-op exit 0 (push hints not configured), so a release workflow can run it
+// unconditionally.
+func TestPushHintNoSubscribersFileIsSoftSkip(t *testing.T) {
+	pub, _ := world(t)
+	so, _, code := vk(t, pub, nil, true, "push-hint", "--version", "v0.9.0",
+		"--publisher-root", pub)
+	if code != 0 {
+		t.Fatalf("push-hint exit = %d, want 0\n%s", code, so)
+	}
+	mustContain(t, so, "subscribers=0")
+	mustContain(t, so, "dispatched=0")
+}
+
+// TestPushHintFlagGatesTheReceiver: --push-hint controls whether the scaffolded
+// sync workflow carries the early-trigger receiver; default is off.
+func TestPushHintFlagGatesTheReceiver(t *testing.T) {
+	pub, con := world(t)
+	// world() onboards without --push-hint: no repository_dispatch receiver.
+	def := read(t, filepath.Join(con, ".github", "workflows", "docs-sync.yml"))
+	if strings.Contains(def, "repository_dispatch") {
+		t.Error("default scaffold must omit the repository_dispatch receiver")
+	}
+	mustContain(t, def, "workflow_dispatch:") // sanity: it is still the sync workflow
+
+	// With --push-hint the receiver is present.
+	hinted := filepath.Join(t.TempDir(), "hinted-consumer")
+	mkdirAll(t, hinted)
+	git(t, hinted, "init", "-q", "-b", "main")
+	vk(t, pub, nil, true, "init", "--ci", "github-actions", "--scm", "github",
+		"--version", "v0.1.0", "--profile", "code-repo", "--push-hint",
+		"--publisher-root", pub, "--consumer-root", hinted)
+	on := read(t, filepath.Join(hinted, ".github", "workflows", "docs-sync.yml"))
+	mustContain(t, on, "repository_dispatch:")
+	mustContain(t, on, "types: [vendkit-release]")
+}

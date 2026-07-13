@@ -7,10 +7,7 @@ on:
   schedule:
     - cron: "17 6 * * 1-5"
   workflow_dispatch:
-  # Optional push hint (DR-0006): the publisher's release workflow may
-  # dispatch this event; the schedule above remains the reconciler.
-  repository_dispatch:
-    types: [vendkit-release]
+__PUSH_HINT_RECEIVER__
 
 permissions:
   contents: write

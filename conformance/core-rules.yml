@@ -10,7 +10,7 @@ rules:
     detector: { kind: file-exists, path: ".vendkit/<slice>-manifest.json" }
     remediation: >-
       Vendor the slice and commit .vendkit/<slice>-manifest.json
-      (vendkit onboard does both).
+      (vendkit init does both).
 
   - id: gate-wired
     title: "Gate lane wired, pinned, required on PRs"
@@ -23,7 +23,7 @@ rules:
       events: [pull_request]
       required_check: true
     remediation: >-
-      Wire the gate pipeline (scaffolded by vendkit onboard), pin it to a
+      Wire the gate pipeline (scaffolded by vendkit init), pin it to a
       release tag, and enforce it: required status check (GitHub ruleset) or
       Build Validation branch policy (Azure DevOps). Record the attestations.
 

@@ -33,7 +33,7 @@ rules:
       events: [pull_request]          # pull_request | schedule
       required_check: true            # must be enforced, not merely present
     remediation: >-
-      Wire the gate pipeline (scaffold: `vendkit onboard`), pin it to a release
+      Wire the gate pipeline (scaffold: `vendkit init`), pin it to a release
       tag, and make it a required check / build-validation policy.
 ```
 

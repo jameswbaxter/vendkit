@@ -113,11 +113,16 @@ Handlers are wired per slice in the consumer config (onboarding spec §1):
 
 ```yaml
 handlers:
-  pr:          { exec: [python3, -m, vendkit.handlers.github] }
-  handoff:     { exec: [python3, -m, vendkit.handlers.github],
+  pr:          { exec: [vendkit, handler, github] }
+  handoff:     { exec: [vendkit, handler, github],
                  dedup_key: vendkit-watch-docs }
-  fact-verify: { exec: [python3, -m, vendkit.handlers.github] }
+  fact-verify: { exec: [vendkit, handler, github] }
 ```
+
+`vendkit handler <scm>` is the built-in reference handler (same static
+binary, DR-0016): it reads the intent on stdin and dispatches on `kind`.
+`<scm>` is `github` or `ado`. Any other protocol-honouring executable can
+replace it.
 
 Resolution order per kind: `VENDKIT_HANDLER_<KIND>` environment override
 (shell-split; `-` → `_`), then the slice config, else **unwired**. Unwired
@@ -134,7 +139,7 @@ behaviour is defined per producer and always visible, never silent:
 ## 5. Upstream reads are NOT handler territory
 
 Listing a publisher's release tags and reading a file at a tag are plain
-**git protocol** operations (`core/upstream.py`): identical against GitHub,
+**git protocol** operations (`internal/core/upstream.go`): identical against GitHub,
 Azure Repos, or a local path, authenticated by ordinary git credentials. No
 handler, no vendor API. The only vendor knowledge is the clone-URL template
 that expands an `owner/repo` shorthand (`github`) or `org/project/repo`
@@ -144,11 +149,15 @@ that expands an `owner/repo` shorthand (`github`) or `org/project/repo`
 
 Shipped in-tree, released and conformance-tested with the framework:
 
-| Module | Serves | Notes |
+| Command | Serves | Notes |
 |---|---|---|
-| `vendkit.handlers.github` | pr, handoff, fact-verify | PR credential refuses `GITHUB_TOKEN` fallback (differences ledger #2) |
-| `vendkit.handlers.ado` | pr, handoff, fact-verify | needs `VENDKIT_ADO_ORG_URL`; Basic-auth PAT / `SYSTEM_ACCESSTOKEN` |
-| `vendkit.handlers.journal` | all | records intents to `VENDKIT_NEUTRAL_JOURNAL` (or stderr); the scenario kit's assertion point and the template for new handlers |
+| `vendkit handler github` | pr, handoff, fact-verify | PR credential refuses `GITHUB_TOKEN` fallback (differences ledger #2) |
+| `vendkit handler ado` | pr, handoff, fact-verify | needs `VENDKIT_ADO_ORG_URL`; Basic-auth PAT / `SYSTEM_ACCESSTOKEN` |
+
+`github` / `ado` are built into the engine binary (DR-0016) — no separate
+install, no interpreter. The neutral journal handler used by the scenario
+kit (`internal/e2e/journalhandler`) records intents to
+`VENDKIT_NEUTRAL_JOURNAL` and is the template for new handlers.
 
 Writing a third handler (Jira, Slack, GitLab…) = one executable + a
 `handlers:` edit in the slice config. The scenario kit's handler tests run

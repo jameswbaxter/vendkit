@@ -5,26 +5,54 @@
 # triggers. Attach this pipeline as a Build Validation branch policy on
 # __BASE_BRANCH__, then record the attestations `pull_request_enforcement`
 # and `required_check_enforced` in .vendkit/__SLICE__.yml.
+#
+# Set the pipeline variable VENDKIT_ENGINE_BASE_URL to the publisher's
+# release-asset base (where vendkit_<ver>_<os>_<arch> + SHA256SUMS.txt are
+# published); the checksum pin decides trust (DR-0016).
 trigger: none
 pr: none
-
-resources:
-  repositories:
-    - repository: vendkit
-      type: git
-      name: __PUBLISHER_REPO__
-      ref: refs/tags/__VERSION__ # advanced by sync PRs (pin.files)
 
 pool:
   vmImage: ubuntu-latest
 
 steps:
   - checkout: self
-  - checkout: vendkit
-  - script: |
-      cd $(Build.SourcesDirectory)/$(Build.Repository.Name)
-      PYTHONPATH=$(Build.SourcesDirectory)/vendkit \
-        python3 -m vendkit.cli gate --all --strict
+  - task: Cache@2
+    inputs:
+      key: 'vendkit-engine | __VERSION__ | "$(Agent.OS)" | "$(Agent.OSArchitecture)"'
+      path: $(Agent.TempDirectory)/vendkit-bin
+      cacheHitVar: VENDKIT_ENGINE_CACHED
+    displayName: "Restore cached vendkit engine"
+  - bash: |
+      set -euo pipefail
+      version="${ENGINE_REF#refs/tags/}"
+      if [ -z "${ENGINE_BASE_URL:-}" ]; then
+        echo "set pipeline variable VENDKIT_ENGINE_BASE_URL to the publisher's release-asset base URL (DR-0016)" >&2
+        exit 1
+      fi
+      os=linux; arch=amd64
+      case "$(uname -m)" in aarch64|arm64) arch=arm64 ;; esac
+      asset="vendkit_${version}_${os}_${arch}"
+      dir="$(Agent.TempDirectory)/vendkit-bin"; mkdir -p "$dir"
+      curl -fsSL -o "$dir/vendkit" "${ENGINE_BASE_URL}/${asset}"
+      curl -fsSL -o "$dir/SHA256SUMS.txt" "${ENGINE_BASE_URL}/SHA256SUMS.txt"
+      want="$(grep " ${asset}\$" "$dir/SHA256SUMS.txt" | cut -d' ' -f1)"
+      echo "${want}  ${dir}/vendkit" | sha256sum -c -
+      chmod +x "$dir/vendkit"
+    displayName: "Fetch + verify pinned vendkit engine (DR-0016)"
+    condition: ne(variables.VENDKIT_ENGINE_CACHED, 'true')
+    env:
+      # vendkit-pin __SLICE__ — engine ref, advanced with the content pin by
+      # the sync PR (INV-6: one version for engine and content).
+      ENGINE_REF: refs/tags/__VERSION__
+      ENGINE_BASE_URL: $(VENDKIT_ENGINE_BASE_URL)
+  - bash: echo "##vso[task.prependpath]$(Agent.TempDirectory)/vendkit-bin"
+    displayName: "Put vendkit on PATH"
+  - bash: vendkit self-verify --slice __SLICE__
+    displayName: "Verify the pinned engine (DR-0016 §2)"
+    env:
+      VENDKIT_PLATFORM: azure-pipelines
+  - bash: vendkit gate --all --strict
     displayName: "Gate — verify every vendored slice"
     env:
       VENDKIT_PLATFORM: azure-pipelines

@@ -182,3 +182,43 @@ total: the gate discovers every `.vendkit/*-manifest.json`, verifies each, and
 enforces INV-7 across them. Watch is likewise a single pipeline reading every
 slice config. Sync pipelines stay per-slice because cadence, credentials and
 push triggers are per-publisher decisions.
+
+## 6. The docs site
+
+These docs are published as a *versioned* static site so a reader sees the docs
+for the release they care about, not always `main`. The pipeline is pure Go —
+no Python, Node, or mkdocs (DR-0017, DR-0018).
+
+**Generator.** `internal/docsgen` is a build-time `package main` (never imported
+by `cmd/vendkit`, so the shipped binary is unaffected). It renders the `docs/`
+Markdown tree to self-contained HTML with [goldmark] (GFM tables included),
+rewrites internal `*.md` links to the rendered `*.html` paths, and emits a left
+nav plus a version-selector dropdown on every page.
+
+Build the site locally:
+
+```
+# Render one version into ./dist (repeat per release; dist/ is gitignored).
+go run ./internal/docsgen --docs docs --out dist --version v0.1.0
+go run ./internal/docsgen --docs docs --out dist --version v0.2.0
+# dist/v0.1.0/  dist/v0.2.0/  dist/latest/  dist/versions.json
+```
+
+`go run ./internal/docsgen --help` documents the flags.
+
+**Versioning.** Each run writes `dist/<version>/` (one page per doc plus an
+`index.html`), merges the version into `dist/versions.json` (newest first, the
+newest marked `latest` by SemVer), and mirrors the newest version into
+`dist/latest/`. Output is deterministic (stable ordering, no timestamps), so
+re-running a version is idempotent and diffs are clean. The in-page selector
+fetches `versions.json` at runtime, so a page published for an older release
+still lists releases added later.
+
+**Publishing.** `.github/workflows/pages.yml` accumulates on a `gh-pages`
+branch: on a `vX.Y.Z` tag it seeds from the currently published site, renders
+that version into it, and republishes the whole tree — previously published
+versions stay put. A push to `main` re-overlays the hand-authored landing page
+(`site/index.html`) at the site root. The landing page's "Docs" links point at
+`/latest/`.
+
+[goldmark]: https://github.com/yuin/goldmark

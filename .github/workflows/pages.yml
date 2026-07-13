@@ -1,41 +1,124 @@
 name: Pages
 
-# Deploys the static landing page in site/ to GitHub Pages. The page is a
-# single self-contained HTML file (inline CSS/JS) plus og-image.png and a
-# .nojekyll marker; there is no build step.
+# Publishes the VendKit site to GitHub Pages via a persistent `gh-pages`
+# branch that ACCUMULATES content across runs. Two things live there:
+#
+#   /                     the hand-authored landing page (site/index.html and
+#                         its og-image.png + .nojekyll marker) — no build step
+#   /<version>/           versioned docs rendered from docs/ by the pure-Go
+#   /latest/              generator (internal/docsgen); /latest mirrors newest
+#   /versions.json        manifest the in-page version selector reads
+#
+# Why gh-pages and not the actions/upload-pages-artifact + deploy-pages model:
+# that model deploys a SINGLE artifact and cannot accumulate — each release
+# would clobber older versions. A long-lived branch lets every tagged release
+# add its own /<version>/ directory while previous ones stay published. Each
+# run starts from the CURRENT branch content, overlays its change, and
+# republishes the whole tree, so nothing is lost.
+#
+# ONE-TIME REPO SETTING (cannot be done from this file):
+#   Settings -> Pages -> "Build and deployment" -> Source = "Deploy from a
+#   branch", Branch = gh-pages / (root). (The older "GitHub Actions" source is
+#   for the single-artifact model this workflow intentionally replaces.)
+#
+# The docs pipeline is pure Go: the generator is a build-time `go run` of
+# internal/docsgen (Markdown->HTML via the compiled-in goldmark library). No
+# Python, Node, mkdocs, npm, or pip is installed — consistent with DR-0017/0018.
 
 on:
+  # A single push trigger: pushes to main AND vX.Y.Z tags both publish. The
+  # earlier site/**-only path filter is folded in here — every run re-overlays
+  # the landing page, and the render step is skipped when there's no version,
+  # so a plain main push just refreshes the root cheaply and idempotently.
+  # (A path filter can't be scoped per-ref alongside the tag filter, so we
+  # trigger unconditionally rather than risk filtering out tag pushes.)
   push:
     branches: [main]
-    paths: ['site/**', '.github/workflows/pages.yml']
+    tags: ['v*']
   workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version label to (re)render docs for, e.g. v0.2.0 (blank = landing page only)'
+        required: false
+        default: ''
 
-permissions:
-  contents: read
-  pages: write
-  id-token: write
-
-# One in-flight deploy at a time; let a newer push finish rather than cancel it.
+# gh-pages is a shared mutable branch: never run two publishes at once, and let
+# an in-flight one finish so we don't corrupt the accumulated tree.
 concurrency:
-  group: pages
+  group: pages-publish
   cancel-in-progress: false
 
+permissions:
+  contents: write # peaceiris/actions-gh-pages pushes to the gh-pages branch
+
 jobs:
-  deploy:
-    name: build · upload · deploy
+  publish:
+    name: render · accumulate · publish
     runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: ${{ steps.deploy.outputs.page_url }}
     steps:
-      - uses: actions/checkout@v7
+      - name: checkout source (docs + generator + landing page)
+        uses: actions/checkout@v7
 
-      - uses: actions/configure-pages@v6
-
-      - name: upload site/ artifact
-        uses: actions/upload-pages-artifact@v5
+      - uses: actions/setup-go@v6
         with:
-          path: site
+          go-version-file: go.mod
+          check-latest: true
+          cache: true
 
-      - id: deploy
-        uses: actions/deploy-pages@v5
+      # Bring the CURRENTLY published site into ./public so we accumulate onto
+      # it. On the very first run the branch does not exist yet — tolerate that
+      # and start from an empty tree.
+      - name: fetch current gh-pages content
+        run: |
+          set -euo pipefail
+          mkdir -p public
+          if git fetch origin gh-pages --depth 1 2>/dev/null; then
+            git --work-tree=public checkout origin/gh-pages -- . || true
+            echo "seeded ./public from existing gh-pages"
+          else
+            echo "no gh-pages branch yet — starting fresh"
+          fi
+
+      # Landing page always wins at the root (single self-contained file plus
+      # its image and the Jekyll opt-out). This runs on every trigger so the
+      # marketing page stays current.
+      - name: overlay landing page at site root
+        run: |
+          set -euo pipefail
+          cp site/index.html public/index.html
+          cp site/og-image.png public/og-image.png
+          cp site/.nojekyll public/.nojekyll
+
+      # Resolve the version to render: the pushed tag, or the manual input.
+      # Empty means "landing page only" (a push to main).
+      - name: resolve version
+        id: ver
+        run: |
+          set -euo pipefail
+          if [ "${GITHUB_REF_TYPE:-}" = "tag" ]; then
+            echo "version=${GITHUB_REF_NAME}" >> "$GITHUB_OUTPUT"
+          else
+            echo "version=${{ github.event.inputs.version }}" >> "$GITHUB_OUTPUT"
+          fi
+
+      # Render the docs for this version straight into ./public. docsgen merges
+      # versions.json, adds /<version>/, and refreshes /latest/ — leaving every
+      # previously published version directory in place.
+      - name: render versioned docs
+        if: steps.ver.outputs.version != ''
+        run: |
+          set -euo pipefail
+          go run ./internal/docsgen --docs docs --out public --version "${{ steps.ver.outputs.version }}"
+
+      # Publish the full accumulated tree back to gh-pages. keep_files is not
+      # needed: ./public already contains the previous versions (seeded above)
+      # plus this run's change, so a clean replace is correct and predictable.
+      - name: publish to gh-pages
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_branch: gh-pages
+          publish_dir: ./public
+          commit_message: "site: publish ${{ steps.ver.outputs.version || 'landing page' }} [skip ci]"
+          user_name: github-actions[bot]
+          user_email: github-actions[bot]@users.noreply.github.com

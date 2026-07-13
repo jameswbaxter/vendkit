@@ -36,11 +36,12 @@ and GHA (testing.md §3).
 > +0 -0) is on the remote. What's still unexercised is a live
 > download-and-run of the release-attached binaries end-to-end on both platforms.
 >
-> Still open: live platform-matrix CI (testing §3), REST-fixture contract
-> tests for the GitHub/ADO reference handlers, push-hint dispatch step, fleet audit,
-> API-verified attestations, remaining public-repo hygiene (SECURITY.md,
-> issue templates). A GitHub Pages landing page (`site/`) and its deploy
-> workflow have shipped; a *versioned* docs site is still open.
+> Still open: REST-fixture contract tests for the GitHub/ADO reference
+> handlers, push-hint dispatch step, fleet audit, API-verified attestations,
+> and a *versioned* docs site. Shipped since v0.1.0: the GitHub Pages landing
+> page (`site/`) and its deploy workflow, live platform-matrix CI (testing §3,
+> GHA surface with a dormant ADO peer in `azure-pipelines.yml`), and
+> public-repo hygiene (SECURITY.md, issue templates).
 
 ## M0 — Skeleton and invariants (foundation)
 

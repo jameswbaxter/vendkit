@@ -23,6 +23,14 @@ type RuleResult struct {
 	Severity string `json:"severity"`
 	Status   string `json:"status"`
 	Detail   string `json:"detail"`
+	// Fact is the stable machine key identifying the attested control (empty
+	// for non-attested results). Verify carries the structured parameters a
+	// fact-verify handler needs to check that control (e.g. the pipeline
+	// event). Both are internal plumbing for the --verify-attestations intent
+	// — never string-matched from the human Detail — and stay OUT of the fleet
+	// interchange document (json:"-"); Detail remains the display string.
+	Fact   string            `json:"-"`
+	Verify map[string]string `json:"-"`
 }
 
 func (r *RuleResult) IsGap() bool { return r.Status == "fail" || r.Status == "error" }
@@ -287,50 +295,57 @@ func Evaluate(consumerRoot string, cfg *SliceConfig, rules []map[string]any) *Co
 		title := getStr(rule, "title")
 		if reason, isWaived := waived[rid]; isWaived {
 			if severity == "waivable" {
-				report.Results = append(report.Results,
-					&RuleResult{rid, title, severity, "waived", reason})
+				report.Results = append(report.Results, &RuleResult{
+					RuleID: rid, Title: title, Severity: severity,
+					Status: "waived", Detail: reason})
 				continue
 			}
-			report.Results = append(report.Results, &RuleResult{rid, title,
-				severity, "fail", "rule is mandatory and cannot be waived"})
+			report.Results = append(report.Results, &RuleResult{
+				RuleID: rid, Title: title, Severity: severity, Status: "fail",
+				Detail: "rule is mandatory and cannot be waived"})
 			continue
 		}
-		status, detail := detect(det, consumerRoot, cfg, manifest, pipelines)
-		report.Results = append(report.Results,
-			&RuleResult{rid, title, severity, status, detail})
+		status, detail, fact, verify := detect(det, consumerRoot, cfg, manifest, pipelines)
+		report.Results = append(report.Results, &RuleResult{
+			RuleID: rid, Title: title, Severity: severity,
+			Status: status, Detail: detail, Fact: fact, Verify: verify})
 	}
 	return report
 }
 
+// detect returns (status, detail, fact, verify). fact is the stable
+// verification key for an `attested` result (empty otherwise); verify holds
+// the structured parameters a fact-verify handler needs. Non-attested results
+// carry no fact/verify.
 func detect(det map[string]any, consumerRoot string, cfg *SliceConfig,
-	manifest map[string]any, pipelines []pipelineInfo) (string, string) {
+	manifest map[string]any, pipelines []pipelineInfo) (string, string, string, map[string]string) {
 	kind := getStr(det, "kind")
 
 	switch kind {
 	case "file-exists":
 		path := strings.ReplaceAll(getStr(det, "path"), "<slice>", cfg.SliceName)
 		if fi, err := os.Stat(filepath.Join(consumerRoot, filepath.FromSlash(path))); err == nil && !fi.IsDir() {
-			return "pass", ""
+			return "pass", "", "", nil
 		}
-		return "fail", path + " missing"
+		return "fail", path + " missing", "", nil
 
 	case "manifest-tracked":
 		if manifest == nil {
-			return "fail", "slice manifest missing"
+			return "fail", "slice manifest missing", "", nil
 		}
 		want := getStr(det, "path")
 		for _, e := range manifestEntries(manifest) {
 			if getStr(e, "consumer_path") == want {
-				return "pass", ""
+				return "pass", "", "", nil
 			}
 		}
-		return "fail", want + " not tracked"
+		return "fail", want + " not tracked", "", nil
 
 	case "profile-bound":
 		if cfg.Profile != "" {
-			return "pass", cfg.Profile
+			return "pass", cfg.Profile, "", nil
 		}
-		return "fail", "no profile declared in slice config"
+		return "fail", "no profile declared in slice config", "", nil
 
 	case "codeowners-covers":
 		// Ownership is an SCM-axis concern: Azure Repos does not honour
@@ -339,26 +354,27 @@ func detect(det map[string]any, consumerRoot string, cfg *SliceConfig,
 		if cfg.SCM == "azure-repos" {
 			att := "required_reviewers_policy"
 			if cfg.Attestations[att] {
-				return "attested", att
+				return "attested", att, att, nil
 			}
 			return "fail", fmt.Sprintf("CODEOWNERS is not honoured on "+
 				"azure-repos; add a required-reviewers policy and record "+
-				"attestation %q", att)
+				"attestation %q", att), "", nil
 		}
 		patterns, _ := strList(det["patterns"])
-		return codeownersCovers(consumerRoot, patterns)
+		status, detail := codeownersCovers(consumerRoot, patterns)
+		return status, detail, "", nil
 
 	case "attest":
 		name := getStr(det, "attestation")
 		if cfg.Attestations[name] {
-			return "attested", name
+			return "attested", name, name, nil
 		}
-		return "fail", fmt.Sprintf("attestation %q not recorded", name)
+		return "fail", fmt.Sprintf("attestation %q not recorded", name), "", nil
 
 	case "tool":
 		tool := filepath.Join(consumerRoot, filepath.FromSlash(getStr(det, "path")))
 		if fi, err := os.Stat(tool); err != nil || fi.IsDir() {
-			return "skipped", "tool absent: " + getStr(det, "path")
+			return "skipped", "tool absent: " + getStr(det, "path"), "", nil
 		}
 		args, _ := strList(det["args"])
 		cmd := exec.Command(tool, args...)
@@ -368,25 +384,26 @@ func detect(det map[string]any, consumerRoot string, cfg *SliceConfig,
 			if ee, ok := err.(*exec.ExitError); ok {
 				code = ee.ExitCode()
 			}
-			return "fail", fmt.Sprintf("tool exited %d", code)
+			return "fail", fmt.Sprintf("tool exited %d", code), "", nil
 		}
-		return "pass", ""
+		return "pass", "", "", nil
 
 	case "pipeline-wired":
 		if cfg.CI == "none" {
 			// Manual mode forfeits automated enforcement — say so, don't
 			// hide it: `skipped` is visible in every report.
-			return "skipped", "ci is 'none': orchestration is manual"
+			return "skipped", "ci is 'none': orchestration is manual", "", nil
 		}
 		return pipelineWired(det, cfg, pipelines)
 
 	case "paths-lockstep":
 		if cfg.CI == "none" {
-			return "skipped", "ci is 'none': no gate pipeline to filter"
+			return "skipped", "ci is 'none': no gate pipeline to filter", "", nil
 		}
-		return pathsLockstep(det, cfg, pipelines, manifest)
+		status, detail := pathsLockstep(det, cfg, pipelines, manifest)
+		return status, detail, "", nil
 	}
-	return "error", fmt.Sprintf("unknown detector kind %q", kind)
+	return "error", fmt.Sprintf("unknown detector kind %q", kind), "", nil
 }
 
 func codeownersCovers(root string, patterns []string) (string, string) {
@@ -426,7 +443,7 @@ func codeownersCovers(root string, patterns []string) (string, string) {
 	return "fail", "no CODEOWNERS file"
 }
 
-func pipelineWired(det map[string]any, cfg *SliceConfig, pipelines []pipelineInfo) (string, string) {
+func pipelineWired(det map[string]any, cfg *SliceConfig, pipelines []pipelineInfo) (string, string, string, map[string]string) {
 	component := getStr(det, "component")
 	var hit *pipelineInfo
 	pinned := false
@@ -437,38 +454,40 @@ func pipelineWired(det map[string]any, cfg *SliceConfig, pipelines []pipelineInf
 		}
 	}
 	if hit == nil {
-		return "fail", fmt.Sprintf("no pipeline references component %q", component)
+		return "fail", fmt.Sprintf("no pipeline references component %q", component), "", nil
 	}
 	base := filepath.Base(hit.Path)
 	if getBool(det, "pinned") && !pinned {
-		return "fail", base + ": reference is not pinned to a release tag"
+		return "fail", base + ": reference is not pinned to a release tag", "", nil
 	}
 	events, _ := strList(det["events"])
 	for _, event := range events {
 		switch hasEvent(*hit, event, cfg.CI) {
 		case 0:
-			return "fail", fmt.Sprintf("%s: not wired on %s", base, event)
+			return "fail", fmt.Sprintf("%s: not wired on %s", base, event), "", nil
 		case -1:
 			// Not tree-decidable on this CI platform: degrade to
-			// attestation (conformance spec §3).
+			// attestation (conformance spec §3). The fact key is
+			// "<event>_enforcement"; verify carries the event so a
+			// fact-verify handler can pick the right policy check.
 			att := event + "_enforcement"
 			if !cfg.Attestations[att] {
 				return "fail", fmt.Sprintf("%s enforcement is not "+
 					"tree-decidable on %s; record attestation %q",
-					event, cfg.CI, att)
+					event, cfg.CI, att), "", nil
 			}
-			return "attested", att
+			return "attested", att, att, map[string]string{"event": event}
 		}
 	}
 	if getBool(det, "required_check") {
 		att := "required_check_enforced"
 		if !cfg.Attestations[att] {
 			return "fail", fmt.Sprintf(
-				"record attestation %q (branch protection / policy)", att)
+				"record attestation %q (branch protection / policy)", att), "", nil
 		}
-		return "attested", att
+		return "attested", att, att, nil
 	}
-	return "pass", base
+	return "pass", base, "", nil
 }
 
 // pathsLockstep: if the gate pipeline path-filters, the filter must cover

@@ -99,13 +99,39 @@ rather than creating a sibling.
 Sent by `conformance --verify-attestations` for each `attested` rule result.
 
 ```json
-{ "kind": "fact-verify", "fact": "required_check_enforced", "slice": "docs" }
+{ "kind": "fact-verify", "fact": "required_check_enforced", "slice": "docs",
+  "repo": "octo/demo", "branch": "main" }
 ```
+
+The intent carries a **stable machine `fact` key** (never the human `detail`
+prose) plus the coordinate the handler needs to query the platform: `repo`
+(else the handler's own env — `GITHUB_REPOSITORY` / `SYSTEM_TEAMPROJECT`),
+`branch` (the protected branch; when omitted, GitHub handlers resolve the
+repo's default branch), and any fact-specific parameters (e.g. `event` for the
+`_enforcement` facts, `check` for a named required status check). The core
+composes these from the conformance rule and CLI `--repo` / `--base-branch`;
+**core itself calls no vendor API** (conformance spec §4).
 
 Facts: `verdict=true|false|unknown`. `true` promotes the rule to `pass`,
 `false` makes it a `fail` (the attestation was wrong — that is a finding,
-not an error), `unknown` leaves it `attested` (insufficient API scopes is a
-normal, non-failing outcome). Exit 0 for all three verdicts.
+not an error), `unknown` leaves it `attested`. `unknown` is the non-failing
+outcome the handler emits when the token lacks scope (a 401/403 → `unknown`,
+**never** `false`), the endpoint is unavailable, a required coordinate is
+missing, or the `fact` key is one the handler does not verify
+(forward-compatible). Exit 0 for all three verdicts.
+
+The reference handlers verify these facts against the platform API:
+
+| `fact` key | GitHub (`handler github`) | Azure DevOps (`handler ado`) |
+|---|---|---|
+| `required_check_enforced` | `GET /repos/{repo}/branches/{branch}/protection` → `required_status_checks` present (member `check` if named) | `GET .../_apis/policy/configurations` → an enabled **blocking** Build-validation policy |
+| `pull_request_enforcement` | — (tree-decidable on GitHub) | an enabled Build-validation policy (the gate runs on PRs) |
+| `required_reviewers_policy` | — (CODEOWNERS is tree-decidable) | an enabled Required-reviewers policy |
+
+Any other key (e.g. `branch_protection_enabled`) is `unknown`. Verification
+needs a read-scoped token: `VENDKIT_TOKEN_FACT_VERIFY` (GitHub falls back to
+`GITHUB_TOKEN`/`GH_TOKEN` with `repo`/`administration:read`; ADO falls back to
+`SYSTEM_ACCESSTOKEN`/`ADO_PAT` with policy read).
 
 ### `push-hint` — nudge a subscriber's sync pipeline
 
@@ -179,8 +205,8 @@ Shipped in-tree, released and conformance-tested with the framework:
 
 | Command | Serves | Notes |
 |---|---|---|
-| `vendkit handler github` | pr, handoff, fact-verify, push-hint | PR credential refuses `GITHUB_TOKEN` fallback (differences ledger #2); push-hint uses `VENDKIT_TOKEN_PUSH_HINT` |
-| `vendkit handler ado` | pr, handoff, fact-verify, push-hint | needs `VENDKIT_ADO_ORG_URL`; Basic-auth PAT / `SYSTEM_ACCESSTOKEN`; push-hint is a no-op (pull trigger) |
+| `vendkit handler github` | pr, handoff, fact-verify, push-hint | PR credential refuses `GITHUB_TOKEN` fallback (differences ledger #2); push-hint uses `VENDKIT_TOKEN_PUSH_HINT`; fact-verify reads branch protection (`required_check_enforced`) with `VENDKIT_TOKEN_FACT_VERIFY`/`GITHUB_TOKEN` |
+| `vendkit handler ado` | pr, handoff, fact-verify, push-hint | needs `VENDKIT_ADO_ORG_URL`; Basic-auth PAT / `SYSTEM_ACCESSTOKEN`; push-hint is a no-op (pull trigger); fact-verify reads branch policies (`required_reviewers_policy`, `pull_request_enforcement`, `required_check_enforced`) |
 
 `github` / `ado` are built into the engine binary (DR-0016) — no separate
 install, no interpreter. The neutral journal handler used by the scenario

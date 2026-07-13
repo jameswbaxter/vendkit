@@ -16,6 +16,8 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"net/http"
+	"net/http/httptest"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -707,6 +709,68 @@ func TestConformanceReportsAndAttestations(t *testing.T) {
 		"attestations:\n  required_check_enforced: true")
 	write(t, cfgPath, cfg)
 	vk(t, con, nil, true, "conformance", "--slice", "docs", "--strict")
+}
+
+// TestConformanceVerifyAttestationsAPI drives --verify-attestations end-to-end
+// with the real `vendkit handler github` fact-verify handler pointed at a mock
+// GitHub API (VENDKIT_GITHUB_API): the attested gate-wired rule is promoted to
+// `pass (verified)` when the branch-protection API confirms the required check.
+func TestConformanceVerifyAttestationsAPI(t *testing.T) {
+	_, con := world(t)
+	// Record the required-check attestation so gate-wired degrades to `attested`
+	// (the state --verify-attestations then confirms against the platform).
+	cfgPath := filepath.Join(con, ".vendkit", "docs.yml")
+	cfg := read(t, cfgPath)
+	cfg = strings.ReplaceAll(cfg, "attestations:",
+		"attestations:\n  required_check_enforced: true")
+	write(t, cfgPath, cfg)
+
+	var sawProt bool
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method == "GET" && r.URL.Path == "/repos/octo/demo/branches/main/protection" {
+			sawProt = true
+			_, _ = w.Write([]byte(`{"required_status_checks":{"contexts":["vendkit-gate"]}}`))
+			return
+		}
+		t.Errorf("unexpected request %s %s", r.Method, r.URL.Path)
+		http.Error(w, "unexpected", http.StatusInternalServerError)
+	}))
+	defer srv.Close()
+
+	env := map[string]string{
+		"VENDKIT_HANDLER_FACT_VERIFY": vendkitBin + " handler github",
+		"VENDKIT_GITHUB_API":          srv.URL,
+		"VENDKIT_TOKEN_FACT_VERIFY":   "verify-tok",
+	}
+	so, _, _ := vk(t, con, env, true, "conformance", "--slice", "docs",
+		"--verify-attestations", "--repo", "octo/demo", "--base-branch", "main")
+	if !sawProt {
+		t.Fatal("fact-verify handler did not call the branch-protection API")
+	}
+	if !strings.Contains(so, "(verified)") {
+		t.Fatalf("expected a verified promotion in output:\n%s", so)
+	}
+	for _, l := range strings.Split(so, "\n") {
+		if strings.Contains(l, "gate-wired") && !strings.HasPrefix(l, "pass") {
+			t.Fatalf("gate-wired was not promoted to pass: %q", l)
+		}
+	}
+
+	// Refutation: a branch with no required checks demotes the attestation to a
+	// fail (a wrong attestation is a finding) — --strict then exits 1.
+	srv2 := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		_, _ = w.Write([]byte(`{"required_pull_request_reviews":{}}`)) // no required checks
+	}))
+	defer srv2.Close()
+	env["VENDKIT_GITHUB_API"] = srv2.URL
+	so2, _, code := vk(t, con, env, false, "conformance", "--slice", "docs",
+		"--verify-attestations", "--repo", "octo/demo", "--base-branch", "main", "--strict")
+	if code != 1 {
+		t.Fatalf("refuted attestation strict exit = %d, want 1\n%s", code, so2)
+	}
+	if !strings.Contains(so2, "verification refuted") {
+		t.Fatalf("expected a refuted demotion in output:\n%s", so2)
+	}
 }
 
 // TestConformanceJSONFleetShapeAndAggregation exercises the fleet-view

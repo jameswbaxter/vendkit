@@ -639,6 +639,12 @@ func cmdConformance(args []string, surface ci.Surface) (int, error) {
 	strict := fs.Bool("strict", false, "")
 	rulesPath := fs.String("rules", "", "")
 	verifyAttest := fs.Bool("verify-attestations", false, "")
+	// Repo coordinate for --verify-attestations: the fact-verify handler needs
+	// the repo/branch to query. --repo defaults to the handler's own env
+	// (GITHUB_REPOSITORY / SYSTEM_TEAMPROJECT); --base-branch is the protected
+	// branch to inspect (empty → the handler resolves the repo default branch).
+	baseBranch := fs.String("base-branch", "", "")
+	repoCoord := fs.String("repo", "", "")
 	addCommon(fs, &c, false, true, false)
 	if err := parseFlags(fs, args); err != nil {
 		return 0, err
@@ -682,9 +688,26 @@ func cmdConformance(args []string, surface ci.Surface) (int, error) {
 			if r.Status != "attested" {
 				continue
 			}
+			// Thread the STABLE fact key + structured params — never the human
+			// Detail prose — into the intent, plus the repo/branch coordinate
+			// the handler needs to hit the platform API. r.Fact is empty only
+			// for legacy rules; fall back to Detail there for compatibility.
+			fact := r.Fact
+			if fact == "" {
+				fact = r.Detail
+			}
+			payload := map[string]any{"fact": fact, "slice": cfg.SliceName}
+			for k, v := range r.Verify {
+				payload[k] = v
+			}
+			if *repoCoord != "" {
+				payload["repo"] = *repoCoord
+			}
+			if *baseBranch != "" {
+				payload["branch"] = *baseBranch
+			}
 			facts, err := core.InvokeHandler(command, "fact-verify",
-				map[string]any{"fact": r.Detail, "slice": cfg.SliceName},
-				c.ConsumerRoot)
+				payload, c.ConsumerRoot)
 			if err != nil {
 				return 0, err
 			}

@@ -105,7 +105,26 @@ verified facts from asserted ones. `conformance --verify-attestations`
 sends each attested fact to the configured **fact-verify handler**
 (handler-protocol spec §3): verdict `true` promotes `attested` → `pass`,
 `false` demotes to `fail` (a wrong attestation is a finding), `unknown`
-(insufficient scopes) leaves it attested. Core calls no vendor API itself.
+leaves it attested. Core calls no vendor API itself — it composes the intent
+from a **stable machine fact key** (never the human detail prose) plus the
+repo/branch coordinate (`--repo`, `--base-branch`, or the handler's CI env)
+and hands it to the handler, which owns all HTTP.
+
+The reference handlers perform real API verification (replacing the earlier
+`unknown` stub):
+
+| attested fact | GitHub check | Azure DevOps check |
+|---|---|---|
+| `required_check_enforced` | branch protection requires a status check | an enabled **blocking** Build-validation policy |
+| `pull_request_enforcement` | — (tree-decidable) | an enabled Build-validation policy |
+| `required_reviewers_policy` | — (tree-decidable) | an enabled Required-reviewers policy |
+
+`true` means the platform confirms the control; `false` means it is
+definitively not enforced; `unknown` is emitted only when the token lacks
+scope (a 401/403 is `unknown`, never `false`), the endpoint is unavailable, or
+the fact key is unrecognised (forward-compatible). Verification uses a
+read-scoped `VENDKIT_TOKEN_FACT_VERIFY` (GitHub: `GITHUB_TOKEN` fallback;
+ADO: `SYSTEM_ACCESSTOKEN`/`ADO_PAT`).
 
 ## 5. Fleet view
 

@@ -38,7 +38,7 @@ Every intent document carries:
 ```json
 {
   "vendkit_handler_protocol": 1,
-  "kind": "pr" | "handoff" | "fact-verify",
+  "kind": "pr" | "handoff" | "fact-verify" | "push-hint",
   ...kind-specific fields...
 }
 ```
@@ -107,6 +107,34 @@ Facts: `verdict=true|false|unknown`. `true` promotes the rule to `pass`,
 not an error), `unknown` leaves it `attested` (insufficient API scopes is a
 normal, non-failing outcome). Exit 0 for all three verdicts.
 
+### `push-hint` — nudge a subscriber's sync pipeline
+
+Sent by `push-hint` (the publisher-side dispatch step) once per **github-actions**
+subscriber after a release is published (platform-integration spec §4, DR-0006).
+
+```json
+{
+  "kind": "push-hint",
+  "repo": "acme/leaf-consumer",
+  "event_type": "vendkit-release",
+  "client_payload": { "version": "v1.5.0", "tag": "v1.5.0", "publisher": "acme/framework" }
+}
+```
+
+GitHub: POST `/repos/{repo}/dispatches` with body
+`{"event_type": …, "client_payload": …}`, authenticated by the dispatch-scoped
+`VENDKIT_TOKEN_PUSH_HINT` (distinct from the PR token; the reference handler
+refuses to run without it). Facts: `dispatched=true`, `event_type=…`,
+`repo=…`. Azure DevOps: a deliberate **no-op** — the push hint there is the
+consumer's own `resources.pipelines` trigger, so the publisher takes no action
+(`dispatched=false`, `skipped=ado-pull-trigger`).
+
+Push is a hint, not the reconciler: a lost dispatch costs latency, not
+correctness. The *engine's* dispatch step therefore treats a nonzero handler
+exit for one subscriber as a warning and continues — but the handler itself
+still obeys the protocol (a genuine API failure is a nonzero exit; the engine
+decides it is non-fatal *here* because push is best-effort).
+
 ## 4. Configuration and resolution
 
 Handlers are wired per slice in the consumer config (onboarding spec §1):
@@ -151,8 +179,8 @@ Shipped in-tree, released and conformance-tested with the framework:
 
 | Command | Serves | Notes |
 |---|---|---|
-| `vendkit handler github` | pr, handoff, fact-verify | PR credential refuses `GITHUB_TOKEN` fallback (differences ledger #2) |
-| `vendkit handler ado` | pr, handoff, fact-verify | needs `VENDKIT_ADO_ORG_URL`; Basic-auth PAT / `SYSTEM_ACCESSTOKEN` |
+| `vendkit handler github` | pr, handoff, fact-verify, push-hint | PR credential refuses `GITHUB_TOKEN` fallback (differences ledger #2); push-hint uses `VENDKIT_TOKEN_PUSH_HINT` |
+| `vendkit handler ado` | pr, handoff, fact-verify, push-hint | needs `VENDKIT_ADO_ORG_URL`; Basic-auth PAT / `SYSTEM_ACCESSTOKEN`; push-hint is a no-op (pull trigger) |
 
 `github` / `ado` are built into the engine binary (DR-0016) — no separate
 install, no interpreter. The neutral journal handler used by the scenario

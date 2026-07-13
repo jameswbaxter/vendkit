@@ -32,6 +32,16 @@ func ResolveHandler(kind string, cfg *SliceConfig) []string {
 // stdout. Exit 0 = delivered; nonzero = infrastructure failure (loud).
 func InvokeHandler(command []string, kind string, payload map[string]any,
 	cwd string) (map[string]string, error) {
+	return InvokeHandlerEnv(command, kind, payload, cwd, nil)
+}
+
+// InvokeHandlerEnv is InvokeHandler with per-invocation environment additions
+// appended to the inherited environment (later entries win). Credentials
+// travel by environment only (handler-protocol spec §7); push-hint uses this
+// to hand each subscriber its own dispatch-scoped token as
+// VENDKIT_TOKEN_PUSH_HINT without mutating the engine's global env.
+func InvokeHandlerEnv(command []string, kind string, payload map[string]any,
+	cwd string, extraEnv []string) (map[string]string, error) {
 	document := map[string]any{
 		"vendkit_handler_protocol": HandlerProtocolVersion,
 		"kind":                     kind,
@@ -45,6 +55,9 @@ func InvokeHandler(command []string, kind string, payload map[string]any,
 	}
 	cmd := exec.Command(command[0], command[1:]...)
 	cmd.Dir = cwd
+	if len(extraEnv) > 0 {
+		cmd.Env = append(os.Environ(), extraEnv...)
+	}
 	cmd.Stdin = bytes.NewReader(input)
 	var stdout, stderr bytes.Buffer
 	cmd.Stdout, cmd.Stderr = &stdout, &stderr

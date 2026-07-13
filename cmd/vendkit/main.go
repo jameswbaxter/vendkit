@@ -39,8 +39,8 @@ func run(args []string) int {
 	if len(args) == 0 {
 		fmt.Fprintln(os.Stderr, "usage error: a command is required "+
 			"(generate, gate, sync, sync-pipeline, release, watch, migrations, "+
-			"migrations-verify, conformance, fleet, self-verify, handler, init, "+
-			"status, diff, update, explain)")
+			"migrations-verify, conformance, fleet, self-verify, handler, "+
+			"push-hint, init, status, diff, update, explain)")
 		return 2
 	}
 	cmd, rest := args[0], args[1:]
@@ -77,6 +77,8 @@ func run(args []string) int {
 		code, err = cmdSelfVerify(rest, surface)
 	case "handler":
 		code, err = cmdHandler(rest, surface)
+	case "push-hint":
+		code, err = cmdPushHint(rest, surface)
 	case "init", "onboard":
 		code, err = cmdInit(rest, surface)
 	case "status":

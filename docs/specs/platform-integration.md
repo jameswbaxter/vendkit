@@ -79,6 +79,7 @@ Credentials are resolved *by the party that spends them*:
 | push sync branch | `GITHUB_TOKEN` (contents: write) | `System.AccessToken` (Contribute) |
 | deliver sync PR (`pr` handler) | **PAT or App token — not `GITHUB_TOKEN`**: PRs opened with the workflow token do not trigger `pull_request` workflows, so the sync PR would silently skip its own gate. The reference handler refuses the fallback. | PR-capable credential; must be able to satisfy branch policies. `System.AccessToken` works when the project grants it PR-create. |
 | work items / issues (`handoff` handler) | `GITHUB_TOKEN` (issues: write) | PAT or granted `System.AccessToken` (work-item write) |
+| push hint (`push-hint` handler) | **`VENDKIT_TOKEN_PUSH_HINT`** — a dispatch-scoped PAT/App token per subscriber; the one publisher-held credential the model permits (§4, security model §4). Never `GITHUB_TOKEN`. | none — ADO push is pull-based (the consumer's own `resources.pipelines` trigger); the publisher spends no credential. |
 
 Failure duties: a missing/expired credential is a loud failure (nonzero
 handler exit → red pipeline; git failure → red pipeline) — silent skips are
@@ -96,17 +97,53 @@ Mechanisms differ by *consumer CI*:
   organisation). Consumer-declared: the publisher keeps no registry. This is
   the preferred shape.
 - **github-actions:** GitHub has no consumer-declared cross-repo trigger.
-  The sync workflow adds `on: repository_dispatch: types: [vendkit-release]`;
-  the *publisher's* release workflow optionally dispatches to subscribers
-  listed in a `subscribers:` file maintained **by consumer PRs** to the
-  publisher repo (opt-in, self-service, auditable). This needs a
-  publisher-held token with dispatch scope per subscriber — the one place
-  the "publisher knows no downstream" stance is relaxed, which is why it is
-  optional and the schedule remains mandatory.
+  The sync workflow adds `on: repository_dispatch: types: [vendkit-release]`
+  (scaffolded only with `--push-hint`); the *publisher's* release workflow
+  optionally dispatches to subscribers listed in a `subscribers:` file
+  maintained **by consumer PRs** to the publisher repo (opt-in, self-service,
+  auditable). This needs a publisher-held token with dispatch scope per
+  subscriber — the one place the "publisher knows no downstream" stance is
+  relaxed, which is why it is optional and the schedule remains mandatory.
 - **ci: none:** no push target exists; the human (or their cron) is the
   trigger. Watch remains the safety net.
 - **Tier chains:** hints compose hop-by-hop, collapsing multi-cadence
   propagation latency to same-day while every hop stays a reviewed PR.
+
+### The subscribers file and the dispatch step
+
+The publisher-held subscribers file (default `.vendkit/subscribers.yml`,
+overridable with `push-hint --subscribers`) is *publisher-side* config — read
+only by `vendkit push-hint`, never by the gate/sync/watch lanes. It is the
+audit surface for the one relaxation above: consumers add themselves by PR.
+
+```yaml
+schema_version: 1
+subscribers:
+  - repo: acme/leaf-consumer          # owner/name — the dispatch POST target
+    event_type: vendkit-release       # optional; default vendkit-release
+    token_secret: LEAF_DISPATCH_TOKEN # optional; names the env var holding
+                                      #   this subscriber's dispatch-scoped
+                                      #   token. Unset => ambient
+                                      #   VENDKIT_TOKEN_PUSH_HINT is used.
+    platform: github-actions          # optional; default github-actions
+  - repo: acme/mid-consumer           # defaults: vendkit-release, GHA
+  - repo: acme/ado-consumer           # non-GHA: recorded but skipped (its own
+    platform: azure-pipelines         #   resources.pipelines trigger pulls)
+```
+
+The loader validates strictly (malformed entries are a loud usage error, never
+a silent skip): GHA entries require an `owner/name` `repo`; `platform` must be
+`github-actions | azure-pipelines | none`.
+
+**The dispatch step** (`vendkit push-hint`, wired into the publisher's release
+workflow) reads the file and, for each **github-actions** subscriber, composes
+one handler intent — core calls no vendor API itself (DR-0014). Non-GHA
+subscribers are skipped with a logged note. It is deliberately **resilient**:
+one subscriber failing (or a missing per-subscriber token) is a warning that
+never aborts the rest and never fails the release — a lost hint costs latency,
+not correctness. A missing subscribers file is a soft no-op (exit 0), so the
+release workflow can run the step unconditionally. Emitted facts:
+`subscribers`, `dispatched`, `skipped`, `failed`.
 
 ## 5. Layer 2 packaging
 

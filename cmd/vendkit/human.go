@@ -87,6 +87,7 @@ func cmdInit(args []string, surface ci.Surface) (int, error) {
 	baseBranch := fs.String("base-branch", "main", "")
 	prTokenSecret := fs.String("pr-token-secret", "VENDKIT_PR_TOKEN", "")
 	codeowners := fs.String("codeowners", "", "")
+	pushHint := fs.Bool("push-hint", false, "")
 	addCommon(fs, &c, true, true, true)
 	if err := parseFlags(fs, args); err != nil {
 		return 0, err
@@ -130,6 +131,7 @@ func cmdInit(args []string, surface ci.Surface) (int, error) {
 			CI: *ciHost, SCM: resolvedSCM, Version: *version,
 			Profile: *profile, Mode: *mode, BaseBranch: *baseBranch,
 			PRTokenSecret: *prTokenSecret, Codeowners: *codeowners,
+			PushHint: *pushHint,
 		}, vendkitassets.FS)
 	if err != nil {
 		return 0, err

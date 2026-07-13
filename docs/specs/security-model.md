@@ -63,8 +63,11 @@ Principles:
   at the next release.
 - **Consumer-held only** — no publisher-held write credentials into consumers.
   The one relaxation is the optional GHA push-hint dispatch token
-  (platform-integration spec §4), which is dispatch-scoped, opt-in, and does
-  not bypass any review.
+  (`VENDKIT_TOKEN_PUSH_HINT`, spent by the `push-hint` handler —
+  platform-integration spec §4), which is dispatch-scoped, opt-in, and does
+  not bypass any review: `repository_dispatch` only *triggers* the consumer's
+  existing sync pipeline, which still opens a reviewed PR. A lost or refused
+  hint costs latency, not correctness.
 - The sync PR credential deliberately **must satisfy branch review, not bypass
   it**: exemptions (ADO policy allowances) apply only to *creating* the PR,
   never to merging it.

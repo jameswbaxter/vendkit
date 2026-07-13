@@ -80,7 +80,7 @@ Field notes:
 
 `vendkit init --ci github-actions|azure-pipelines|none [--scm github|azure-repos]
 --version vX.Y.Z [--profile <p>] [--mode primary|additive] [--base-branch main]
-[--pr-token-secret <name>] [--codeowners <owners>]`   (alias: `onboard`)
+[--pr-token-secret <name>] [--codeowners <owners>] [--push-hint]`   (alias: `onboard`)
 
 Run from a checkout of the **publisher at the release being pinned** (so the
 scaffold, engine and content come from one immutable tree). `--scm` defaults
@@ -139,9 +139,12 @@ conformance `pipeline-wired` rules keep the wiring honest.
   engine binary, verifies it against the release `SHA256SUMS.txt`, caches it,
   and runs `vendkit self-verify` against the `engine.sha256` pin before the
   lane proper — no interpreter, no build step on the runner.
-- **Push hint:** `--push-hint` adds the `resources.pipelines` trigger
-  (azure-pipelines) or the `repository_dispatch` receiver (github-actions)
-  to the sync pipeline (platform-integration spec §4).
+- **Push hint:** `--push-hint` (off by default) adds the `resources.pipelines`
+  trigger (azure-pipelines) or the `repository_dispatch` receiver
+  (github-actions) to the sync pipeline — the consumer *receiver* side of the
+  hint. The publisher *sender* side is `vendkit push-hint` reading its
+  subscribers file (platform-integration spec §4). The schedule is always the
+  reconciler, so the receiver is a pure latency optimisation (DR-0006).
 
 ## 4. Irreducible manual steps (reported, never performed)
 

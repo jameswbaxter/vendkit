@@ -19,7 +19,8 @@ One entrypoint: `vendkit`. Single Python package, Python ≥ 3.10. Global flags:
 | `vendkit migrations-verify --obligations <json>` | deterministic obligation check | 0 | migrations §4 |
 | `vendkit conformance [--strict] [--verify-attestations]` | adoption check; verification → fact-verify handler | 0+1 | conformance |
 | `vendkit fleet [--json] [<path>…]` | read-only aggregation of consumer `conformance --json` documents into one fleet report; no clone/fetch/API | 3 | conformance §5 |
-| `vendkit init --ci <c> [--scm <s>] --version <v> [--profile <p>] [--codeowners <o>]` | scaffold a consumer (alias: `onboard`). `--ci none` = fully manual mode; `--scm` inferred from the origin remote when omitted | 3 | onboarding §2 |
+| `vendkit push-hint [--subscribers <p>] [--version <v>] [--publisher-repo <r>]` | publisher-side dispatch step: nudge GHA subscribers' sync pipelines after a release; best-effort (never fails the release); intent → `push-hint` handler | 0+1 | platform-integration §4 |
+| `vendkit init --ci <c> [--scm <s>] --version <v> [--profile <p>] [--codeowners <o>] [--push-hint]` | scaffold a consumer (alias: `onboard`). `--ci none` = fully manual mode; `--scm` inferred from the origin remote when omitted; `--push-hint` adds the early-trigger receiver | 3 | onboarding §2 |
 
 Removed pre-1.0: `is-newer` (an artefact of step-wise wrappers; the compare
 is internal to `sync-pipeline` and `watch`, and remains unit-tested as

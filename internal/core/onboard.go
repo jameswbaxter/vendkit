@@ -62,6 +62,33 @@ func renderTemplate(template string, subs map[string]string) (string, error) {
 	return out, nil
 }
 
+// pushHintReceiver is the GHA repository_dispatch receiver block, or empty when
+// --push-hint is off (platform-integration spec §4). The block sits under the
+// workflow's `on:` key, so it carries two-space indentation.
+func pushHintReceiver(p OnboardParams) string {
+	if !p.PushHint {
+		return ""
+	}
+	return "  # Optional push hint (DR-0006): the publisher's release workflow may\n" +
+		"  # dispatch this event; the schedule above remains the reconciler.\n" +
+		"  repository_dispatch:\n" +
+		"    types: [vendkit-release]"
+}
+
+// pushHintTrigger is the ADO resources.pipelines trigger block, or empty when
+// --push-hint is off. It nests under `resources:`, so two-space indentation.
+// `source:` names the consumer's own publisher-release pipeline — an inherently
+// consumer-local value they must set (angle-free so it is not a placeholder).
+func pushHintTrigger(p OnboardParams) string {
+	if !p.PushHint {
+		return ""
+	}
+	return "  pipelines:\n" +
+		"    - pipeline: publisher-release\n" +
+		"      source: publisher-release-pipeline # set to your publisher's release pipeline name\n" +
+		"      trigger: true"
+}
+
 type OnboardParams struct {
 	CI            string
 	SCM           string
@@ -71,6 +98,11 @@ type OnboardParams struct {
 	BaseBranch    string
 	PRTokenSecret string
 	Codeowners    string
+	// PushHint gates the optional early-trigger receiver in the sync pipeline
+	// (platform-integration spec §4): the GHA repository_dispatch receiver, or
+	// the ADO resources.pipelines trigger. Off by default — the schedule is
+	// always the reconciler; the receiver is a latency optimisation (DR-0006).
+	PushHint bool
 }
 
 func Onboard(publisherRoot, consumerRoot string, decl *ExportDecl,
@@ -105,6 +137,10 @@ func Onboard(publisherRoot, consumerRoot string, decl *ExportDecl,
 		"VERSION":         p.Version,
 		"BASE_BRANCH":     p.BaseBranch,
 		"PR_TOKEN_SECRET": p.PRTokenSecret,
+		// Push-hint receiver — flag-gated (platform-integration spec §4). When
+		// off these expand to empty and the sync pipeline is schedule-only.
+		"PUSH_HINT_RECEIVER": pushHintReceiver(p),
+		"PUSH_HINT_TRIGGER":  pushHintTrigger(p),
 	}
 
 	// 1. Slice config first (materialise reads the profile from it).

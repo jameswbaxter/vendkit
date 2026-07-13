@@ -59,3 +59,19 @@ jobs:
             dist/vendkit_*
             dist/SHA256SUMS.txt
           generate_release_notes: true
+
+      # Push hints (DR-0006, platform-integration §4): after the release is
+      # published, nudge subscribers listed in .vendkit/subscribers.yml so
+      # their sync pipelines run early. Pull remains the source of truth, so
+      # this is strictly best-effort — guarded to a no-op when no subscribers
+      # file exists, and continue-on-error so a failed hint never fails the
+      # release. Opt in by adding .vendkit/subscribers.yml + the dispatch token.
+      - name: Push-hint subscribers (best-effort)
+        if: ${{ hashFiles('.vendkit/subscribers.yml') != '' }}
+        continue-on-error: true
+        env:
+          # Dispatch-scoped token — the one publisher-held credential the model
+          # permits (security-model §4). Distinct from any PR token.
+          VENDKIT_TOKEN_PUSH_HINT: ${{ secrets.VENDKIT_TOKEN_PUSH_HINT }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+        run: go run ./cmd/vendkit push-hint --version "${{ github.ref_name }}"

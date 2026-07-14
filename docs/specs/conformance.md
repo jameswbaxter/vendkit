@@ -1,6 +1,6 @@
 # Spec: Conformance
 
-Status: draft for implementation · Owner: Layer 0 (engine) + Layer 1 (detector bindings)
+Status: stable (frozen at v1.0.0) · Owner: Layer 0 (engine) + Layer 1 (detector bindings)
 
 Conformance answers "is this consumer correctly wired?" against a rule spec
 that **ships inside each release** — so advancing a pin brings the current rule

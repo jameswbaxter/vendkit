@@ -25,13 +25,13 @@ exists.
 - Branch from `main`; PRs small and single-topic; maintainers squash-merge.
 - Conventional commit prefixes (`spec:`, `dr:`, `feat:`, `fix:`, `test:`,
   `docs:`).
-- Once code exists: every behavioural PR adds/extends a scenario-kit case
-  (testing.md §2); breaking changes follow the compatibility policy
-  (MAJOR + migration entry).
+- Every behavioural PR adds/extends a scenario-kit case (testing.md §2);
+  breaking changes follow the [compatibility policy](COMPATIBILITY.md)
+  (MAJOR + migration entry — the surface frozen at 1.0 is enumerated there).
 
 ## Security
 
-Report suspected vulnerabilities privately (SECURITY.md will define the
-channel before the first public release). The threat model is
+Report suspected vulnerabilities privately — [SECURITY.md](SECURITY.md)
+defines the channel. The threat model is
 [docs/specs/security-model.md](docs/specs/security-model.md) — read it before
 proposing anything that touches credentials, tags, or the PR machinery.

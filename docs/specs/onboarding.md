@@ -1,6 +1,6 @@
 # Spec: Onboarding and consumer configuration
 
-Status: draft for implementation · Owner: Layer 3
+Status: stable (frozen at v1.0.0) · Owner: Layer 3
 
 ## 1. Consumer configuration file
 

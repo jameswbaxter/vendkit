@@ -1,6 +1,6 @@
 # Spec: Platform integration — CI surfaces, credentials, differences ledger
 
-Status: draft for implementation · Owner: Layer 1 (+ Layer 2 packaging)
+Status: stable (frozen at v1.0.0) · Owner: Layer 1 (+ Layer 2 packaging)
 
 This spec covers everything platform-flavoured that is *not* the handler
 protocol (which has [its own spec](handler-protocol.md)). After DR-0014 and

@@ -1,6 +1,6 @@
 # Spec: Release watch
 
-Status: draft for implementation · Owner: Layer 0 (compare) + Layer 1 (ref listing, handoff)
+Status: stable (frozen at v1.0.0) · Owner: Layer 0 (compare) + Layer 1 (ref listing, handoff)
 
 The sync lane refreshes content once a pin is advanced, but never *detects* a
 new upstream release. Watch closes that gap: a scheduled job in the consumer

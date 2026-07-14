@@ -1,0 +1,88 @@
+# Release binary smoke — Azure Pipelines half (testing.md §3 parity rule).
+#
+# DORMANT until wired (same reason as azure-pipelines.yml): this repo lives on
+# GitHub, so running this needs an Azure DevOps project with a GitHub service
+# connection to jameswbaxter/vendkit and a pipeline created from this file.
+# Until then it is the authored, in-tree parity counterpart to
+# .github/workflows/release-smoke.yml.
+#
+# It proves the same DR-0016 supply chain the scaffolded ADO consumer pipelines
+# use — download the release-attached binary, verify it against the release
+# SHA256SUMS.txt, and run it against the repo checked out at the released tag
+# until it reports fresh=true — on a real ADO agent across the three hosted OS
+# families (linux/amd64, darwin, windows/amd64).
+
+parameters:
+  - name: version
+    displayName: Release tag to smoke (blank = latest release)
+    type: string
+    default: ''
+
+trigger: none          # on demand / scheduled once wired
+pr: none
+
+schedules:
+  - cron: '23 7 * * 1'  # weekly, mirrors release-smoke.yml
+    displayName: weekly release-binary smoke
+    branches:
+      include: [main]
+    always: true
+
+strategy:
+  matrix:
+    linux:   { vmImage: ubuntu-latest }
+    macos:   { vmImage: macOS-latest }
+    windows: { vmImage: windows-latest }
+
+pool:
+  vmImage: $(vmImage)
+
+variables:
+  REPO: jameswbaxter/vendkit
+  REQ_VERSION: ${{ parameters.version }}
+
+steps:
+  - checkout: self
+    fetchTags: true       # generate --check needs the release tag's tree
+
+  # `bash:` uses Git-Bash on the Windows agent, so one script covers all three.
+  - bash: |
+      set -euo pipefail
+      sha_check() {
+        if command -v sha256sum >/dev/null 2>&1; then sha256sum -c -
+        else shasum -a 256 -c -; fi
+      }
+      version="${REQ_VERSION}"
+      if [ -z "$version" ]; then
+        version="$(curl -fsSL "https://api.github.com/repos/${REPO}/releases/latest" \
+          | grep -m1 '"tag_name"' | cut -d'"' -f4)"
+      fi
+      echo "smoking $version"
+
+      case "$(uname -s)" in
+        Linux)                os=linux ;;
+        Darwin)               os=darwin ;;
+        MINGW*|MSYS*|CYGWIN*) os=windows ;;
+        *) echo "unsupported OS $(uname -s)" >&2; exit 1 ;;
+      esac
+      arch=amd64
+      case "$(uname -m)" in aarch64|arm64) arch=arm64 ;; esac
+      ext=""; [ "$os" = windows ] && ext=".exe"
+      asset="vendkit_${version}_${os}_${arch}${ext}"
+      base="https://github.com/${REPO}/releases/download/${version}"
+      echo "runner $(uname -s)/$(uname -m) -> ${asset}"
+
+      curl -fsSL -o "vendkit${ext}" "${base}/${asset}"
+      curl -fsSL -o SHA256SUMS.txt "${base}/SHA256SUMS.txt"
+      want="$(grep " ${asset}\$" SHA256SUMS.txt | cut -d' ' -f1)"
+      if [ -z "$want" ]; then echo "no checksum for ${asset}" >&2; exit 1; fi
+      echo "${want}  vendkit${ext}" | sha_check
+      chmod +x "vendkit${ext}"
+
+      # Run against the release tag's tree (default checkout is this commit).
+      git worktree add --detach _tag "$version"
+      echo "=== run the downloaded, checksum-verified binary end-to-end ==="
+      "$PWD/vendkit${ext}" generate --check --root _tag | tee out.txt
+      grep -qx 'fresh=true' out.txt
+      echo "OK: ${asset} downloaded, checksum-verified, and ran clean on $(uname -s)/$(uname -m)"
+    displayName: download · verify · run the release binary (DR-0016)

@@ -1,0 +1,117 @@
+name: Release binary smoke
+
+# Live download-and-run of the RELEASE-ATTACHED binaries (DR-0016) — the one
+# supply-chain step the rest of CI never exercises. ci.yml and
+# platform-matrix.yml build the binary from source, but real consumers fetch a
+# *checksummed* binary from the GitHub Release (see
+# scaffold/github-actions/sync.yml.tmpl). This workflow proves that path
+# end-to-end on every OS family GitHub hosts: download the native asset, verify
+# it against the release SHA256SUMS.txt (the exact shape the scaffold ships),
+# then run the downloaded binary against the repo checked out at the released
+# tag until it reports `fresh=true`.
+#
+# Coverage: linux/amd64, linux/arm64, darwin/amd64, darwin/arm64, windows/amd64
+# via GitHub-hosted runners. windows/arm64 ships in the release but has no
+# GitHub-hosted runner, so it is built-and-checksummed but not run here.
+#
+# ADO parity is authored in ../../azure-pipelines-release-smoke.yml (dormant
+# until an Azure DevOps project + GitHub service connection exist), per the
+# testing.md §3 parity rule.
+
+on:
+  release:
+    types: [published]        # right after release.yml publishes a tag
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Release tag to smoke (blank = latest release)'
+        required: false
+        type: string
+  schedule:
+    - cron: '23 7 * * 1'      # weekly: catch asset-availability / bit-rot regressions
+
+permissions:
+  contents: read
+
+jobs:
+  resolve:
+    name: resolve target version
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.pick.outputs.version }}
+    steps:
+      - id: pick
+        env:
+          GH_TOKEN: ${{ github.token }}
+          EVENT_TAG: ${{ github.event.release.tag_name }}
+          INPUT_VERSION: ${{ inputs.version }}
+          REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          v="${EVENT_TAG:-${INPUT_VERSION:-}}"
+          if [ -z "$v" ]; then
+            v="$(gh release view --repo "$REPO" --json tagName -q .tagName)"
+          fi
+          echo "resolved version: $v"
+          echo "version=$v" >> "$GITHUB_OUTPUT"
+
+  smoke:
+    name: download · verify · run · ${{ matrix.runner }}
+    needs: resolve
+    strategy:
+      fail-fast: false
+      matrix:
+        runner:
+          - ubuntu-latest      # linux/amd64
+          - ubuntu-24.04-arm   # linux/arm64
+          - macos-13           # darwin/amd64
+          - macos-latest       # darwin/arm64
+          - windows-latest     # windows/amd64
+    runs-on: ${{ matrix.runner }}
+    steps:
+      - name: Check out the repo at the released tag
+        # generate --check re-derives the manifest from the tree; the tree must
+        # be the exact release the downloaded binary was cut from.
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.resolve.outputs.version }}
+
+      - name: Download, verify, and run the release binary (DR-0016)
+        shell: bash
+        env:
+          VERSION: ${{ needs.resolve.outputs.version }}
+          REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          # Portable sha256 verify: sha256sum on linux + Git-Bash/Windows,
+          # shasum -a 256 on macOS (no sha256sum there).
+          sha_check() {
+            if command -v sha256sum >/dev/null 2>&1; then sha256sum -c -
+            else shasum -a 256 -c -; fi
+          }
+          # os/arch/ext detection mirrors scaffold/github-actions/sync.yml.tmpl.
+          case "$(uname -s)" in
+            Linux)                os=linux ;;
+            Darwin)               os=darwin ;;
+            MINGW*|MSYS*|CYGWIN*) os=windows ;;
+            *) echo "unsupported OS $(uname -s)" >&2; exit 1 ;;
+          esac
+          arch=amd64
+          case "$(uname -m)" in aarch64|arm64) arch=arm64 ;; esac
+          ext=""; [ "$os" = windows ] && ext=".exe"
+          asset="vendkit_${VERSION}_${os}_${arch}${ext}"
+          base="https://github.com/${REPO}/releases/download/${VERSION}"
+          echo "runner $(uname -s)/$(uname -m) -> ${asset}"
+
+          curl -fsSL -o "vendkit${ext}" "${base}/${asset}"
+          curl -fsSL -o SHA256SUMS.txt "${base}/SHA256SUMS.txt"
+          # Verify our asset against its pinned checksum (the trust decision).
+          want="$(grep " ${asset}\$" SHA256SUMS.txt | cut -d' ' -f1)"
+          if [ -z "$want" ]; then echo "no checksum for ${asset}" >&2; exit 1; fi
+          echo "${want}  vendkit${ext}" | sha_check
+          chmod +x "vendkit${ext}"
+
+          echo "=== run the downloaded, checksum-verified binary end-to-end ==="
+          "./vendkit${ext}" generate --check | tee out.txt
+          grep -qx 'fresh=true' out.txt
+          echo "OK: ${asset} downloaded, checksum-verified, and ran clean on $(uname -s)/$(uname -m)"

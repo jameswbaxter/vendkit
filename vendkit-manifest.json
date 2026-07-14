@@ -19,28 +19,42 @@
       "exec": false,
       "path": "cmd/vendkit/cmds.go",
       "raw": false,
-      "sha256": "34d0f4836ec520fe23eef3f85f90242a1ffe6d3c01d2dccf6099e0f15bec1b23"
+      "sha256": "50dcc1fa01f368933df7b907f6d701607a124709870acd41cbd4cdff966dd6ed"
+    },
+    {
+      "consumer_path": "cmd/vendkit/fleet.go",
+      "exec": false,
+      "path": "cmd/vendkit/fleet.go",
+      "raw": false,
+      "sha256": "d15a1734429856c5fccefd1ac5742bac34aa71c34de0d18a343640ff7221f610"
     },
     {
       "consumer_path": "cmd/vendkit/handler.go",
       "exec": false,
       "path": "cmd/vendkit/handler.go",
       "raw": false,
-      "sha256": "f142e062fcca0b1f04efebf62a0a335d4cbc8d1e7552637d4df367532ecc4e38"
+      "sha256": "123b30a8c7dfe4608f8145609175db68b28f573e94125eb7fb04675f3b407bbc"
     },
     {
       "consumer_path": "cmd/vendkit/human.go",
       "exec": false,
       "path": "cmd/vendkit/human.go",
       "raw": false,
-      "sha256": "89df461976d11a338e89987886730e2947228fa8fb1029d4deed609765677838"
+      "sha256": "d64e4fbd2b5486215d1642fd690ac04456bb86b64b515190d98a8d60bfa7b0ec"
     },
     {
       "consumer_path": "cmd/vendkit/main.go",
       "exec": false,
       "path": "cmd/vendkit/main.go",
       "raw": false,
-      "sha256": "31169b682324e0f580ecb3c0b20f8542f7ffcf5e0d3d8dc338c8714ab1830c3f"
+      "sha256": "e142dc06682e8bf76093a71b57dc7fbc99dc985ea097ea0657fe05ad2a83bb20"
+    },
+    {
+      "consumer_path": "cmd/vendkit/pushhint.go",
+      "exec": false,
+      "path": "cmd/vendkit/pushhint.go",
+      "raw": false,
+      "sha256": "d4db5c97f6ccc865fa92f5d831bf374bbb1ce5441cc2ce1655ec5ed3ab96d297"
     },
     {
       "consumer_path": "cmd/vendkit/selfverify.go",
@@ -61,14 +75,14 @@
       "exec": false,
       "path": "go.mod",
       "raw": false,
-      "sha256": "3881476ee1b92e6292e8228d381d2d0ba4ba89303a9fda749d08ac6d8807c5af"
+      "sha256": "e2a786e124925135723a3fe149ae701acd0eee38fe4941a63f15251bf89a4f8c"
     },
     {
       "consumer_path": "go.sum",
       "exec": false,
       "path": "go.sum",
       "raw": false,
-      "sha256": "e42794fa9b56301ad073de55cac1dea683b320ed951454d8709ffc7156088dd2"
+      "sha256": "cc9803544069f90b73f74ee4dfbf4ab48a6171897b6cb927d33de5e109a43a87"
     },
     {
       "consumer_path": "internal/ci/ci.go",
@@ -96,7 +110,7 @@
       "exec": false,
       "path": "internal/core/conformance.go",
       "raw": false,
-      "sha256": "e80746ca2ebe7a6b5b06074278faafdc99c7833bffc69399e252bfac027b77d3"
+      "sha256": "34b2e48c68342360e599f1e463717611d04d5216830a3a16baff8a792244c314"
     },
     {
       "consumer_path": "internal/core/declaration.go",
@@ -120,11 +134,18 @@
       "sha256": "47e797563721164d309d688ef0801af7418e18a08f23767713480ca6988e1d1f"
     },
     {
+      "consumer_path": "internal/core/fleet.go",
+      "exec": false,
+      "path": "internal/core/fleet.go",
+      "raw": false,
+      "sha256": "88961760285e222f7c3f2b863080baf7b24e1db934be0ae1d4e5c65723d842f6"
+    },
+    {
       "consumer_path": "internal/core/handlers.go",
       "exec": false,
       "path": "internal/core/handlers.go",
       "raw": false,
-      "sha256": "4e9fb3b8cfebb7671c7e791b633cf6a6526f9af136b5ef60a6d20b5941ac19d2"
+      "sha256": "5780f9daf3331d83f7963263c43ef3678fb73642bcbc81f8adb0ae62a75b5673"
     },
     {
       "consumer_path": "internal/core/manifest.go",
@@ -159,7 +180,7 @@
       "exec": false,
       "path": "internal/core/onboard.go",
       "raw": false,
-      "sha256": "3388da26dbdc1c1745b19811497711c8ad99dad10ed5b376963a6e49f91f7bf5"
+      "sha256": "5b6902d79466fc5c9165e30589f63a33ca153fe270bfd1293a1bff7419426b31"
     },
     {
       "consumer_path": "internal/core/release.go",
@@ -174,6 +195,13 @@
       "path": "internal/core/sliceconfig.go",
       "raw": false,
       "sha256": "37d12f44906b5f48510e5e8f0ad9288449c774dbc500fc40c856419cc46a0f2a"
+    },
+    {
+      "consumer_path": "internal/core/subscribers.go",
+      "exec": false,
+      "path": "internal/core/subscribers.go",
+      "raw": false,
+      "sha256": "4b5a94b385b924046f84cca0f8ca7b2a090b1ecc98c181e9d9662846839bdd98"
     },
     {
       "consumer_path": "internal/core/treeglob.go",
@@ -218,6 +246,41 @@
       "sha256": "dc33461152d6a93e5378c3b71e84a6277a2199b0a0f34d320bb9ef2a6a652b6f"
     },
     {
+      "consumer_path": "internal/docsgen/css.go",
+      "exec": false,
+      "path": "internal/docsgen/css.go",
+      "raw": false,
+      "sha256": "c4715cb2138077c07e5a39580e2c197980f97eca9ebec7971605d6f27f69f0f3"
+    },
+    {
+      "consumer_path": "internal/docsgen/main.go",
+      "exec": false,
+      "path": "internal/docsgen/main.go",
+      "raw": false,
+      "sha256": "d0586404240c5cb0b5385a3f6c299ed20d97b5ada6ceff65aea7086eb52aef3e"
+    },
+    {
+      "consumer_path": "internal/docsgen/manifest.go",
+      "exec": false,
+      "path": "internal/docsgen/manifest.go",
+      "raw": false,
+      "sha256": "9561dd1b096224d231f3b9cfd32ce9f2efb4029cf35220b12b92b5cf73734c8a"
+    },
+    {
+      "consumer_path": "internal/docsgen/page.go",
+      "exec": false,
+      "path": "internal/docsgen/page.go",
+      "raw": false,
+      "sha256": "8ecc607d472ade084e8e9fd0a3ecb660fdb83f39ea3b3d4fce0a131bc5cdc940"
+    },
+    {
+      "consumer_path": "internal/docsgen/site.go",
+      "exec": false,
+      "path": "internal/docsgen/site.go",
+      "raw": false,
+      "sha256": "afa5e41ff0e42d1218d7031f340f7b93d0483c76220fb12de3c295afbe4a9458"
+    },
+    {
       "consumer_path": "scaffold/azure-pipelines/conformance.yml.tmpl",
       "exec": false,
       "path": "scaffold/azure-pipelines/conformance.yml.tmpl",
@@ -236,7 +299,7 @@
       "exec": false,
       "path": "scaffold/azure-pipelines/sync.yml.tmpl",
       "raw": false,
-      "sha256": "4330338965301321852228f7ab68e78c96da1854c7642a46035c7915f58be19b"
+      "sha256": "37167db0ee25391e946f5817e881e9c81bd769647d1840e2095463a1b60c929e"
     },
     {
       "consumer_path": "scaffold/azure-pipelines/watch.yml.tmpl",
@@ -264,7 +327,7 @@
       "exec": false,
       "path": "scaffold/github-actions/sync.yml.tmpl",
       "raw": false,
-      "sha256": "1146e07bb5aed76b964eac27efa18aa1e849ff74ddbae02ebfb3b03cd79f0a4b"
+      "sha256": "d3b2450ff9900872ae3afd8ba002bf980c078aa73be4d8becec42d16f590ddc3"
     },
     {
       "consumer_path": "scaffold/github-actions/watch.yml.tmpl",

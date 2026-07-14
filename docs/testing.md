@@ -58,7 +58,7 @@ the journal handler. Core scenario matrix:
 The scenario kit (§2) pins `VENDKIT_PLATFORM=neutral` by construction, so it
 proves *behaviour* platform-free but never touches the two live output
 dialects. The platform matrix closes that gap. It runs in real CI per platform
-and has two layers:
+and has three layers:
 
 - **Surface dialect tests** (`internal/ci`, run on every platform and locally):
   the `github-actions` and `azure-pipelines` `Surface` implementations —
@@ -75,6 +75,23 @@ and has two layers:
     and consumed across steps. **Authored but dormant** — this repo is on
     GitHub, so it needs an Azure DevOps project + GitHub service connection
     before it can run.
+- **Release-binary smoke (DR-0016)** — the live download-and-run of the
+  *release-attached* binaries, the one supply-chain step the layers above skip
+  (they build from source; consumers fetch a checksummed binary from the
+  Release — `scaffold/github-actions/sync.yml.tmpl`). Each run downloads the
+  native asset, verifies it against the release `SHA256SUMS.txt` (the exact
+  fetch+verify the scaffold ships), then runs the downloaded binary against the
+  repo checked out at the released tag until `generate --check` reports
+  `fresh=true`.
+  - **GHA** — [`.github/workflows/release-smoke.yml`](../.github/workflows/release-smoke.yml):
+    triggered on `release: published`, weekly, and on demand; matrixed over
+    every OS family GitHub hosts — linux/amd64, linux/arm64, darwin/amd64,
+    darwin/arm64, windows/amd64. **Live.** windows/arm64 ships in the release
+    but has no GitHub-hosted runner, so it is built-and-checksummed, not run.
+  - **ADO** — [`azure-pipelines-release-smoke.yml`](../azure-pipelines-release-smoke.yml):
+    the mirror across the three hosted ADO OS families. **Authored but
+    dormant** — same GitHub-service-connection prerequisite as the surface
+    smoke above.
 
 Still owed (tracked here, not yet built):
 

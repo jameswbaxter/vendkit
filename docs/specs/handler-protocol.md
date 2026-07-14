@@ -1,6 +1,6 @@
 # Spec: Handler protocol
 
-Status: draft for implementation · Protocol version: 1 · Owner: Layer 1
+Status: stable (frozen at v1.0.0) · Protocol version: 1 · Owner: Layer 1
 
 The engine never integrates with a vendor *service* (DR-0014). Where a core
 judgment must become a delivery — a sync PR, a watch or migration work item,

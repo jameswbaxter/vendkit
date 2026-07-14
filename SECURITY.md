@@ -23,10 +23,10 @@ unless you'd rather stay anonymous.
 
 ## Supported versions
 
-VendKit is pre-1.0. Until the 1.0 release, security fixes land only on the
-**latest** release; there is no back-porting to earlier `v0.x` tags. Upgrade
-to the newest release to receive fixes. Once 1.0 ships, this section will
-state the supported range.
+Security fixes land only on the **latest** release; there is no back-porting
+to superseded `v0.x` tags or to older `v1.x` release lines. Upgrade to the
+newest release to receive fixes. This mirrors the support rule in the
+[compatibility policy](COMPATIBILITY.md) (§4).
 
 ## Scope — what "a vulnerability" means here
 

@@ -1,6 +1,6 @@
 # Spec: Security model
 
-Status: draft for implementation · Owner: cross-cutting
+Status: stable (frozen at v1.0.0) · Owner: cross-cutting
 
 ## 1. Trust boundary — stated plainly
 

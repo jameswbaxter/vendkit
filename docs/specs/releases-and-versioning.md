@@ -1,6 +1,6 @@
 # Spec: Releases and versioning
 
-Status: draft for implementation · Owner: Layer 0 (+ Layer 1 for ref listing)
+Status: stable (frozen at v1.0.0) · Owner: Layer 0 (+ Layer 1 for ref listing)
 
 ## 1. The tag is the release
 

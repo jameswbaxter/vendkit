@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Spec: Sync lane and materialisation · VendKit docs v0.7.0</title>
+<link rel="stylesheet" href="../assets/docs.css">
+<script>(function(){try{var t=localStorage.getItem('vk-theme');if(t==='dark'||t==='light')document.documentElement.setAttribute('data-theme',t);}catch(e){}})();</script>
+</head>
+<body>
+<header class="vk-top"><div class="vk-topwrap">
+<a class="vk-brand" href="../index.html"><span class="vk-bdot"></span>vendkit docs</a>
+<select class="vk-vers" aria-label="Documentation version" data-current="v0.7.0" data-root="../../" data-rel="specs/sync.html">
+  <option value="v0.7.0" selected>v0.7.0 (latest)</option>
+</select>
+<button class="vk-tbtn" type="button" aria-label="Toggle color scheme" onclick="(function(d){var c=d.getAttribute('data-theme');if(!c){c=(window.matchMedia&&matchMedia('(prefers-color-scheme: dark)').matches)?'dark':'light';}var n=c==='dark'?'light':'dark';d.setAttribute('data-theme',n);try{localStorage.setItem('vk-theme',n);}catch(e){}})(document.documentElement)">◑</button>
+</div></header>
+<div class="vk-shell">
+<nav class="vk-nav" aria-label="Documentation">
+<a class="vk-nav-home" href="../index.html">Overview</a>
+<div class="vk-nav-sec">Guides</div>
+<ul class="vk-nav-list">
+  <li><a class="vk-nav-link" href="../architecture.html">Architecture</a></li>
+  <li><a class="vk-nav-link" href="../testing.html">Testing strategy and the conformance kit</a></li>
+</ul>
+<div class="vk-nav-sec">Specs</div>
+<ul class="vk-nav-list">
+  <li><a class="vk-nav-link" href="../specs/cli.html">Spec: CLI surface</a></li>
+  <li><a class="vk-nav-link" href="../specs/conformance.html">Spec: Conformance</a></li>
+  <li><a class="vk-nav-link" href="../specs/export-declaration.html">Spec: Export declaration</a></li>
+  <li><a class="vk-nav-link" href="../specs/handler-protocol.html">Spec: Handler protocol</a></li>
+  <li><a class="vk-nav-link" href="../specs/manifest-and-gate.html">Spec: Manifest and gate lane</a></li>
+  <li><a class="vk-nav-link" href="../specs/migrations.html">Spec: Migrations</a></li>
+  <li><a class="vk-nav-link" href="../specs/onboarding.html">Spec: Onboarding and consumer configuration</a></li>
+  <li><a class="vk-nav-link" href="../specs/platform-integration.html">Spec: Platform integration — CI surfaces, credentials, differences ledger</a></li>
+  <li><a class="vk-nav-link" href="../specs/release-watch.html">Spec: Release watch</a></li>
+  <li><a class="vk-nav-link" href="../specs/releases-and-versioning.html">Spec: Releases and versioning</a></li>
+  <li><a class="vk-nav-link" href="../specs/security-model.html">Spec: Security model</a></li>
+  <li><a class="vk-nav-link is-active" href="../specs/sync.html">Spec: Sync lane and materialisation</a></li>
+</ul>
+<div class="vk-nav-sec">Design</div>
+<ul class="vk-nav-list">
+  <li><a class="vk-nav-link" href="../design/DR-0001-vendored-identity-copies.html">DR-0001 — Vendored identity copies, not package distribution</a></li>
+  <li><a class="vk-nav-link" href="../design/DR-0002-identity-in-declaration.html">DR-0002 — Slice identity lives in the declaration, not the tools</a></li>
+  <li><a class="vk-nav-link" href="../design/DR-0003-two-lane-model.html">DR-0003 — Two-lane distribution: sync PRs + PR-time gate</a></li>
+  <li><a class="vk-nav-link" href="../design/DR-0004-normalised-hashing.html">DR-0004 — Normalised content hashing</a></li>
+  <li><a class="vk-nav-link" href="../design/DR-0005-tag-is-the-release.html">DR-0005 — The tag is the release: immutable, SHA-anchored, retractable</a></li>
+  <li><a class="vk-nav-link" href="../design/DR-0006-pull-with-push-hints.html">DR-0006 — Pull reconciliation with optional push hints</a></li>
+  <li><a class="vk-nav-link" href="../design/DR-0007-platform-ports.html">DR-0007 — ADO and GitHub Actions as peer backends behind a port interface</a></li>
+  <li><a class="vk-nav-link" href="../design/DR-0008-declarative-migrations.html">DR-0008 — Declarative migrations with deterministic verification</a></li>
+  <li><a class="vk-nav-link" href="../design/DR-0009-content-adapters.html">DR-0009 — Content adapters: identity copy by default, named transforms by declaration</a></li>
+  <li><a class="vk-nav-link" href="../design/DR-0010-review-gated-scope.html">DR-0010 — Scope changes are reviewed PR events, never automatic</a></li>
+  <li><a class="vk-nav-link" href="../design/DR-0011-single-cli-stdlib-gate.html">DR-0011 — One CLI; dependency-free consumer gate path</a></li>
+  <li><a class="vk-nav-link" href="../design/DR-0012-consumer-config-consolidation.html">DR-0012 — One consumer config file per slice under `.vendkit/`</a></li>
+  <li><a class="vk-nav-link" href="../design/DR-0013-seeded-files.html">DR-0013 — Seeded files: a scaffold-once lifecycle class</a></li>
+  <li><a class="vk-nav-link" href="../design/DR-0014-handler-protocol.html">DR-0014: Detection and delivery split by an exec handler protocol</a></li>
+  <li><a class="vk-nav-link" href="../design/DR-0015-scm-ci-axes.html">DR-0015: Split the platform vocabulary into SCM and CI axes; formats not services</a></li>
+  <li><a class="vk-nav-link" href="../design/DR-0016-engine-as-pinned-artefact.html">DR-0016: The engine becomes a pinned, checksummed artefact (INV-6 revision)</a></li>
+  <li><a class="vk-nav-link" href="../design/DR-0017-single-implementation-go.html">DR-0017: Single engine implementation in Go, with the scenario kit as the parity ratchet</a></li>
+  <li><a class="vk-nav-link" href="../design/DR-0018-versioned-docs-generator.html">DR-0018: Versioned docs site from a pure-Go static generator</a></li>
+  <li><a class="vk-nav-link" href="../design/README.html">Design records</a></li>
+  <li><a class="vk-nav-link" href="../design/TEMPLATE.html">DR-NNNN — Title</a></li>
+</ul>
+</nav>
+<main class="vk-main"><article class="vk-doc">
+<h1 id="spec-sync-lane-and-materialisation">Spec: Sync lane and materialisation</h1>
+<p>Status: draft for implementation · Owner: Layer 0 (materialise), Layer 1 (PR), Layer 2 (pipeline)</p>
+<p>The sync lane keeps a consumer's vendored slice fresh: it detects that the pin
+is behind a target release, rewrites the tracked files and manifest from that
+release, and opens <strong>one reviewed PR</strong>. It never merges, never deletes files
+from disk, and never changes scope silently (INV-4, INV-10).</p>
+<h2 id="1-version-model">1. Version model</h2>
+<p>Per slice, two versions exist during a sync:</p>
+<ul>
+<li><strong>PINNED</strong> — the release currently vendored. The consumer manifest's
+<code>source.release</code> is authoritative (it records what was actually
+materialised); the pin location declared in the slice config
+(<code>pin.pattern</code> + <code>pin.files</code>, first entry read) is the bootstrap fallback
+before the first sync, and is what <em>watch</em> reads as the consumer's intent.
+The pin is the platform-native reference line — an ADO repository-resource
+<code>ref: refs/tags/vX.Y.Z</code> or a GHA checkout <code>ref:</code> — never a separate
+version file. Under <code>ci: none</code> there are no pin lines at all: the
+manifest's provenance is the sole pin.</li>
+<li><strong>TARGET</strong> — the release the sync pipeline itself is pinned to. Because the
+pipeline reference resolves the publisher tree at TARGET, <strong>the checkout that
+supplies the content also supplies the engine that materialises it</strong> (INV-6).</li>
+</ul>
+<p>The comparison is strict SemVer (see releases spec), internal to
+<code>sync-pipeline</code> and <code>watch</code>. Retracted targets are refused (exit 3,
+<code>refused=retracted</code>).</p>
+<h2 id="2-materialise-semantics">2. Materialise semantics</h2>
+<p><code>vendkit sync --check|--apply --consumer-root &lt;path&gt; --target &lt;v&gt; [--reconcile-scope] [--porcelain]</code></p>
+<p>Given the target release tree (the engine's own checkout), the export
+declaration in it, the consumer's current manifest and bound profile:</p>
+<ol>
+<li><strong>Tracked refresh (default).</strong> For every manifest entry whose <code>path</code> is still
+exported by the target: run adapters, write bytes to <code>consumer_path</code>, set the
+exec bit to the source's (INV-2 purity: output depends only on the inputs
+listed above). Classification is against the <strong>consumer working tree</strong>, not
+the recorded hash — so a locally drifted or missing file simply counts as
+<code>updated</code>, and <code>--check</code> predicts <code>--apply</code> exactly (INV-3).</li>
+<li><strong>Removals.</strong> A tracked <code>path</code> no longer exported by the target is reported
+<code>removed-upstream</code> and dropped from the refreshed manifest; the vendored file
+is <strong>left on disk</strong> for the PR to delete under review.</li>
+<li><strong>Additions (opt-in).</strong> With <code>--reconcile-scope</code>, exported files inside the
+consumer profile's <code>export_slice</code> that are not yet tracked are materialised,
+added to the manifest, and reported <code>added</code>. Reconciliation can only widen
+the tracked slice, never narrow it.</li>
+<li><strong>Manifest rewrite.</strong> The consumer manifest is regenerated as a projection of
+the target's export set filtered to the tracked slice, with per-entry hashes
+computed from the <strong>vendored</strong> (post-adapter) bytes, and <code>source:</code> set to
+<code>{platform, repo, release: TARGET, commit: &lt;resolved SHA&gt;}</code>.</li>
+</ol>
+<p>Report classes: <code>updated</code>, <code>removed-upstream</code>, <code>added</code>, <code>seeded</code>,
+<code>seed-retired</code>, <code>template-updated</code>, plus the summary <code>changed=true|false</code>
+(<code>changed</code> = any class except <code>template-updated</code> non-empty; see §6).</p>
+<p><strong>Porcelain contract (INV-3).</strong> With <code>--porcelain</code>, a successful <code>--check</code> run
+always exits 0 and prints exactly one <code>changed=</code> line; machine callers treat any
+non-zero exit as an infrastructure failure, never as &quot;changes exist&quot;.</p>
+<h2 id="3-pipeline-behaviour-layer-2-per-platform">3. Pipeline behaviour (Layer 2, per platform)</h2>
+<p>The scaffolded sync pipeline, on both platforms:</p>
+<ol>
+<li>Resolve PINNED (manifest provenance, else pin location); TARGET from its
+own reference.</li>
+<li>Version compare — if not newer (or retracted), emit
+<code>update-available=false</code> and stop green.</li>
+<li><code>sync --check</code> probe — if <code>changed=false</code>, stop green.</li>
+<li><code>sync --apply</code>, re-assert exec bits, advance the pin line(s) in every file
+listed under <code>pin.files</code> (an anchored string substitution of the old release
+for the new; a no-op under <code>ci: none</code>), commit on branch
+<code>vendkit/&lt;slice&gt;/sync-v&lt;PINNED&gt;-to-v&lt;TARGET&gt;</code>, push.</li>
+<li><strong>Deliver the PR intent</strong> to the configured <code>pr</code> handler
+(handler-protocol spec §3). Idempotency is the handler's obligation,
+keyed on the deterministic branch name: an existing open PR with the
+same head is updated, never duplicated. <strong>Unwired handler</strong> → stop green
+with <code>pr-delivered=false</code> and the full intent on <code>pr-intent=</code> — the
+branch is pushed and a human delivers the PR (the <code>ci: none</code> workflow).</li>
+</ol>
+<p>PR content: title <code>sync(&lt;slice&gt;): v&lt;PINNED&gt; → v&lt;TARGET&gt;</code>; body lists the report
+classes, the resolved source commit, retraction/channel notes, and links the
+release. The PR is never auto-merged and requires the consumer's normal review
+(INV-10) — a handler with merge capability is non-conforming. The sync PR
+also surfaces applicable <strong>migrations</strong> for the window (see migrations spec
+§4).</p>
+<p>Triggering: <code>schedule</code> (cron, consumer-chosen cadence) plus the optional push
+hint (publisher release completion → run now; see platform-integration spec
+§4). Both trigger paths run the identical pipeline — push is a latency
+optimisation, pull remains the reconciler (DR-0006).</p>
+<h2 id="4-content-adapters-at-materialise-time">4. Content adapters at materialise time</h2>
+<p>Adapters (declared in the export declaration, DR-0009) run inside step 1/3:</p>
+<ul>
+<li><code>prefix-namespace</code> — writes the file to its prefixed <code>consumer_path</code>.</li>
+<li><code>glob-localise</code> — prunes the declared glob union to the consumer's profile
+before hashing/writing, per the catalogue rules in the declaration spec §3.</li>
+</ul>
+<p>Everything else is an identity copy. Adapters must be deterministic and
+byte-stable (INV-2); an adapter that needs consumer context may read only the
+bound profile name and adapter parameters — never the consumer tree.</p>
+<h2 id="5-failure-and-race-behaviour">5. Failure and race behaviour</h2>
+<ul>
+<li>Two concurrent syncs of one slice converge on the same branch name; the
+second force-push wins with identical content (materialise is pure) — worst
+case is a no-op update, never corruption.</li>
+<li>A sync racing a consumer PR that touches vendored paths resolves at merge
+time: whichever merges second re-runs the gate; a stale sync PR goes red and
+is refreshed by the next scheduled run.</li>
+<li>A target tag deleted mid-sync fails the checkout — loud infrastructure
+failure, by design (INV-5; see security model).</li>
+<li>Credential loss (push denied, or a nonzero PR-handler exit) must fail the
+pipeline red — the sync lane is only trustworthy if its failure is visible
+(see security model §4).</li>
+</ul>
+<h2 id="6-seeded-files-scaffold-once--dr-0013">6. Seeded files (scaffold-once — DR-0013)</h2>
+<p>Paths under the declaration's <code>seed:</code> surface are templates handed out once,
+then consumer-owned. Semantics, all decided by the manifest entry (which is
+the &quot;seeding happened&quot; record — no other state):</p>
+<ul>
+<li><strong>Untracked seed path</strong> (reconcile only): target absent → write it and add a
+<code>seed: true</code> entry (<code>seeded</code> report class); target <strong>already exists</strong> →
+<em>adopt without writing</em> — add the entry, never clobber the consumer's file.</li>
+<li><strong>Tracked seed entry</strong>: never written again, whether the file exists, has
+diverged, or was deleted — deletion is respected. The entry carries the
+template's current hash; when it differs from the stored one <strong>and</strong> the
+consumer's file exists, the path is reported <code>template-updated</code> —
+informational only, never sets <code>changed</code>, and (when the slice config's
+<code>seeds.notes</code> is <code>informational</code>, the default) listed in the next real sync
+PR's body. <code>seeds.notes: silent</code> suppresses the note.</li>
+<li><strong>Template retired upstream</strong>: the entry is dropped (<code>seed-retired</code>); the
+consumer's copy is untouched and simply stops being tracked. Seed removals
+are exempt from the release command's MAJOR-bump and migration pre-gates.</li>
+<li><strong>Re-seed escape hatch</strong>: remove the entry from the manifest; the next
+reconcile re-offers the seed as a reviewed PR addition.</li>
+<li>The gate never hash-checks seed entries but they still claim their
+<code>consumer_path</code> (INV-7). INV-1 is unaffected: the gate skips exactly what
+sync refuses to write. Template hashes refresh only when a sync PR actually
+ships, so a <code>template-updated</code> note may repeat until the next real sync.</li>
+</ul>
+
+</article>
+<footer class="vk-foot">VendKit documentation · <code>v0.7.0</code> · <a href="../../">all releases</a></footer>
+</main>
+</div>
+<script>
+(function(){
+  var sel=document.querySelector('select.vk-vers');
+  if(!sel)return;
+  var root=sel.getAttribute('data-root')||'';
+  var rel=sel.getAttribute('data-rel')||'index.html';
+  var current=sel.getAttribute('data-current');
+  sel.addEventListener('change',function(){
+    if(sel.value)location.href=root+sel.value+'/'+rel;
+  });
+  try{
+    fetch(root+'versions.json',{cache:'no-cache'}).then(function(r){return r.json();}).then(function(m){
+      if(!m||!m.versions||!m.versions.length)return;
+      sel.innerHTML='';
+      m.versions.forEach(function(v){
+        var o=document.createElement('option');
+        o.value=v.version;
+        o.textContent=v.version+(v.latest?' (latest)':'');
+        if(v.version===current)o.selected=true;
+        sel.appendChild(o);
+      });
+    }).catch(function(){});
+  }catch(e){}
+})();
+</script>
+</body>
+</html>

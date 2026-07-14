@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Spec: Conformance · VendKit docs v0.7.0</title>
+<link rel="stylesheet" href="../assets/docs.css">
+<script>(function(){try{var t=localStorage.getItem('vk-theme');if(t==='dark'||t==='light')document.documentElement.setAttribute('data-theme',t);}catch(e){}})();</script>
+</head>
+<body>
+<header class="vk-top"><div class="vk-topwrap">
+<a class="vk-brand" href="../index.html"><span class="vk-bdot"></span>vendkit docs</a>
+<select class="vk-vers" aria-label="Documentation version" data-current="v0.7.0" data-root="../../" data-rel="specs/conformance.html">
+  <option value="v0.7.0" selected>v0.7.0 (latest)</option>
+</select>
+<button class="vk-tbtn" type="button" aria-label="Toggle color scheme" onclick="(function(d){var c=d.getAttribute('data-theme');if(!c){c=(window.matchMedia&&matchMedia('(prefers-color-scheme: dark)').matches)?'dark':'light';}var n=c==='dark'?'light':'dark';d.setAttribute('data-theme',n);try{localStorage.setItem('vk-theme',n);}catch(e){}})(document.documentElement)">◑</button>
+</div></header>
+<div class="vk-shell">
+<nav class="vk-nav" aria-label="Documentation">
+<a class="vk-nav-home" href="../index.html">Overview</a>
+<div class="vk-nav-sec">Guides</div>
+<ul class="vk-nav-list">
+  <li><a class="vk-nav-link" href="../architecture.html">Architecture</a></li>
+  <li><a class="vk-nav-link" href="../testing.html">Testing strategy and the conformance kit</a></li>
+</ul>
+<div class="vk-nav-sec">Specs</div>
+<ul class="vk-nav-list">
+  <li><a class="vk-nav-link" href="../specs/cli.html">Spec: CLI surface</a></li>
+  <li><a class="vk-nav-link is-active" href="../specs/conformance.html">Spec: Conformance</a></li>
+  <li><a class="vk-nav-link" href="../specs/export-declaration.html">Spec: Export declaration</a></li>
+  <li><a class="vk-nav-link" href="../specs/handler-protocol.html">Spec: Handler protocol</a></li>
+  <li><a class="vk-nav-link" href="../specs/manifest-and-gate.html">Spec: Manifest and gate lane</a></li>
+  <li><a class="vk-nav-link" href="../specs/migrations.html">Spec: Migrations</a></li>
+  <li><a class="vk-nav-link" href="../specs/onboarding.html">Spec: Onboarding and consumer configuration</a></li>
+  <li><a class="vk-nav-link" href="../specs/platform-integration.html">Spec: Platform integration — CI surfaces, credentials, differences ledger</a></li>
+  <li><a class="vk-nav-link" href="../specs/release-watch.html">Spec: Release watch</a></li>
+  <li><a class="vk-nav-link" href="../specs/releases-and-versioning.html">Spec: Releases and versioning</a></li>
+  <li><a class="vk-nav-link" href="../specs/security-model.html">Spec: Security model</a></li>
+  <li><a class="vk-nav-link" href="../specs/sync.html">Spec: Sync lane and materialisation</a></li>
+</ul>
+<div class="vk-nav-sec">Design</div>
+<ul class="vk-nav-list">
+  <li><a class="vk-nav-link" href="../design/DR-0001-vendored-identity-copies.html">DR-0001 — Vendored identity copies, not package distribution</a></li>
+  <li><a class="vk-nav-link" href="../design/DR-0002-identity-in-declaration.html">DR-0002 — Slice identity lives in the declaration, not the tools</a></li>
+  <li><a class="vk-nav-link" href="../design/DR-0003-two-lane-model.html">DR-0003 — Two-lane distribution: sync PRs + PR-time gate</a></li>
+  <li><a class="vk-nav-link" href="../design/DR-0004-normalised-hashing.html">DR-0004 — Normalised content hashing</a></li>
+  <li><a class="vk-nav-link" href="../design/DR-0005-tag-is-the-release.html">DR-0005 — The tag is the release: immutable, SHA-anchored, retractable</a></li>
+  <li><a class="vk-nav-link" href="../design/DR-0006-pull-with-push-hints.html">DR-0006 — Pull reconciliation with optional push hints</a></li>
+  <li><a class="vk-nav-link" href="../design/DR-0007-platform-ports.html">DR-0007 — ADO and GitHub Actions as peer backends behind a port interface</a></li>
+  <li><a class="vk-nav-link" href="../design/DR-0008-declarative-migrations.html">DR-0008 — Declarative migrations with deterministic verification</a></li>
+  <li><a class="vk-nav-link" href="../design/DR-0009-content-adapters.html">DR-0009 — Content adapters: identity copy by default, named transforms by declaration</a></li>
+  <li><a class="vk-nav-link" href="../design/DR-0010-review-gated-scope.html">DR-0010 — Scope changes are reviewed PR events, never automatic</a></li>
+  <li><a class="vk-nav-link" href="../design/DR-0011-single-cli-stdlib-gate.html">DR-0011 — One CLI; dependency-free consumer gate path</a></li>
+  <li><a class="vk-nav-link" href="../design/DR-0012-consumer-config-consolidation.html">DR-0012 — One consumer config file per slice under `.vendkit/`</a></li>
+  <li><a class="vk-nav-link" href="../design/DR-0013-seeded-files.html">DR-0013 — Seeded files: a scaffold-once lifecycle class</a></li>
+  <li><a class="vk-nav-link" href="../design/DR-0014-handler-protocol.html">DR-0014: Detection and delivery split by an exec handler protocol</a></li>
+  <li><a class="vk-nav-link" href="../design/DR-0015-scm-ci-axes.html">DR-0015: Split the platform vocabulary into SCM and CI axes; formats not services</a></li>
+  <li><a class="vk-nav-link" href="../design/DR-0016-engine-as-pinned-artefact.html">DR-0016: The engine becomes a pinned, checksummed artefact (INV-6 revision)</a></li>
+  <li><a class="vk-nav-link" href="../design/DR-0017-single-implementation-go.html">DR-0017: Single engine implementation in Go, with the scenario kit as the parity ratchet</a></li>
+  <li><a class="vk-nav-link" href="../design/DR-0018-versioned-docs-generator.html">DR-0018: Versioned docs site from a pure-Go static generator</a></li>
+  <li><a class="vk-nav-link" href="../design/README.html">Design records</a></li>
+  <li><a class="vk-nav-link" href="../design/TEMPLATE.html">DR-NNNN — Title</a></li>
+</ul>
+</nav>
+<main class="vk-main"><article class="vk-doc">
+<h1 id="spec-conformance">Spec: Conformance</h1>
+<p>Status: draft for implementation · Owner: Layer 0 (engine) + Layer 1 (detector bindings)</p>
+<p>Conformance answers &quot;is this consumer correctly wired?&quot; against a rule spec
+that <strong>ships inside each release</strong> — so advancing a pin brings the current rule
+set into force, and improving the framework surfaces the new gap in every
+not-yet-adopted consumer.</p>
+<p>Two rule sources compose:</p>
+<ul>
+<li><strong>Core rules</strong> (<code>conformance/core-rules.yml</code>, shipped by the framework):
+platform-neutral wiring requirements every slice needs — gate wired and
+required, sync scheduled, watch present, manifest committed, pins are tags.</li>
+<li><strong>Publisher rules</strong> (optional <code>conformance.yml</code> beside the export
+declaration): slice-specific requirements a publisher adds (e.g. &quot;profile
+declared&quot;, domain-specific checks via <code>tool</code> detectors).</li>
+</ul>
+<h2 id="1-rule-schema-v1">1. Rule schema (v1)</h2>
+<pre><code class="language-yaml">schema_version: 1
+rules:
+  - id: gate-wired                    # stable kebab-case, never renamed
+    title: &quot;Gate lane wired and required on PRs&quot;
+    category: enforcement             # prerequisites | protection | vendoring |
+                                      # enforcement | sync | promotion | custom
+    severity: mandatory               # mandatory (unwaivable) | waivable | advisory
+    detector:
+      kind: pipeline-wired            # see registry §2
+      component: gate                 # gate | sync | watch | migration-verify
+      pinned: true                    # the reference must be an immutable tag
+      events: [pull_request]          # pull_request | schedule
+      required_check: true            # must be enforced, not merely present
+    remediation: &gt;-
+      Wire the gate pipeline (scaffold: `vendkit init`), pin it to a release
+      tag, and make it a required check / build-validation policy.
+</code></pre>
+<p>Statuses per rule: <code>pass</code>, <code>fail</code>, <code>waived</code>, <code>attested</code>, <code>skipped</code>, <code>error</code>.
+<code>fail</code>/<code>error</code> are gaps. <code>vendkit conformance [--strict]</code>: strict exits 1 on
+any non-waived gap; default is advisory (exit 0, report only). Waivers live in
+the consumer slice config (<code>waivers: [{rule, reason}]</code>) and are honoured only
+for <code>severity: waivable</code> rules — a waiver on a mandatory rule is itself a
+finding.</p>
+<h2 id="2-detector-registry">2. Detector registry</h2>
+<p>Platform-neutral kinds, implemented in Layer 0 unless noted:</p>
+<table>
+<thead>
+<tr>
+<th>Kind</th>
+<th>Decides</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>file-exists</code></td>
+<td>path present</td>
+<td></td>
+</tr>
+<tr>
+<td><code>manifest-tracked</code></td>
+<td>path is a <code>consumer_path</code> in the slice manifest</td>
+<td></td>
+</tr>
+<tr>
+<td><code>profile-bound</code></td>
+<td>slice config declares a profile the declaration defines</td>
+<td></td>
+</tr>
+<tr>
+<td><code>codeowners-covers</code></td>
+<td>ownership review covers given patterns</td>
+<td>SCM-axis: GitHub parses CODEOWNERS; Azure Repos does not honour it → degrades to the <code>required_reviewers_policy</code> attestation (DR-0015)</td>
+</tr>
+<tr>
+<td><code>paths-lockstep</code></td>
+<td>if the gate pipeline path-filters, the filter covers every <code>consumer_path</code></td>
+<td>parses the dialect named by the slice config's <code>ci:</code>; <code>skipped</code> under <code>ci: none</code></td>
+</tr>
+<tr>
+<td><code>pipeline-wired</code></td>
+<td>a pipeline references the given framework component, pinned, on the given events, enforced</td>
+<td>dialect by <code>ci:</code>, §3; <code>skipped</code> under <code>ci: none</code> (manual mode is visible, not hidden)</td>
+</tr>
+<tr>
+<td><code>attest</code></td>
+<td>consumer config asserts a non-tree-decidable fact</td>
+<td>§4</td>
+</tr>
+<tr>
+<td><code>tool</code></td>
+<td>a manifest-tracked executable exits 0</td>
+<td>shared with migration checks</td>
+</tr>
+</tbody>
+</table>
+<p>Pipeline parsing is <em>format</em> knowledge and stays in core; anything needing a
+vendor <em>service</em> goes through the fact-verify handler (§4) — the
+format-vs-service rule (DR-0015).</p>
+<p>Publishers may not invent detector kinds; they extend via <code>tool</code> (vendored,
+gate-verified executables). This keeps the checker's trusted computing base
+fixed.</p>
+<h2 id="3-pipeline-wired-per-ci-decidability">3. <code>pipeline-wired</code>: per-CI decidability</h2>
+<p>The same rule is decided differently per CI dialect (selected by the slice
+config's <code>ci:</code> field, never env-sniffed — a fleet audit decides identically
+to CI):</p>
+<table>
+<thead>
+<tr>
+<th>Aspect</th>
+<th>github-actions</th>
+<th>azure-pipelines</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Locate pipelines</td>
+<td><code>.github/workflows/*.yml</code></td>
+<td><code>azure-pipelines/*.yml</code>, <code>azure-pipelines.yml</code></td>
+</tr>
+<tr>
+<td>&quot;references component&quot;</td>
+<td>the pipeline invokes the component's CLI subcommand (direct call, composite action, or template all bottom out in the invocation)</td>
+<td>same</td>
+</tr>
+<tr>
+<td><code>pinned</code></td>
+<td>a <code>refs/tags/vX.Y.Z</code> checkout ref, <code>@vX.Y.Z</code>, or 40-hex SHA</td>
+<td><code>resources.repositories</code> <code>ref:</code> starts <code>refs/tags/</code></td>
+</tr>
+<tr>
+<td><code>events: [pull_request]</code></td>
+<td>tree-decidable: <code>on: pull_request</code></td>
+<td><strong>not tree-decidable</strong>: Azure Repos ignores <code>pr:</code>; requires Build Validation policy → <code>attest</code> (or fact-verify handler, §4)</td>
+</tr>
+<tr>
+<td><code>events: [schedule]</code></td>
+<td>tree-decidable: <code>on: schedule</code></td>
+<td>tree-decidable: <code>schedules:</code> block</td>
+</tr>
+<tr>
+<td><code>required_check</code></td>
+<td>branch protection / ruleset → <code>attest</code> or fact-verify</td>
+<td>Build Validation policy → <code>attest</code> or fact-verify</td>
+</tr>
+<tr>
+<td><code>ci: none</code></td>
+<td>every <code>pipeline-wired</code>/<code>paths-lockstep</code> rule reports <code>skipped</code> — manual orchestration forfeits automated enforcement, stated in every report</td>
+<td>same</td>
+</tr>
+</tbody>
+</table>
+<p>The rule <em>spec</em> stays identical across platforms; only the dialect binding
+changes (INV-8). Where a platform fact is not tree-decidable the binding
+degrades to an <code>attest</code> sub-check automatically, with the fact-verify
+handler as the upgrade path (§4).</p>
+<h2 id="4-attestations">4. Attestations</h2>
+<p>Non-tree-decidable prerequisites (branch protection enabled, sync credential
+provisioned and policy-exempt, publisher repo readable by CI identity) are
+asserted in the consumer slice config:</p>
+<pre><code class="language-yaml">attestations:
+  branch_protection_enabled: true
+  sync_credential_provisioned: true
+</code></pre>
+<p>Attested rules report <code>attested</code>, not <code>pass</code> — dashboards can distinguish
+verified facts from asserted ones. <code>conformance --verify-attestations</code>
+sends each attested fact to the configured <strong>fact-verify handler</strong>
+(handler-protocol spec §3): verdict <code>true</code> promotes <code>attested</code> → <code>pass</code>,
+<code>false</code> demotes to <code>fail</code> (a wrong attestation is a finding), <code>unknown</code>
+leaves it attested. Core calls no vendor API itself — it composes the intent
+from a <strong>stable machine fact key</strong> (never the human detail prose) plus the
+repo/branch coordinate (<code>--repo</code>, <code>--base-branch</code>, or the handler's CI env)
+and hands it to the handler, which owns all HTTP.</p>
+<p>The reference handlers perform real API verification (replacing the earlier
+<code>unknown</code> stub):</p>
+<table>
+<thead>
+<tr>
+<th>attested fact</th>
+<th>GitHub check</th>
+<th>Azure DevOps check</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>required_check_enforced</code></td>
+<td>branch protection requires a status check</td>
+<td>an enabled <strong>blocking</strong> Build-validation policy</td>
+</tr>
+<tr>
+<td><code>pull_request_enforcement</code></td>
+<td>— (tree-decidable)</td>
+<td>an enabled Build-validation policy</td>
+</tr>
+<tr>
+<td><code>required_reviewers_policy</code></td>
+<td>— (tree-decidable)</td>
+<td>an enabled Required-reviewers policy</td>
+</tr>
+</tbody>
+</table>
+<p><code>true</code> means the platform confirms the control; <code>false</code> means it is
+definitively not enforced; <code>unknown</code> is emitted only when the token lacks
+scope (a 401/403 is <code>unknown</code>, never <code>false</code>), the endpoint is unavailable, or
+the fact key is unrecognised (forward-compatible). Verification uses a
+read-scoped <code>VENDKIT_TOKEN_FACT_VERIFY</code> (GitHub: <code>GITHUB_TOKEN</code> fallback;
+ADO: <code>SYSTEM_ACCESSTOKEN</code>/<code>ADO_PAT</code>).</p>
+<h2 id="5-fleet-view">5. Fleet view</h2>
+<p><code>vendkit conformance --json</code> emits a machine document (per-rule status,
+gap count, pin, pin lag, slice, profile). A <strong>fleet audit</strong> — a scheduled,
+read-only job that clones each consumer, runs conformance + gate verify +
+watch compare locally, and publishes one aggregated dashboard — is the intended
+consumer of this format. It requires only read access (no inversion of the
+trust model) and is specified as a Layer 3 optional component in the roadmap
+(M4), not core.</p>
+<h3 id="51-the-conformance---json-document">5.1 The <code>conformance --json</code> document</h3>
+<p><code>--json</code> emits a single object (not a bare rule array) — the fleet-view
+interchange format:</p>
+<pre><code class="language-json">{
+  &quot;slice&quot;: &quot;docs&quot;,
+  &quot;profile&quot;: &quot;code-repo&quot;,
+  &quot;pin&quot;: { &quot;version&quot;: &quot;v1.4.2&quot;, &quot;sha256&quot;: &quot;…&quot; },
+  &quot;pin_lag&quot;: null,
+  &quot;gap_count&quot;: 2,
+  &quot;rules&quot;: [
+    { &quot;rule_id&quot;: &quot;gate-wired&quot;, &quot;title&quot;: &quot;…&quot;, &quot;severity&quot;: &quot;mandatory&quot;,
+      &quot;status&quot;: &quot;fail&quot;, &quot;detail&quot;: &quot;…&quot; }
+  ]
+}
+</code></pre>
+<ul>
+<li><code>slice</code>, <code>profile</code> — from the consumer slice config.</li>
+<li><code>pin</code> — the <strong>engine</strong> pin from the slice config (DR-0016): <code>version</code>, and
+the recorded <code>sha256</code> for the audit host's own platform (<code>&lt;goos&gt;/&lt;goarch&gt;</code>).
+Omitted when the slice records no engine pin (e.g. <code>ci: none</code>); <code>sha256</code> is
+omitted when unrecorded (an advisory pin).</li>
+<li><code>pin_lag</code> — how far behind the latest release the pin is. <strong>Not determinable
+offline</strong>: computing it needs the publisher's release list, and core issues
+no network/SCM call. It is therefore emitted as JSON <code>null</code>. A fleet audit
+running in a network-capable scheduled job may fill it before aggregating.</li>
+<li><code>gap_count</code> — number of rules whose status is a gap (<code>fail</code>/<code>error</code>).</li>
+<li><code>rules</code> — the per-rule results (<code>rule_id</code>, <code>title</code>, <code>severity</code>, <code>status</code>,
+<code>detail</code>), unchanged from earlier releases.</li>
+</ul>
+<p>This replaces the pre-existing <code>--json</code> output (a bare array of rule results):
+the array is now the <code>rules</code> field. The human (non-<code>--json</code>) output is
+unchanged.</p>
+<h3 id="52-the-fleet-command">5.2 The <code>fleet</code> command</h3>
+<p><code>vendkit fleet [--json] [&lt;path&gt;…]</code> is the read-only aggregation half of the
+fleet audit. The clone-and-run over many repos is the scheduled external job
+(Layer 3, optional); <code>fleet</code> folds the resulting <code>conformance --json</code>
+documents into one aggregated report. It clones nothing, fetches nothing, and
+calls no network or SCM API.</p>
+<p><strong>Input.</strong> Each positional <code>&lt;path&gt;</code> is either a file — one document, or a JSON
+array of documents — or a directory, in which case every <code>*.json</code> file inside
+it (sorted) is read. With no paths, documents are read from <strong>stdin</strong>: a JSON
+array, or one-or-more JSON objects (newline-delimited or concatenated). Flags
+and paths may be given in any order. A source that is not valid conformance
+JSON, or an object lacking <code>slice</code>, fails loudly, named, with exit 2.</p>
+<p><strong>Output.</strong> A human summary always (fleet size, a census of consumers by worst
+status, total gaps, and a per-consumer table sorted worst offenders first),
+plus the machine facts <code>consumers=</code> and <code>total-gaps=</code> on the CI surface. With
+<code>--json</code>, the fleet-level interchange document is additionally emitted:</p>
+<pre><code class="language-json">{
+  &quot;total_consumers&quot;: 2,
+  &quot;by_worst_status&quot;: { &quot;fail&quot;: 1, &quot;pass&quot;: 1 },
+  &quot;total_gaps&quot;: 2,
+  &quot;consumers&quot;: [
+    { &quot;slice&quot;: &quot;docs&quot;, &quot;profile&quot;: &quot;code-repo&quot;,
+      &quot;pin&quot;: { &quot;version&quot;: &quot;v0.9.0&quot; }, &quot;pin_lag&quot;: null,
+      &quot;gap_count&quot;: 2, &quot;worst_status&quot;: &quot;fail&quot; }
+  ]
+}
+</code></pre>
+<p>Each consumer row carries <code>slice</code>, <code>profile</code>, <code>pin</code>, <code>pin_lag</code>, <code>gap_count</code>,
+and <code>worst_status</code>. <strong>Worst status</strong> is the most severe rule status in a
+document, ranked (worst → best) <code>error</code> &gt; <code>fail</code> &gt; <code>attested</code> &gt; <code>skipped</code> &gt;
+<code>waived</code> &gt; <code>pass</code>: gaps first, then unverified assertions, then forfeited
+enforcement (<code>ci: none</code>), then deliberately accepted, then clean. Rows are
+sorted by that rank (desc), then gap count (desc), then slice name — so the
+worst offenders lead the dashboard. <code>fleet</code> is advisory: it aggregates and
+reports, exiting 0 (usage/parse failures aside).</p>
+
+</article>
+<footer class="vk-foot">VendKit documentation · <code>v0.7.0</code> · <a href="../../">all releases</a></footer>
+</main>
+</div>
+<script>
+(function(){
+  var sel=document.querySelector('select.vk-vers');
+  if(!sel)return;
+  var root=sel.getAttribute('data-root')||'';
+  var rel=sel.getAttribute('data-rel')||'index.html';
+  var current=sel.getAttribute('data-current');
+  sel.addEventListener('change',function(){
+    if(sel.value)location.href=root+sel.value+'/'+rel;
+  });
+  try{
+    fetch(root+'versions.json',{cache:'no-cache'}).then(function(r){return r.json();}).then(function(m){
+      if(!m||!m.versions||!m.versions.length)return;
+      sel.innerHTML='';
+      m.versions.forEach(function(v){
+        var o=document.createElement('option');
+        o.value=v.version;
+        o.textContent=v.version+(v.latest?' (latest)':'');
+        if(v.version===current)o.selected=true;
+        sel.appendChild(o);
+      });
+    }).catch(function(){});
+  }catch(e){}
+})();
+</script>
+</body>
+</html>

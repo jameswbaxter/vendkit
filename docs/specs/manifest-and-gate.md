@@ -1,6 +1,6 @@
 # Spec: Manifest and gate lane
 
-Status: draft for implementation · Manifest schema version: 1 · Owner: Layer 0
+Status: stable (frozen at v1.0.0) · Manifest schema version: 1 · Owner: Layer 0
 
 The manifest is the integrity contract between publisher and consumer. The gate
 lane is its enforcement point: a check on every consumer PR that re-hashes

@@ -1,6 +1,6 @@
 # Spec: Export declaration
 
-Status: draft for implementation · Schema version: 1 · Owner: Layer 0
+Status: stable (frozen at v1.0.0) · Schema version: 1 · Owner: Layer 0
 
 The export declaration is the publisher-side YAML file that fully defines a
 slice. **All slice identity lives here; the tools carry none** (DR-0002). One

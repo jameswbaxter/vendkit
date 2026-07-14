@@ -1,6 +1,6 @@
 # Spec: CLI surface
 
-Status: stable (surface shipped through v0.7.0) · Owner: Layer 0 (surface), delegating per command
+Status: frozen at v1.0.0 (public API; command set test-enforced against the binary) · Owner: Layer 0 (surface), delegating per command
 
 One entrypoint: `vendkit` — a single static Go binary with no runtime
 prerequisites (DR-0017). The only truly global flag is `--platform` (CI output
@@ -76,5 +76,9 @@ the strict property use the scheduled lane.
   declaration, slice configs, manifests); no environment reads outside
   `ci.detect()`, credential passthrough to handlers, and the
   `VENDKIT_HANDLER_<KIND>` overrides.
-- **Deprecation policy:** CLI flags and `key=value` output names are a public
-  API once released; removal requires a MAJOR release and a migration entry.
+- **Deprecation policy:** the command set, CLI flags, and `key=value` output
+  names are a public API frozen at v1.0.0; removal or reshaping requires a MAJOR
+  release and a migration entry (see [COMPATIBILITY.md](../../COMPATIBILITY.md)).
+  The command set is locked to the binary by `cmd/vendkit/surface_test.go`, so a
+  command cannot be added or dropped without a deliberate edit to the frozen
+  snapshot.

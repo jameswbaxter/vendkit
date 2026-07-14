@@ -1,6 +1,6 @@
 # Spec: Migrations
 
-Status: draft for implementation · Owner: Layer 0 (resolve/verify) + Layer 1 (handoff)
+Status: stable (frozen at v1.0.0) · Owner: Layer 0 (resolve/verify) + Layer 1 (handoff)
 
 Mechanical sync refreshes manifest-tracked files only. A release that also
 invalidates **consumer-owned** content — renamed trees, retired conventions,

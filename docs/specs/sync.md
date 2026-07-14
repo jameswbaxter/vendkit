@@ -1,6 +1,6 @@
 # Spec: Sync lane and materialisation
 
-Status: draft for implementation · Owner: Layer 0 (materialise), Layer 1 (PR), Layer 2 (pipeline)
+Status: stable (frozen at v1.0.0) · Owner: Layer 0 (materialise), Layer 1 (PR), Layer 2 (pipeline)
 
 The sync lane keeps a consumer's vendored slice fresh: it detects that the pin
 is behind a target release, rewrites the tracked files and manifest from that

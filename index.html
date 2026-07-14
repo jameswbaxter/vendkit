@@ -63,7 +63,7 @@ code,pre,kbd{font-family:var(--mono)}
 .js .in{opacity:1;transform:none}
 @media (prefers-reduced-motion:reduce){.js .rv{opacity:1;transform:none;transition:none}html{scroll-behavior:auto}}
 .dgm{margin:0;font-family:var(--mono);background:var(--bg);border:1px solid var(--bd);border-radius:14px;padding:20px}
-.dg-grid{display:grid;grid-template-columns:158px 1fr 172px;gap:16px;align-items:stretch}
+.dg-grid{display:grid;grid-template-columns:158px 1fr 172px;gap:16px;align-items:stretch;position:relative}
 .dg-card{display:flex;flex-direction:column;align-items:center;gap:8px;background:var(--sf);border:1px solid var(--bd);border-radius:12px;padding:18px 14px;text-align:center;justify-content:center}
 .dg-pub{align-self:center}
 .dg-lab{font-size:10px;font-weight:600;letter-spacing:1.6px;color:var(--lab)}
@@ -72,6 +72,8 @@ code,pre,kbd{font-family:var(--mono)}
 .chip{font-size:11px;border-radius:12px;padding:4px 12px;white-space:nowrap}
 .chip-g{background:var(--gbg);border:1px solid var(--gbd);color:var(--g)}
 .fchip{font-size:10.5px;background:var(--sf2);border-radius:7px;padding:5px 12px;color:var(--mut);align-self:stretch}
+.ver{position:relative;display:inline-block}
+.v-new{position:absolute;left:0;top:0;opacity:0}
 .dg-lanes{display:flex;flex-direction:column;gap:0;min-width:0}
 .lane{border-radius:12px;padding:14px 16px 16px}
 .lane-sync{background:var(--lgbg);border:1px solid var(--gbd)}
@@ -83,6 +85,7 @@ code,pre,kbd{font-family:var(--mono)}
 .lane-note{font-size:10px;color:var(--mut);text-align:right}
 .lane-flow{position:relative;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
 .stp{display:flex;flex-direction:column;align-items:center;gap:2px;background:var(--sf);border:1px solid var(--bd);border-radius:9px;padding:8px 13px;min-width:0}
+.lane .stp{flex:1 1 auto}
 .stp b{font-size:12.5px;color:var(--ink);font-weight:600;white-space:nowrap}
 .stp i{font-style:normal;font-size:9.5px;color:var(--lab);white-space:nowrap}
 .stp-gate b{color:var(--a)}
@@ -98,7 +101,7 @@ code,pre,kbd{font-family:var(--mono)}
 .inv{text-align:center;font-size:11.5px;color:var(--mut);padding:12px 8px;line-height:1.5}
 .inv b{color:var(--ink);font-weight:600}
 .inv-gl{color:var(--g)}
-.dot{position:absolute;top:22px;left:0;width:9px;height:9px;border-radius:50%;background:var(--g);box-shadow:0 0 0 3px var(--gbg);opacity:0;pointer-events:none}
+.dot{position:absolute;top:68px;--pW:calc(185.5px + 0.123*(100% - 394px));--pS:calc(185.5px + 0.471*(100% - 394px));--pP:calc(185.5px + 0.836*(100% - 394px));--pC:calc(100% - 90.5px);left:var(--pW);width:9px;height:9px;border-radius:50%;background:var(--g);box-shadow:0 0 0 3px var(--gbg);opacity:0;pointer-events:none;z-index:3}
 .anim .tag-p{animation:kTag var(--cycle) infinite}
 .anim .s-watch{animation:kWatch var(--cycle) infinite}
 .anim .s-sync{animation:kSync var(--cycle) infinite}
@@ -108,17 +111,27 @@ code,pre,kbd{font-family:var(--mono)}
 .anim .out-ok{animation:kOk var(--cycle) infinite}
 .anim .out-no{animation:kNo var(--cycle) infinite}
 .anim .dot{animation:kDot var(--cycle) infinite}
+.anim .vf1{animation:kFileA var(--cycle) infinite}
+.anim .vf2{animation:kFileB var(--cycle) infinite}
+.anim .v-old{animation:kVold var(--cycle) infinite}
+.anim .v-new{animation:kVnew var(--cycle) infinite}
+.anim .mver{animation:kMver var(--cycle) infinite}
 @keyframes kTag{0%,2%{box-shadow:0 0 0 0 rgba(30,138,92,0)}6%{box-shadow:0 0 0 6px var(--gbg)}12%,100%{box-shadow:0 0 0 0 rgba(30,138,92,0)}}
-@keyframes kWatch{0%,11%{border-color:var(--bd)}14%,20%{border-color:var(--g);box-shadow:0 0 0 3px var(--gbg)}26%,100%{border-color:var(--bd);box-shadow:none}}
-@keyframes kSync{0%,23%{border-color:var(--bd)}26%,32%{border-color:var(--g);box-shadow:0 0 0 3px var(--gbg)}38%,100%{border-color:var(--bd);box-shadow:none}}
-@keyframes kPr{0%,35%{border-color:var(--bd)}38%,46%{border-color:var(--g);box-shadow:0 0 0 3px var(--gbg)}52%,100%{border-color:var(--bd);box-shadow:none}}
-@keyframes kCon{0%,46%{border-color:var(--bd)}50%,56%{border-color:var(--gbd);box-shadow:0 0 0 3px var(--gbg)}62%,100%{border-color:var(--bd);box-shadow:none}}
+@keyframes kWatch{0%,8%{border-color:var(--bd);box-shadow:none}11%,17%{border-color:var(--g);box-shadow:0 0 0 3px var(--gbg)}23%,100%{border-color:var(--bd);box-shadow:none}}
+@keyframes kSync{0%,21%{border-color:var(--bd);box-shadow:none}25%,31%{border-color:var(--g);box-shadow:0 0 0 3px var(--gbg)}37%,100%{border-color:var(--bd);box-shadow:none}}
+@keyframes kPr{0%,33%{border-color:var(--bd);box-shadow:none}37%,44%{border-color:var(--g);box-shadow:0 0 0 3px var(--gbg)}50%,100%{border-color:var(--bd);box-shadow:none}}
+@keyframes kCon{0%,48%{border-color:var(--bd);box-shadow:none}52%,62%{border-color:var(--g);box-shadow:0 0 0 4px var(--gbg)}68%,100%{border-color:var(--bd);box-shadow:none}}
 @keyframes kGate{0%,58%{border-color:var(--bd)}62%,70%{border-color:var(--a);box-shadow:0 0 0 3px var(--abg)}76%,100%{border-color:var(--bd);box-shadow:none}}
 @keyframes kOk{0%,64%{box-shadow:0 0 0 0 rgba(30,138,92,0)}68%,74%{box-shadow:0 0 0 4px var(--gbg)}80%,100%{box-shadow:0 0 0 0 rgba(30,138,92,0)}}
 @keyframes kNo{0%,82%{box-shadow:0 0 0 0 rgba(191,74,52,0)}86%,92%{box-shadow:0 0 0 4px var(--rbg)}98%,100%{box-shadow:0 0 0 0 rgba(191,74,52,0)}}
-@keyframes kDot{0%,9%{left:0;opacity:0}12%{left:1%;opacity:1}44%{left:96%;opacity:1}48%,100%{left:96%;opacity:0}}
-@media (prefers-reduced-motion:reduce){.anim .tag-p,.anim .s-watch,.anim .s-sync,.anim .s-pr,.anim .dg-con,.anim .s-gate,.anim .out-ok,.anim .out-no,.anim .dot{animation:none}.dot{display:none}}
-.noanim .tag-p,.noanim .s-watch,.noanim .s-sync,.noanim .s-pr,.noanim .dg-con,.noanim .s-gate,.noanim .out-ok,.noanim .out-no{animation:none}
+@keyframes kDot{0%,6%{left:var(--pW);opacity:0}10%,16%{left:var(--pW);opacity:1}28%{left:var(--pS);opacity:1}40%{left:var(--pP);opacity:1}52%{left:var(--pC);opacity:1}58%,100%{left:var(--pC);opacity:0}}
+@keyframes kFileA{0%,52%{background:var(--sf2);color:var(--mut)}55%{background:var(--gbg);color:var(--g)}63%,100%{background:var(--sf2);color:var(--mut)}}
+@keyframes kFileB{0%,54%{background:var(--sf2);color:var(--mut)}58%{background:var(--gbg);color:var(--g)}66%,100%{background:var(--sf2);color:var(--mut)}}
+@keyframes kVold{0%,56%{opacity:1}62%,92%{opacity:0}98%,100%{opacity:1}}
+@keyframes kVnew{0%,56%{opacity:0}62%,92%{opacity:1}98%,100%{opacity:0}}
+@keyframes kMver{0%,57%{box-shadow:none}61%{box-shadow:0 0 0 4px var(--gbg)}70%,100%{box-shadow:none}}
+@media (prefers-reduced-motion:reduce){.anim .tag-p,.anim .s-watch,.anim .s-sync,.anim .s-pr,.anim .dg-con,.anim .s-gate,.anim .out-ok,.anim .out-no,.anim .dot,.anim .vf1,.anim .vf2,.anim .v-old,.anim .v-new,.anim .mver{animation:none}.dot{display:none}}
+.noanim .tag-p,.noanim .s-watch,.noanim .s-sync,.noanim .s-pr,.noanim .dg-con,.noanim .s-gate,.noanim .out-ok,.noanim .out-no,.noanim .vf1,.noanim .vf2,.noanim .v-old,.noanim .v-new,.noanim .mver{animation:none}
 .noanim .dot{display:none;animation:none}
 .lanepts{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;margin-top:26px}
 .lpt{font-size:14.5px;line-height:1.55}
@@ -251,7 +264,7 @@ if(document.readyState!=='loading'){setTimeout(window.__vkInit,0);}else{document
 <div class="dg-lanes">
 <div class="lane lane-sync">
 <div class="lane-hd"><span class="lane-t lt-g">SYNC LANE</span><span class="lane-note">one reviewed PR per upgrade</span></div>
-<div class="lane-flow"><span class="stp s-watch"><b>watch</b><i>sees v1.4.0</i></span><span class="arw arw-g" aria-hidden="true">→</span><span class="stp s-sync"><b>sync</b><i>adds · updates · removals</i></span><span class="arw arw-g" aria-hidden="true">→</span><span class="stp s-pr"><b>reviewed PR</b><i>never silent</i></span><span class="arw arw-g arw-out" aria-hidden="true">→</span><span class="dot" aria-hidden="true"></span></div>
+<div class="lane-flow"><span class="stp s-watch"><b>watch</b><i>sees v1.4.0</i></span><span class="arw arw-g" aria-hidden="true">→</span><span class="stp s-sync"><b>sync</b><i>adds · updates · removals</i></span><span class="arw arw-g" aria-hidden="true">→</span><span class="stp s-pr"><b>reviewed PR</b><i>never silent</i></span><span class="arw arw-g arw-out" aria-hidden="true">→</span></div>
 </div>
 <div class="inv"><span class="inv-gl" aria-hidden="true">⇅</span> <b>composition invariant</b> — the sync lane's output always passes the gate lane</div>
 <div class="lane lane-gate">
@@ -259,7 +272,8 @@ if(document.readyState!=='loading'){setTimeout(window.__vkInit,0);}else{document
 <div class="lane-flow"><span class="stp s-cpr"><b>consumer PR</b><i>any change</i></span><span class="arw arw-a" aria-hidden="true">→</span><span class="stp s-gate stp-gate"><b>vendkit gate</b><i>verifies checksum manifest</i></span><div class="flowgrp"><span class="arw arw-a" aria-hidden="true">→</span><div class="outs"><span class="out out-ok">✓ sync PR merges</span><span class="out out-no">✗ hand-edit blocked</span></div></div></div>
 </div>
 </div>
-<div class="dg-card dg-con"><span class="dg-lab">CONSUMER</span><strong class="dg-name">product repo</strong><span class="fchip">CLAUDE.md</span><span class="fchip">agent-rules/**</span><span class="chip chip-g">manifest · v1.3.2</span><span class="dg-cap">owned like first-party code</span></div>
+<div class="dg-card dg-con"><span class="dg-lab">CONSUMER</span><strong class="dg-name">product repo</strong><span class="fchip vf1">CLAUDE.md</span><span class="fchip vf2">agent-rules/**</span><span class="chip chip-g mver">manifest · <span class="ver"><span class="v-old">v1.3.2</span><span class="v-new" aria-hidden="true">v1.4.0</span></span></span><span class="dg-cap">owned like first-party code</span></div>
+<span class="dot" aria-hidden="true"></span>
 </div>
 </figure>
 <div class="lanepts rv">

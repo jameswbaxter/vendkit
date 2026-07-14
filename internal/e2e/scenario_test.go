@@ -1271,6 +1271,191 @@ subscribers:
 	}
 }
 
+// rewriteOffline applies the world fixture's two load-bearing offline rewrites
+// to a consumer slice config: the publisher coordinate becomes a local path git
+// can clone, and the GitHub delivery handler becomes the neutral journal binary.
+// Without both, the CLI would reach for real git remotes / the live GitHub API.
+func rewriteOffline(t *testing.T, cfgPath, repoCoord, publisherPath string) {
+	t.Helper()
+	cfg := read(t, cfgPath)
+	cfg = strings.ReplaceAll(cfg, "repo: "+repoCoord, "repo: "+publisherPath)
+	cfg = strings.ReplaceAll(cfg, "[vendkit, handler, github]", `["`+journalBin+`"]`)
+	write(t, cfgPath, cfg)
+}
+
+// bareOriginPush inits a bare origin next to a repo, wires it as `origin`, and
+// pushes main — the same publisher/consumer wiring the world fixture performs.
+func bareOriginPush(t *testing.T, repo, originPath string) {
+	t.Helper()
+	git(t, repo, "init", "-q", "--bare", originPath)
+	git(t, repo, "remote", "add", "origin", originPath)
+	git(t, repo, "push", "-q", "origin", "main")
+}
+
+// TestTierChainPropagatesFrameworkReleaseToLeaf is the DR-0006 tier-chain
+// dogfooding demo: a release at the framework (top) propagates all the way to
+// the leaf (bottom) THROUGH a mid publisher that is both a consumer of the
+// framework and a publisher of a re-export slice. Each hop exercises the
+// push-hint dispatch step (the nudge) followed by the sync lane (the real
+// pull). Everything runs offline against the neutral journal handler.
+//
+//	framework  ──docs v0.2.0──▶  mid  ──platform v0.2.0──▶  leaf
+//	 (publisher)  push-hint#1     (consumer+publisher)  push-hint#2  (consumer)
+func TestTierChainPropagatesFrameworkReleaseToLeaf(t *testing.T) {
+	tmp := t.TempDir()
+	framework := filepath.Join(tmp, "framework")
+	mid := filepath.Join(tmp, "mid")
+	leaf := filepath.Join(tmp, "leaf")
+
+	// -- framework: publisher of slice `docs`, released v0.1.0 -----------------
+	write(t, filepath.Join(framework, "docs", "standard.md"), "# Standard\n\nRule one.\n")
+	write(t, filepath.Join(framework, "docs", "guide.md"), "# Guide\n")
+	write(t, filepath.Join(framework, "vendkit-export.yml"), `schema_version: 1
+slice: {name: docs, title: "Design docs"}
+publisher: {scm: github, repo: example-org/framework}
+include: ["docs/**/*.md"]
+profiles:
+  code-repo: {}
+`)
+	git(t, framework, "init", "-q", "-b", "main")
+	vk(t, framework, nil, true, "generate")
+	git(t, framework, "add", "-A")
+	git(t, framework, "commit", "-q", "-m", "init")
+	bareOriginPush(t, framework, filepath.Join(tmp, "framework-origin.git"))
+	vk(t, framework, nil, true, "release", "--version", "v0.1.0")
+
+	// -- mid: consumer of framework's docs, AND publisher of `platform` --------
+	// (a) consumer: onboard the docs slice at v0.1.0, apply the offline rewrites.
+	mkdirAll(t, mid)
+	git(t, mid, "init", "-q", "-b", "main")
+	vk(t, framework, nil, true, "init", "--ci", "github-actions", "--scm", "github",
+		"--version", "v0.1.0", "--profile", "code-repo",
+		"--publisher-root", framework, "--consumer-root", mid)
+	rewriteOffline(t, filepath.Join(mid, ".vendkit", "docs.yml"),
+		"example-org/framework", framework)
+	// (b) publisher: a platform slice that RE-EXPORTS the vendored framework docs
+	// alongside a mid-owned file (identity copy of docs/** plus platform/**).
+	write(t, filepath.Join(mid, "platform", "rules.md"),
+		"# Platform Rules\n\nMid-owned.\n")
+	write(t, filepath.Join(mid, "vendkit-export.yml"), `schema_version: 1
+slice: {name: platform, title: "Platform bundle"}
+publisher: {scm: github, repo: example-org/mid}
+include: ["docs/**/*.md", "platform/**/*"]
+profiles:
+  code-repo: {}
+`)
+	vk(t, mid, nil, true, "generate")
+	git(t, mid, "add", "-A")
+	git(t, mid, "commit", "-q", "-m", "onboard docs v0.1.0 + platform export")
+	bareOriginPush(t, mid, filepath.Join(tmp, "mid-origin.git"))
+	vk(t, mid, nil, true, "release", "--version", "v0.1.0")
+
+	// -- leaf: consumer of mid's `platform` slice at v0.1.0 --------------------
+	mkdirAll(t, leaf)
+	git(t, leaf, "init", "-q", "-b", "main")
+	vk(t, mid, nil, true, "init", "--ci", "github-actions", "--scm", "github",
+		"--version", "v0.1.0", "--profile", "code-repo",
+		"--publisher-root", mid, "--consumer-root", leaf)
+	rewriteOffline(t, filepath.Join(leaf, ".vendkit", "platform.yml"),
+		"example-org/mid", mid)
+	git(t, leaf, "add", "-A")
+	git(t, leaf, "commit", "-q", "-m", "onboard platform v0.1.0")
+	bareOriginPush(t, leaf, filepath.Join(tmp, "leaf-origin.git"))
+	// Baseline: the framework's original text is what the leaf currently sees.
+	mustContain(t, read(t, filepath.Join(leaf, "docs", "standard.md")), "Rule one.")
+	if strings.Contains(read(t, filepath.Join(leaf, "docs", "standard.md")), "Rule two.") {
+		t.Fatal("leaf already carries the framework change before propagation")
+	}
+
+	// === propagate a framework change all the way down ========================
+
+	// 1. Framework makes a distinctive change and cuts v0.2.0.
+	appendText(t, filepath.Join(framework, "docs", "standard.md"), "Rule two.\n")
+	release(t, framework, "v0.2.0")
+
+	// 2. HINT #1: framework nudges its subscriber (the mid).
+	write(t, filepath.Join(framework, ".vendkit", "subscribers.yml"), `schema_version: 1
+subscribers:
+  - repo: acme/mid
+`)
+	journal1 := filepath.Join(tmp, "journal1.jsonl")
+	so, _, _ := vk(t, framework, map[string]string{
+		"VENDKIT_HANDLER_PUSH_HINT": journalBin,
+		"VENDKIT_NEUTRAL_JOURNAL":   journal1,
+	}, true, "push-hint", "--version", "v0.2.0",
+		"--publisher-repo", "acme/framework", "--publisher-root", framework)
+	mustContain(t, so, "subscribers=1")
+	mustContain(t, so, "dispatched=1")
+	hints1 := recordsOfKind(journalRecords(t, journal1), "push-hint")
+	if len(hints1) != 1 {
+		t.Fatalf("hint #1: push-hint intents = %d, want 1", len(hints1))
+	}
+	if got := toStr(hints1[0]["repo"]); got != "acme/mid" {
+		t.Errorf("hint #1 addressed to %q, want acme/mid", got)
+	}
+	p1 := asMap(hints1[0]["client_payload"])
+	if toStr(p1["publisher"]) != "acme/framework" || toStr(p1["version"]) != "v0.2.0" {
+		t.Errorf("hint #1 client_payload = %v, want publisher acme/framework @ v0.2.0", p1)
+	}
+
+	// 3. HOP #1: the mid pulls the framework's docs (the hint is only the
+	// trigger; sync is the source of truth).
+	so, _, _ = vk(t, mid, nil, true, "sync-pipeline", "--slice", "docs",
+		"--publisher-root", framework, "--consumer-root", mid)
+	mustContain(t, so, "update-available=true")
+	mustContain(t, so, "changed=true")
+	mustContain(t, read(t, filepath.Join(mid, "docs", "standard.md")), "Rule two.")
+	mustContain(t, read(t, filepath.Join(mid, ".vendkit", "docs.yml")), "version: v0.2.0")
+	gso, _, _ := vk(t, mid, nil, true, "gate", "--strict") // INV-1 at the mid
+	mustContain(t, gso, "findings=0")
+
+	// 4. The mid re-releases v0.2.0: fold the sync branch back into main and cut
+	// a new platform release that now carries the updated docs.
+	git(t, mid, "checkout", "-q", "main")
+	git(t, mid, "merge", "--ff-only", "vendkit/docs/sync-v0.1.0-to-v0.2.0")
+	release(t, mid, "v0.2.0") // vk generate re-exports the updated docs, then tag
+
+	// 5. HINT #2: the mid nudges its subscriber (the leaf).
+	write(t, filepath.Join(mid, ".vendkit", "subscribers.yml"), `schema_version: 1
+subscribers:
+  - repo: acme/leaf
+`)
+	journal2 := filepath.Join(tmp, "journal2.jsonl")
+	so, _, _ = vk(t, mid, map[string]string{
+		"VENDKIT_HANDLER_PUSH_HINT": journalBin,
+		"VENDKIT_NEUTRAL_JOURNAL":   journal2,
+	}, true, "push-hint", "--version", "v0.2.0",
+		"--publisher-repo", "acme/mid", "--publisher-root", mid)
+	mustContain(t, so, "subscribers=1")
+	mustContain(t, so, "dispatched=1")
+	hints2 := recordsOfKind(journalRecords(t, journal2), "push-hint")
+	if len(hints2) != 1 {
+		t.Fatalf("hint #2: push-hint intents = %d, want 1", len(hints2))
+	}
+	if got := toStr(hints2[0]["repo"]); got != "acme/leaf" {
+		t.Errorf("hint #2 addressed to %q, want acme/leaf", got)
+	}
+	p2 := asMap(hints2[0]["client_payload"])
+	if toStr(p2["publisher"]) != "acme/mid" || toStr(p2["version"]) != "v0.2.0" {
+		t.Errorf("hint #2 client_payload = %v, want publisher acme/mid @ v0.2.0", p2)
+	}
+
+	// 6. HOP #2 (end-to-end proof): the leaf pulls the mid's platform slice and
+	// the framework's change — routed THROUGH the mid — lands at the leaf.
+	so, _, _ = vk(t, leaf, nil, true, "sync-pipeline", "--slice", "platform",
+		"--publisher-root", mid, "--consumer-root", leaf)
+	mustContain(t, so, "update-available=true")
+	mustContain(t, so, "changed=true")
+	mustContain(t, read(t, filepath.Join(leaf, "docs", "standard.md")), "Rule two.")
+	mustContain(t, read(t, filepath.Join(leaf, ".vendkit", "platform.yml")), "version: v0.2.0")
+	leafManifest := loadJSON(t, filepath.Join(leaf, ".vendkit", "platform-manifest.json"))
+	if got := toStr(asMap(leafManifest["source"])["release"]); got != "v0.2.0" {
+		t.Errorf("leaf platform source.release = %q, want v0.2.0", got)
+	}
+	gso, _, _ = vk(t, leaf, nil, true, "gate", "--strict") // INV-1 at the leaf
+	mustContain(t, gso, "findings=0")
+}
+
 // TestPushHintNoSubscribersFileIsSoftSkip: with no subscribers file the step is
 // a no-op exit 0 (push hints not configured), so a release workflow can run it
 // unconditionally.

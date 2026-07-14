@@ -87,13 +87,18 @@ Still owed (tracked here, not yet built):
 - **`base64-safe transport of JSON outputs` on ADO is not implemented** — the
   `azure-pipelines` surface emits raw values, so a multi-line/JSON output value
   would break the `##vso` line. All current outputs are single-line scalars, so
-  this is latent; land it with the full-kit matrix (and a differences-ledger
-  entry) before any output value can carry JSON.
+  this is latent. The constraint is now recorded as differences-ledger entry #7
+  (platform-integration spec §6) and enforced by the ledger audit
+  (`cmd/vendkit/ledger_test.go`); the base64-safe transport itself still ships
+  with the full-kit matrix before any output value can carry JSON.
 
 **Parity rule:** a scenario or behaviour difference discovered on one platform
 must land as (a) a ledger entry (platform-integration spec §6) and (b) a
 matrix test on both platforms — the peer-backend claim (INV-8) is only as
-true as this matrix.
+true as this matrix. The ledger↔code correspondence itself — every entry ↔ a
+live Layer-1 branch (with an anchor), every Layer-1 platform fork ↔ an entry or
+an allowlisted dialect divergence — is enforced by the ledger audit
+(`cmd/vendkit/ledger_test.go`), which parses §6 at test time.
 
 ## 4. Consumer-facing self-tests
 

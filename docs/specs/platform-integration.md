@@ -173,3 +173,4 @@ is discovered, with its mitigation. Seed entries:
 | 4 | ADO tags lack protection rules; GitHub rulesets can protect `refs/tags/*` | ADO: ref-level Manage/Force-push permissions; both: provenance SHA check (security model §2) |
 | 5 | Required-check enforcement is invisible in-tree on both | conformance attest with fact-verify upgrade path (conformance spec §4) |
 | 6 | Azure Repos does not honour CODEOWNERS | ownership = required-reviewers branch policy + `required_reviewers_policy` attestation; CODEOWNERS is GitHub-only and opt-in at init (DR-0015) |
+| 7 | ADO `##vso` output lines cannot carry multi-line/JSON values; GHA `GITHUB_OUTPUT` can | output values are kept single-line scalars today; any JSON-carrying output value must first land the base64-safe ADO transport under the full-kit matrix (testing.md §3) |

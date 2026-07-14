@@ -8,7 +8,10 @@ one executable, on both platforms, forever. Three tiers:
 Pure-function coverage: normalisation (CRLF/CR/trailing-ws/binary round-trips),
 glob matching (one shared matcher — resolver, verifier, and gate must use the
 same implementation, asserted by test), version grammar/ordering incl. rc and
-retraction, declaration validation errors, adapter output stability.
+retraction, declaration validation errors, adapter output stability. The
+build-time docs-site generator (`internal/docsgen`) is unit-tested too — it
+renders the real `docs/` tree deterministically (stable ordering, no embedded
+timestamps) so a byte-diff catches regressions (DR-0018).
 
 Property tests worth the setup:
 - **INV-2/INV-3:** for generated random trees + declarations,

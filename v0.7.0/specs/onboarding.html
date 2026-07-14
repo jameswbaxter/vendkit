@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Spec: Onboarding and consumer configuration · VendKit docs v0.7.0</title>
+<link rel="stylesheet" href="../assets/docs.css">
+<script>(function(){try{var t=localStorage.getItem('vk-theme');if(t==='dark'||t==='light')document.documentElement.setAttribute('data-theme',t);}catch(e){}})();</script>
+</head>
+<body>
+<header class="vk-top"><div class="vk-topwrap">
+<a class="vk-brand" href="../index.html"><span class="vk-bdot"></span>vendkit docs</a>
+<select class="vk-vers" aria-label="Documentation version" data-current="v0.7.0" data-root="../../" data-rel="specs/onboarding.html">
+  <option value="v0.7.0" selected>v0.7.0 (latest)</option>
+</select>
+<button class="vk-tbtn" type="button" aria-label="Toggle color scheme" onclick="(function(d){var c=d.getAttribute('data-theme');if(!c){c=(window.matchMedia&&matchMedia('(prefers-color-scheme: dark)').matches)?'dark':'light';}var n=c==='dark'?'light':'dark';d.setAttribute('data-theme',n);try{localStorage.setItem('vk-theme',n);}catch(e){}})(document.documentElement)">◑</button>
+</div></header>
+<div class="vk-shell">
+<nav class="vk-nav" aria-label="Documentation">
+<a class="vk-nav-home" href="../index.html">Overview</a>
+<div class="vk-nav-sec">Guides</div>
+<ul class="vk-nav-list">
+  <li><a class="vk-nav-link" href="../architecture.html">Architecture</a></li>
+  <li><a class="vk-nav-link" href="../testing.html">Testing strategy and the conformance kit</a></li>
+</ul>
+<div class="vk-nav-sec">Specs</div>
+<ul class="vk-nav-list">
+  <li><a class="vk-nav-link" href="../specs/cli.html">Spec: CLI surface</a></li>
+  <li><a class="vk-nav-link" href="../specs/conformance.html">Spec: Conformance</a></li>
+  <li><a class="vk-nav-link" href="../specs/export-declaration.html">Spec: Export declaration</a></li>
+  <li><a class="vk-nav-link" href="../specs/handler-protocol.html">Spec: Handler protocol</a></li>
+  <li><a class="vk-nav-link" href="../specs/manifest-and-gate.html">Spec: Manifest and gate lane</a></li>
+  <li><a class="vk-nav-link" href="../specs/migrations.html">Spec: Migrations</a></li>
+  <li><a class="vk-nav-link is-active" href="../specs/onboarding.html">Spec: Onboarding and consumer configuration</a></li>
+  <li><a class="vk-nav-link" href="../specs/platform-integration.html">Spec: Platform integration — CI surfaces, credentials, differences ledger</a></li>
+  <li><a class="vk-nav-link" href="../specs/release-watch.html">Spec: Release watch</a></li>
+  <li><a class="vk-nav-link" href="../specs/releases-and-versioning.html">Spec: Releases and versioning</a></li>
+  <li><a class="vk-nav-link" href="../specs/security-model.html">Spec: Security model</a></li>
+  <li><a class="vk-nav-link" href="../specs/sync.html">Spec: Sync lane and materialisation</a></li>
+</ul>
+<div class="vk-nav-sec">Design</div>
+<ul class="vk-nav-list">
+  <li><a class="vk-nav-link" href="../design/DR-0001-vendored-identity-copies.html">DR-0001 — Vendored identity copies, not package distribution</a></li>
+  <li><a class="vk-nav-link" href="../design/DR-0002-identity-in-declaration.html">DR-0002 — Slice identity lives in the declaration, not the tools</a></li>
+  <li><a class="vk-nav-link" href="../design/DR-0003-two-lane-model.html">DR-0003 — Two-lane distribution: sync PRs + PR-time gate</a></li>
+  <li><a class="vk-nav-link" href="../design/DR-0004-normalised-hashing.html">DR-0004 — Normalised content hashing</a></li>
+  <li><a class="vk-nav-link" href="../design/DR-0005-tag-is-the-release.html">DR-0005 — The tag is the release: immutable, SHA-anchored, retractable</a></li>
+  <li><a class="vk-nav-link" href="../design/DR-0006-pull-with-push-hints.html">DR-0006 — Pull reconciliation with optional push hints</a></li>
+  <li><a class="vk-nav-link" href="../design/DR-0007-platform-ports.html">DR-0007 — ADO and GitHub Actions as peer backends behind a port interface</a></li>
+  <li><a class="vk-nav-link" href="../design/DR-0008-declarative-migrations.html">DR-0008 — Declarative migrations with deterministic verification</a></li>
+  <li><a class="vk-nav-link" href="../design/DR-0009-content-adapters.html">DR-0009 — Content adapters: identity copy by default, named transforms by declaration</a></li>
+  <li><a class="vk-nav-link" href="../design/DR-0010-review-gated-scope.html">DR-0010 — Scope changes are reviewed PR events, never automatic</a></li>
+  <li><a class="vk-nav-link" href="../design/DR-0011-single-cli-stdlib-gate.html">DR-0011 — One CLI; dependency-free consumer gate path</a></li>
+  <li><a class="vk-nav-link" href="../design/DR-0012-consumer-config-consolidation.html">DR-0012 — One consumer config file per slice under `.vendkit/`</a></li>
+  <li><a class="vk-nav-link" href="../design/DR-0013-seeded-files.html">DR-0013 — Seeded files: a scaffold-once lifecycle class</a></li>
+  <li><a class="vk-nav-link" href="../design/DR-0014-handler-protocol.html">DR-0014: Detection and delivery split by an exec handler protocol</a></li>
+  <li><a class="vk-nav-link" href="../design/DR-0015-scm-ci-axes.html">DR-0015: Split the platform vocabulary into SCM and CI axes; formats not services</a></li>
+  <li><a class="vk-nav-link" href="../design/DR-0016-engine-as-pinned-artefact.html">DR-0016: The engine becomes a pinned, checksummed artefact (INV-6 revision)</a></li>
+  <li><a class="vk-nav-link" href="../design/DR-0017-single-implementation-go.html">DR-0017: Single engine implementation in Go, with the scenario kit as the parity ratchet</a></li>
+  <li><a class="vk-nav-link" href="../design/DR-0018-versioned-docs-generator.html">DR-0018: Versioned docs site from a pure-Go static generator</a></li>
+  <li><a class="vk-nav-link" href="../design/README.html">Design records</a></li>
+  <li><a class="vk-nav-link" href="../design/TEMPLATE.html">DR-NNNN — Title</a></li>
+</ul>
+</nav>
+<main class="vk-main"><article class="vk-doc">
+<h1 id="spec-onboarding-and-consumer-configuration">Spec: Onboarding and consumer configuration</h1>
+<p>Status: draft for implementation · Owner: Layer 3</p>
+<h2 id="1-consumer-configuration-file">1. Consumer configuration file</h2>
+<p>One file per vendored slice: <code>.vendkit/&lt;slice&gt;.yml</code>. Consumer-owned (scaffolded
+once, then hand-maintained; <strong>not</strong> manifest-tracked — it holds consumer-local
+values). This is the single consumer config surface: environment axes,
+profile binding, pin location, watch channel, delivery handlers,
+attestations, waivers.</p>
+<pre><code class="language-yaml">schema_version: 1
+slice: docs
+publisher:
+  scm: github                         # github | azure-repos — provenance and
+  repo: example-org/design-docs       #   shorthand-expansion hint only; any
+                                      #   git URL or path is used verbatim
+scm: github                           # the CONSUMER's SCM host (DR-0015)
+ci: github-actions                    # github-actions | azure-pipelines | none
+profile: code-repo                    # optional; must exist in the declaration
+pin:
+  # First entry is the authoritative read source; the sync PR advances the
+  # matching reference line in every listed file, in lockstep. With
+  # `ci: none` the pin block must be EMPTY — the manifest's source.release
+  # is the pin.
+  pattern: &quot;ref: refs/tags/v&quot;
+  files:
+    - .github/workflows/docs-sync.yml
+    - .github/workflows/vendkit-gate.yml
+engine:                               # the pinned engine binary (DR-0016)
+  version: v1.4.2                     # advanced with the content pin by sync
+  sha256:                             # per-platform; blank = advisory
+    linux/amd64: &quot;…&quot;
+    darwin/arm64: &quot;…&quot;
+watch:
+  channel: stable                     # stable | rc
+handlers:                             # delivery handlers (handler protocol)
+  pr:
+    exec: [vendkit, handler, github]
+  handoff:
+    exec: [vendkit, handler, github]
+    dedup_key: vendkit-watch-docs
+  fact-verify:
+    exec: [vendkit, handler, github]
+seeds:
+  notes: informational                # informational | silent (DR-0013)
+attestations:
+  branch_protection_enabled: true
+  sync_credential_provisioned: true
+waivers: []                           # [{rule: &lt;id&gt;, reason: &quot;…&quot;}]
+</code></pre>
+<p>Beside it, engine-owned: <code>.vendkit/&lt;slice&gt;-manifest.json</code> (manifest spec).
+Discovery convention (fixed; INV-8): tools enumerate <code>.vendkit/*.yml</code> for
+slices and <code>.vendkit/*-manifest.json</code> for manifests — nothing else, nowhere
+else. The namespace is <strong>strict</strong>: a <code>.vendkit/*.yml</code> that does not parse as
+a slice config is a usage error, never a silent skip (DR-0012).</p>
+<p>Field notes:</p>
+<ul>
+<li><code>scm</code> / <code>ci</code> are the two environment axes (DR-0015). They are independent:
+a GitHub-hosted repo built by Azure Pipelines is <code>scm: github, ci: azure-pipelines</code>. Conformance parses the pipeline dialect named by
+<code>ci:</code> — never env-sniffed, so fleet audits decide identically.</li>
+<li><code>ci: none</code> is fully manual mode: no pipelines were scaffolded; gate,
+watch and sync are run by the human (or cron); the pin block is empty;
+pipeline-dependent conformance rules report <code>skipped</code>.</li>
+<li><code>publisher</code> coordinates deliberately also appear in the manifest's
+<code>source:</code> (immutable provenance of what was actually vendored) and in the
+publisher's own declaration (its identity). The three agree by
+construction; a conformance tree-check flags drift between config and
+manifest.</li>
+<li><code>handlers</code> may be omitted (all deliveries unwired — report-only) and each
+kind is independently optional. <code>VENDKIT_HANDLER_&lt;KIND&gt;</code> env vars override
+per run (handler-protocol spec §4).</li>
+</ul>
+<h2 id="2-the-scaffolder">2. The scaffolder</h2>
+<p><code>vendkit init --ci github-actions|azure-pipelines|none [--scm github|azure-repos] --version vX.Y.Z [--profile &lt;p&gt;] [--mode primary|additive] [--base-branch main] [--pr-token-secret &lt;name&gt;] [--codeowners &lt;owners&gt;] [--push-hint]</code>   (alias: <code>onboard</code>)</p>
+<p>Run from a checkout of the <strong>publisher at the release being pinned</strong> (so the
+scaffold, engine and content come from one immutable tree). <code>--scm</code> defaults
+to inference from the consumer's origin remote (<code>github.com</code> /
+<code>dev.azure.com</code> / <code>*.visualstudio.com</code>); no remote and no flag is a loud
+usage error, never a guess. Three phases:</p>
+<ol>
+<li><strong>Vendor.</strong> Seed an empty manifest, then materialise with scope
+reconciliation — the profile's full export slice lands, tracked, with
+provenance recorded.</li>
+<li><strong>Scaffold.</strong> Render the CI-keyed template set with the slice identity
+(nothing for <code>ci: none</code>). Placeholder substitution must fail loudly on
+any unresolved variable.</li>
+<li><strong>Report.</strong> Print the manual step list (§4) and the conformance gaps that
+remain. The scaffolder never performs trust-bootstrap acts itself and never
+re-implements conformance judgment — it <em>defers</em> to <code>vendkit conformance</code>.</li>
+</ol>
+<h3 id="scaffolded-outputs">Scaffolded outputs</h3>
+<table>
+<thead>
+<tr>
+<th>Output</th>
+<th>github-actions</th>
+<th>azure-pipelines</th>
+<th>none</th>
+<th>Mode</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Gate pipeline (all slices, no path filter)</td>
+<td><code>.github/workflows/vendkit-gate.yml</code></td>
+<td><code>azure-pipelines/vendkit-gate.yml</code></td>
+<td>—</td>
+<td>primary only</td>
+</tr>
+<tr>
+<td>Sync pipeline (per slice; schedule + optional push hint)</td>
+<td><code>.github/workflows/&lt;slice&gt;-sync.yml</code></td>
+<td><code>azure-pipelines/&lt;slice&gt;-sync.yml</code></td>
+<td>—</td>
+<td>always</td>
+</tr>
+<tr>
+<td>Watch pipeline (all slices; weekly + PR dry-run self-test)</td>
+<td><code>.github/workflows/vendkit-watch.yml</code></td>
+<td><code>azure-pipelines/vendkit-watch.yml</code></td>
+<td>—</td>
+<td>primary only</td>
+</tr>
+<tr>
+<td>Conformance pipeline (advisory)</td>
+<td><code>.github/workflows/vendkit-conformance.yml</code></td>
+<td><code>azure-pipelines/vendkit-conformance.yml</code></td>
+<td>—</td>
+<td>primary only</td>
+</tr>
+<tr>
+<td>Slice config</td>
+<td><code>.vendkit/&lt;slice&gt;.yml</code></td>
+<td>same</td>
+<td>same</td>
+<td>always</td>
+</tr>
+<tr>
+<td>Slice manifest</td>
+<td><code>.vendkit/&lt;slice&gt;-manifest.json</code></td>
+<td>same</td>
+<td>same</td>
+<td>always</td>
+</tr>
+<tr>
+<td>CODEOWNERS stanza covering <code>.vendkit/</code></td>
+<td><strong>opt-in</strong> via <code>--codeowners</code> (scm github only)</td>
+<td>refused: Azure Repos does not honour CODEOWNERS — required-reviewers policy on the checklist instead</td>
+<td>scm-dependent</td>
+<td>opt-in</td>
+</tr>
+</tbody>
+</table>
+<p><strong><code>primary</code> vs <code>additive</code>:</strong> the first slice onboards the shared machinery
+(gate, watch, conformance pipelines — which are <em>slice-agnostic</em> by design,
+architecture §5); each further slice adds only its own sync pipeline, config
+and manifest. Additive onboarding must be idempotent: re-running detects the
+existing slice and repairs rather than duplicates.</p>
+<p>Scaffolded pipeline callers are consumer-owned after generation (they embed
+consumer-local values: schedules, secret names, base branch) and are therefore
+<strong>not</strong> drift-gated. The framework components they call are pinned by tag; the
+conformance <code>pipeline-wired</code> rules keep the wiring honest.</p>
+<h2 id="3-platform-notes-baked-into-the-scaffolds">3. Platform notes baked into the scaffolds</h2>
+<ul>
+<li><strong>github-actions sync:</strong> the PR handler takes its token from
+<code>secrets.&lt;pr-token-secret&gt;</code> via <code>VENDKIT_TOKEN_OPEN_PR</code>; the reference
+handler refuses a <code>GITHUB_TOKEN</code> fallback (differences ledger #2) and the
+workflow carries a comment saying why.</li>
+<li><strong>azure-pipelines sync/gate:</strong> scaffold emits the pipeline YAML <em>and</em>
+prints the branch-policy commands/URLs for Build Validation (which cannot
+be set from YAML). The corresponding conformance rules stay red until done
+— the checklist is executable, not prose.</li>
+<li><strong>Handlers:</strong> the slice config's default handler commands are keyed by the
+consumer's <code>scm</code> (<code>vendkit handler github</code> / <code>vendkit handler ado</code>, built
+into the engine binary); <code>ci: none</code> leaves them unwired with a comment
+showing how to wire one.</li>
+<li><strong>Engine (DR-0016):</strong> the scaffolded lanes' first step fetches the pinned
+engine binary, verifies it against the release <code>SHA256SUMS.txt</code>, caches it,
+and runs <code>vendkit self-verify</code> against the <code>engine.sha256</code> pin before the
+lane proper — no interpreter, no build step on the runner.</li>
+<li><strong>Push hint:</strong> <code>--push-hint</code> (off by default) adds the <code>resources.pipelines</code>
+trigger (azure-pipelines) or the <code>repository_dispatch</code> receiver
+(github-actions) to the sync pipeline — the consumer <em>receiver</em> side of the
+hint. The publisher <em>sender</em> side is <code>vendkit push-hint</code> reading its
+subscribers file (platform-integration spec §4). The schedule is always the
+reconciler, so the receiver is a pure latency optimisation (DR-0006).</li>
+</ul>
+<h2 id="4-irreducible-manual-steps-reported-never-performed">4. Irreducible manual steps (reported, never performed)</h2>
+<ol>
+<li>Grant the CI identity read on the publisher repo (content checkout +
+engine artefact fetch).</li>
+<li>Record the engine checksums in <code>engine.sha256</code> from the pinned release's
+<code>SHA256SUMS.txt</code> (one hex per platform). Until filled, <code>vendkit self-verify</code> is advisory; the fetch step still verifies each download
+against <code>SHA256SUMS.txt</code> (DR-0016). (Skipped for <code>ci: none</code>.)</li>
+<li>Provision the PR-capable credential as the named secret for the PR
+handler; on ADO also policy-exempt it for <em>creation</em> only, on GitHub
+prefer a GitHub App. (Skipped for <code>ci: none</code>.)</li>
+<li>Enable branch protection / branch policies; make the gate a required
+check (github: ruleset; azure-repos: Build Validation). Under <code>ci: none</code>
+this step instead states plainly: there is no PR-time gate — automated
+drift enforcement is forfeited and <code>vendkit gate --strict</code> must be run
+by hand.</li>
+<li>On azure-repos: add a required-reviewers branch policy covering
+<code>.vendkit/**</code> (the CODEOWNERS equivalent) and record the
+<code>required_reviewers_policy</code> attestation.</li>
+<li>Record the attestations for the above in the slice config.</li>
+</ol>
+<p>Each maps 1:1 to a conformance rule, so &quot;fully onboarded&quot; is
+<code>vendkit conformance --strict</code> passing — the onboarding checklist and the
+conformance spec can never diverge.</p>
+
+</article>
+<footer class="vk-foot">VendKit documentation · <code>v0.7.0</code> · <a href="../../">all releases</a></footer>
+</main>
+</div>
+<script>
+(function(){
+  var sel=document.querySelector('select.vk-vers');
+  if(!sel)return;
+  var root=sel.getAttribute('data-root')||'';
+  var rel=sel.getAttribute('data-rel')||'index.html';
+  var current=sel.getAttribute('data-current');
+  sel.addEventListener('change',function(){
+    if(sel.value)location.href=root+sel.value+'/'+rel;
+  });
+  try{
+    fetch(root+'versions.json',{cache:'no-cache'}).then(function(r){return r.json();}).then(function(m){
+      if(!m||!m.versions||!m.versions.length)return;
+      sel.innerHTML='';
+      m.versions.forEach(function(v){
+        var o=document.createElement('option');
+        o.value=v.version;
+        o.textContent=v.version+(v.latest?' (latest)':'');
+        if(v.version===current)o.selected=true;
+        sel.appendChild(o);
+      });
+    }).catch(function(){});
+  }catch(e){}
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>DR-0014: Detection and delivery split by an exec handler protocol · VendKit docs v0.7.0</title>
+<link rel="stylesheet" href="../assets/docs.css">
+<script>(function(){try{var t=localStorage.getItem('vk-theme');if(t==='dark'||t==='light')document.documentElement.setAttribute('data-theme',t);}catch(e){}})();</script>
+</head>
+<body>
+<header class="vk-top"><div class="vk-topwrap">
+<a class="vk-brand" href="../index.html"><span class="vk-bdot"></span>vendkit docs</a>
+<select class="vk-vers" aria-label="Documentation version" data-current="v0.7.0" data-root="../../" data-rel="design/DR-0014-handler-protocol.html">
+  <option value="v0.7.0" selected>v0.7.0 (latest)</option>
+</select>
+<button class="vk-tbtn" type="button" aria-label="Toggle color scheme" onclick="(function(d){var c=d.getAttribute('data-theme');if(!c){c=(window.matchMedia&&matchMedia('(prefers-color-scheme: dark)').matches)?'dark':'light';}var n=c==='dark'?'light':'dark';d.setAttribute('data-theme',n);try{localStorage.setItem('vk-theme',n);}catch(e){}})(document.documentElement)">◑</button>
+</div></header>
+<div class="vk-shell">
+<nav class="vk-nav" aria-label="Documentation">
+<a class="vk-nav-home" href="../index.html">Overview</a>
+<div class="vk-nav-sec">Guides</div>
+<ul class="vk-nav-list">
+  <li><a class="vk-nav-link" href="../architecture.html">Architecture</a></li>
+  <li><a class="vk-nav-link" href="../testing.html">Testing strategy and the conformance kit</a></li>
+</ul>
+<div class="vk-nav-sec">Specs</div>
+<ul class="vk-nav-list">
+  <li><a class="vk-nav-link" href="../specs/cli.html">Spec: CLI surface</a></li>
+  <li><a class="vk-nav-link" href="../specs/conformance.html">Spec: Conformance</a></li>
+  <li><a class="vk-nav-link" href="../specs/export-declaration.html">Spec: Export declaration</a></li>
+  <li><a class="vk-nav-link" href="../specs/handler-protocol.html">Spec: Handler protocol</a></li>
+  <li><a class="vk-nav-link" href="../specs/manifest-and-gate.html">Spec: Manifest and gate lane</a></li>
+  <li><a class="vk-nav-link" href="../specs/migrations.html">Spec: Migrations</a></li>
+  <li><a class="vk-nav-link" href="../specs/onboarding.html">Spec: Onboarding and consumer configuration</a></li>
+  <li><a class="vk-nav-link" href="../specs/platform-integration.html">Spec: Platform integration — CI surfaces, credentials, differences ledger</a></li>
+  <li><a class="vk-nav-link" href="../specs/release-watch.html">Spec: Release watch</a></li>
+  <li><a class="vk-nav-link" href="../specs/releases-and-versioning.html">Spec: Releases and versioning</a></li>
+  <li><a class="vk-nav-link" href="../specs/security-model.html">Spec: Security model</a></li>
+  <li><a class="vk-nav-link" href="../specs/sync.html">Spec: Sync lane and materialisation</a></li>
+</ul>
+<div class="vk-nav-sec">Design</div>
+<ul class="vk-nav-list">
+  <li><a class="vk-nav-link" href="../design/DR-0001-vendored-identity-copies.html">DR-0001 — Vendored identity copies, not package distribution</a></li>
+  <li><a class="vk-nav-link" href="../design/DR-0002-identity-in-declaration.html">DR-0002 — Slice identity lives in the declaration, not the tools</a></li>
+  <li><a class="vk-nav-link" href="../design/DR-0003-two-lane-model.html">DR-0003 — Two-lane distribution: sync PRs + PR-time gate</a></li>
+  <li><a class="vk-nav-link" href="../design/DR-0004-normalised-hashing.html">DR-0004 — Normalised content hashing</a></li>
+  <li><a class="vk-nav-link" href="../design/DR-0005-tag-is-the-release.html">DR-0005 — The tag is the release: immutable, SHA-anchored, retractable</a></li>
+  <li><a class="vk-nav-link" href="../design/DR-0006-pull-with-push-hints.html">DR-0006 — Pull reconciliation with optional push hints</a></li>
+  <li><a class="vk-nav-link" href="../design/DR-0007-platform-ports.html">DR-0007 — ADO and GitHub Actions as peer backends behind a port interface</a></li>
+  <li><a class="vk-nav-link" href="../design/DR-0008-declarative-migrations.html">DR-0008 — Declarative migrations with deterministic verification</a></li>
+  <li><a class="vk-nav-link" href="../design/DR-0009-content-adapters.html">DR-0009 — Content adapters: identity copy by default, named transforms by declaration</a></li>
+  <li><a class="vk-nav-link" href="../design/DR-0010-review-gated-scope.html">DR-0010 — Scope changes are reviewed PR events, never automatic</a></li>
+  <li><a class="vk-nav-link" href="../design/DR-0011-single-cli-stdlib-gate.html">DR-0011 — One CLI; dependency-free consumer gate path</a></li>
+  <li><a class="vk-nav-link" href="../design/DR-0012-consumer-config-consolidation.html">DR-0012 — One consumer config file per slice under `.vendkit/`</a></li>
+  <li><a class="vk-nav-link" href="../design/DR-0013-seeded-files.html">DR-0013 — Seeded files: a scaffold-once lifecycle class</a></li>
+  <li><a class="vk-nav-link is-active" href="../design/DR-0014-handler-protocol.html">DR-0014: Detection and delivery split by an exec handler protocol</a></li>
+  <li><a class="vk-nav-link" href="../design/DR-0015-scm-ci-axes.html">DR-0015: Split the platform vocabulary into SCM and CI axes; formats not services</a></li>
+  <li><a class="vk-nav-link" href="../design/DR-0016-engine-as-pinned-artefact.html">DR-0016: The engine becomes a pinned, checksummed artefact (INV-6 revision)</a></li>
+  <li><a class="vk-nav-link" href="../design/DR-0017-single-implementation-go.html">DR-0017: Single engine implementation in Go, with the scenario kit as the parity ratchet</a></li>
+  <li><a class="vk-nav-link" href="../design/DR-0018-versioned-docs-generator.html">DR-0018: Versioned docs site from a pure-Go static generator</a></li>
+  <li><a class="vk-nav-link" href="../design/README.html">Design records</a></li>
+  <li><a class="vk-nav-link" href="../design/TEMPLATE.html">DR-NNNN — Title</a></li>
+</ul>
+</nav>
+<main class="vk-main"><article class="vk-doc">
+<h1 id="dr-0014-detection-and-delivery-split-by-an-exec-handler-protocol">DR-0014: Detection and delivery split by an exec handler protocol</h1>
+<p>Status: accepted · Supersedes: the port-interface service methods of DR-0007</p>
+<h2 id="context">Context</h2>
+<p>The original port interface (DR-0007) bundled two different responsibilities
+behind one Protocol: <em>judgments</em> the engine owns (version compares, drift
+findings, conformance rule evaluation) and <em>deliveries</em> to vendor services
+(open a PR, upsert a work item, verify a platform fact via API). The
+delivery half hardcoded a vendor list — GitHub Issues and Azure DevOps work
+items — and every further ticket system (Jira, Linear, ServiceNow, Slack…)
+would have meant an engine release. The list could only ever be &quot;some but
+not all&quot;.</p>
+<p>A second conflation surfaced at the same time: <code>platform: github | ado</code>
+stood in for the SCM host, the CI host, <em>and</em> the work-tracking system —
+three products that do not have to travel together (see DR-0015).</p>
+<h2 id="decision">Decision</h2>
+<p>Split <strong>detection from delivery</strong> everywhere, with delivery behind an
+exec-based protocol (handler-protocol spec):</p>
+<ol>
+<li>Core commands produce <em>judgments</em> and, where a delivery is needed,
+compose a JSON <strong>intent document</strong> (PR intent, handoff finding,
+fact-verify query).</li>
+<li>A consumer-configured <strong>handler executable</strong> receives the intent on
+stdin, delivers it to its vendor's API, and reports facts as <code>key=value</code>
+on stdout. Idempotency semantics (branch-keyed PR upsert, dedup-keyed
+work-item upsert) are protocol obligations on the handler.</li>
+<li><strong>PR delivery is included</strong> in the split. The reviewed PR is
+invariant-bearing (INV-10), which argued for keeping it in core — but by
+the format-vs-service rule (DR-0015) PR upsert is a vendor service call
+like any other, and it targets the <em>consumer's</em> SCM, a platform fact the
+engine otherwise would not need to know. The invariant-bearing parts
+(deterministic branch name, body composition, never-merge) stay in core
+and in the protocol's obligations; only the API call moves out.</li>
+<li>Reference handlers for GitHub and Azure DevOps ship in the framework
+release itself — first-class support is preserved, as shipped-and-tested
+handlers rather than compiled-in clients. A journal handler is the test
+kit's assertion point.</li>
+<li>Upstream reads (tag listing, file-at-tag) move to the <strong>git protocol</strong>
+(<code>core/upstream.py</code>) — no vendor API and therefore no handler needed.</li>
+</ol>
+<p>The engine ends up vendor-service-free: git + filesystem + subprocess.</p>
+<h2 id="alternatives-considered">Alternatives considered</h2>
+<ul>
+<li><strong>Status quo (service methods on the port).</strong> Simplest, and the port did
+isolate the calls — but the binary's feature list becomes a vendor list,
+and every new ticket system is an engine change. Rejected.</li>
+<li><strong>A second CLI holding all platform REST.</strong> Cleaner-sounding separation,
+but it splits the invariant-bearing sync sequence across two versioned,
+separately pinned artefacts and doubles the distribution story, for no
+isolation the exec protocol doesn't already provide. Rejected.</li>
+<li><strong>PR delivery stays in core as a bounded exception.</strong> Defensible
+(PRs are the product's central mechanism), but it would keep two vendor
+REST clients in the engine forever and require a consumer-SCM detection
+path that the mixed case (Azure Pipelines building a GitHub repo) gets
+wrong. Rejected in favour of protocol symmetry.</li>
+</ul>
+<h2 id="consequences">Consequences</h2>
+<ul>
+<li>Adding a delivery target is a consumer-side config edit plus one
+executable; the engine and its invariants are untouched (INV-8 becomes
+stronger: the core is identical everywhere because it does nothing
+platform-specific).</li>
+<li>Unwired handlers are a defined, visible state (<code>pr-delivered=false</code> +
+intent emitted; <code>handoff=unwired</code>) — which is exactly the fully-manual
+<code>ci: none</code> mode, not a degraded one.</li>
+<li>The sync lane's end-to-end promise now spans two processes; the scenario
+kit therefore asserts through the journal handler, and the protocol
+version field guards against contract drift.</li>
+<li>The port interface shrinks to the CI output surface (emit output/summary/
+error) — the only in-process platform adaptation left.</li>
+</ul>
+
+</article>
+<footer class="vk-foot">VendKit documentation · <code>v0.7.0</code> · <a href="../../">all releases</a></footer>
+</main>
+</div>
+<script>
+(function(){
+  var sel=document.querySelector('select.vk-vers');
+  if(!sel)return;
+  var root=sel.getAttribute('data-root')||'';
+  var rel=sel.getAttribute('data-rel')||'index.html';
+  var current=sel.getAttribute('data-current');
+  sel.addEventListener('change',function(){
+    if(sel.value)location.href=root+sel.value+'/'+rel;
+  });
+  try{
+    fetch(root+'versions.json',{cache:'no-cache'}).then(function(r){return r.json();}).then(function(m){
+      if(!m||!m.versions||!m.versions.length)return;
+      sel.innerHTML='';
+      m.versions.forEach(function(v){
+        var o=document.createElement('option');
+        o.value=v.version;
+        o.textContent=v.version+(v.latest?' (latest)':'');
+        if(v.version===current)o.selected=true;
+        sel.appendChild(o);
+      });
+    }).catch(function(){});
+  }catch(e){}
+})();
+</script>
+</body>
+</html>

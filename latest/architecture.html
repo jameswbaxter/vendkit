@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Architecture · VendKit docs v0.7.0</title>
+<link rel="stylesheet" href="assets/docs.css">
+<script>(function(){try{var t=localStorage.getItem('vk-theme');if(t==='dark'||t==='light')document.documentElement.setAttribute('data-theme',t);}catch(e){}})();</script>
+</head>
+<body>
+<header class="vk-top"><div class="vk-topwrap">
+<a class="vk-brand" href="index.html"><span class="vk-bdot"></span>vendkit docs</a>
+<select class="vk-vers" aria-label="Documentation version" data-current="v0.7.0" data-root="../" data-rel="architecture.html">
+  <option value="v0.7.0" selected>v0.7.0 (latest)</option>
+</select>
+<button class="vk-tbtn" type="button" aria-label="Toggle color scheme" onclick="(function(d){var c=d.getAttribute('data-theme');if(!c){c=(window.matchMedia&&matchMedia('(prefers-color-scheme: dark)').matches)?'dark':'light';}var n=c==='dark'?'light':'dark';d.setAttribute('data-theme',n);try{localStorage.setItem('vk-theme',n);}catch(e){}})(document.documentElement)">◑</button>
+</div></header>
+<div class="vk-shell">
+<nav class="vk-nav" aria-label="Documentation">
+<a class="vk-nav-home" href="index.html">Overview</a>
+<div class="vk-nav-sec">Guides</div>
+<ul class="vk-nav-list">
+  <li><a class="vk-nav-link is-active" href="architecture.html">Architecture</a></li>
+  <li><a class="vk-nav-link" href="testing.html">Testing strategy and the conformance kit</a></li>
+</ul>
+<div class="vk-nav-sec">Specs</div>
+<ul class="vk-nav-list">
+  <li><a class="vk-nav-link" href="specs/cli.html">Spec: CLI surface</a></li>
+  <li><a class="vk-nav-link" href="specs/conformance.html">Spec: Conformance</a></li>
+  <li><a class="vk-nav-link" href="specs/export-declaration.html">Spec: Export declaration</a></li>
+  <li><a class="vk-nav-link" href="specs/handler-protocol.html">Spec: Handler protocol</a></li>
+  <li><a class="vk-nav-link" href="specs/manifest-and-gate.html">Spec: Manifest and gate lane</a></li>
+  <li><a class="vk-nav-link" href="specs/migrations.html">Spec: Migrations</a></li>
+  <li><a class="vk-nav-link" href="specs/onboarding.html">Spec: Onboarding and consumer configuration</a></li>
+  <li><a class="vk-nav-link" href="specs/platform-integration.html">Spec: Platform integration — CI surfaces, credentials, differences ledger</a></li>
+  <li><a class="vk-nav-link" href="specs/release-watch.html">Spec: Release watch</a></li>
+  <li><a class="vk-nav-link" href="specs/releases-and-versioning.html">Spec: Releases and versioning</a></li>
+  <li><a class="vk-nav-link" href="specs/security-model.html">Spec: Security model</a></li>
+  <li><a class="vk-nav-link" href="specs/sync.html">Spec: Sync lane and materialisation</a></li>
+</ul>
+<div class="vk-nav-sec">Design</div>
+<ul class="vk-nav-list">
+  <li><a class="vk-nav-link" href="design/DR-0001-vendored-identity-copies.html">DR-0001 — Vendored identity copies, not package distribution</a></li>
+  <li><a class="vk-nav-link" href="design/DR-0002-identity-in-declaration.html">DR-0002 — Slice identity lives in the declaration, not the tools</a></li>
+  <li><a class="vk-nav-link" href="design/DR-0003-two-lane-model.html">DR-0003 — Two-lane distribution: sync PRs + PR-time gate</a></li>
+  <li><a class="vk-nav-link" href="design/DR-0004-normalised-hashing.html">DR-0004 — Normalised content hashing</a></li>
+  <li><a class="vk-nav-link" href="design/DR-0005-tag-is-the-release.html">DR-0005 — The tag is the release: immutable, SHA-anchored, retractable</a></li>
+  <li><a class="vk-nav-link" href="design/DR-0006-pull-with-push-hints.html">DR-0006 — Pull reconciliation with optional push hints</a></li>
+  <li><a class="vk-nav-link" href="design/DR-0007-platform-ports.html">DR-0007 — ADO and GitHub Actions as peer backends behind a port interface</a></li>
+  <li><a class="vk-nav-link" href="design/DR-0008-declarative-migrations.html">DR-0008 — Declarative migrations with deterministic verification</a></li>
+  <li><a class="vk-nav-link" href="design/DR-0009-content-adapters.html">DR-0009 — Content adapters: identity copy by default, named transforms by declaration</a></li>
+  <li><a class="vk-nav-link" href="design/DR-0010-review-gated-scope.html">DR-0010 — Scope changes are reviewed PR events, never automatic</a></li>
+  <li><a class="vk-nav-link" href="design/DR-0011-single-cli-stdlib-gate.html">DR-0011 — One CLI; dependency-free consumer gate path</a></li>
+  <li><a class="vk-nav-link" href="design/DR-0012-consumer-config-consolidation.html">DR-0012 — One consumer config file per slice under `.vendkit/`</a></li>
+  <li><a class="vk-nav-link" href="design/DR-0013-seeded-files.html">DR-0013 — Seeded files: a scaffold-once lifecycle class</a></li>
+  <li><a class="vk-nav-link" href="design/DR-0014-handler-protocol.html">DR-0014: Detection and delivery split by an exec handler protocol</a></li>
+  <li><a class="vk-nav-link" href="design/DR-0015-scm-ci-axes.html">DR-0015: Split the platform vocabulary into SCM and CI axes; formats not services</a></li>
+  <li><a class="vk-nav-link" href="design/DR-0016-engine-as-pinned-artefact.html">DR-0016: The engine becomes a pinned, checksummed artefact (INV-6 revision)</a></li>
+  <li><a class="vk-nav-link" href="design/DR-0017-single-implementation-go.html">DR-0017: Single engine implementation in Go, with the scenario kit as the parity ratchet</a></li>
+  <li><a class="vk-nav-link" href="design/DR-0018-versioned-docs-generator.html">DR-0018: Versioned docs site from a pure-Go static generator</a></li>
+  <li><a class="vk-nav-link" href="design/README.html">Design records</a></li>
+  <li><a class="vk-nav-link" href="design/TEMPLATE.html">DR-NNNN — Title</a></li>
+</ul>
+</nav>
+<main class="vk-main"><article class="vk-doc">
+<h1 id="architecture">Architecture</h1>
+<h2 id="1-layering">1. Layering</h2>
+<pre><code>Layer 3  Adoption surface      scaffolder (init), conformance rule specs,
+                               operator documentation
+Layer 2  Platform integration  ADO step templates / GHA composite actions +
+                               reusable workflows — thin, parameters-only
+Layer 1  Platform adaptation   CI output surface (in-process dialects) +
+                               handler executables (vendor services: PR,
+                               work items, fact verification) behind the
+                               exec handler protocol
+Layer 0  Core engine           declaration parsing, manifest, materialise,
+                               gate verification, version compare, migrations,
+                               conformance evaluation, git-protocol upstream
+                               reads  (one static Go binary; git + filesystem only)
+</code></pre>
+<p>Rules that keep the layers honest:</p>
+<ul>
+<li><strong>Layer 0 calls no vendor service</strong> — its externals are git, the
+filesystem, and handler subprocesses; it never inspects CI environment
+variables except through <code>ci.detect()</code>. Its outputs are neutral: exit
+codes, <code>key=value</code> lines on stdout, JSON documents.</li>
+<li><strong>Layer 1 is the only place vendor knowledge appears, split by the
+format-vs-service rule (DR-0015):</strong> in-process code may understand vendor
+<em>formats</em> (output dialects, pipeline YAML, CODEOWNERS syntax); vendor
+<em>services</em> live exclusively in handler executables behind the handler
+protocol (DR-0014).</li>
+<li><strong>Layer 2 contains no logic.</strong> A template/action validates parameters,
+calls the CLI, and maps neutral outputs to platform outputs via the CI
+surface. If a template needs an <code>if</code>, the condition belongs in Layer 0
+or 1.</li>
+<li><strong>Layer 3 is data plus rendering.</strong> The scaffolder renders CI-keyed
+template sets; conformance rules are YAML evaluated by the Layer 0 engine.</li>
+</ul>
+<p>See <a href="specs/platform-integration.html">specs/platform-integration.md</a> for the
+CI surface and credential model, <a href="specs/handler-protocol.html">specs/handler-protocol.md</a>
+for the delivery boundary, and DR-0007/DR-0014 for why the boundary sits
+exactly here.</p>
+<h2 id="2-components-and-data-flow">2. Components and data flow</h2>
+<pre><code class="language-mermaid">flowchart LR
+  subgraph Publisher repo
+    D[export declaration] --&gt; G[vendkit generate]
+    G --&gt; M[(publisher manifest)]
+    R[vendkit release] --&gt;|annotated tag vX.Y.Z| T[(immutable tag)]
+    M --&gt;|freshness pre-gate| R
+    MIG[migrations/*.yml] --- T
+    CS[conformance spec] --- T
+  end
+
+  subgraph Consumer repo
+    W[watch] --&gt;|pinned &lt; latest| H[handoff handler → work item / issue]
+    S[sync lane] --&gt;|materialise target release| PR[PR handler → reviewed sync PR]
+    GATE[gate lane] --&gt;|every PR| OK{merge allowed}
+    MR[migration resolve] --&gt; H2[migration handoff] --&gt; V[migration verify]
+    C[conformance check] --&gt; H
+    CFG[.vendkit/&amp;lt;slice&amp;gt;.yml] --- W &amp; S &amp; C
+    CM[(.vendkit/&amp;lt;slice&amp;gt;-manifest.json)] --- GATE &amp; S
+  end
+
+  T --&gt;|pull: schedule / push: release trigger| S
+  T --&gt;|git ls-remote --tags| W
+</code></pre>
+<p>Component inventory, each with its own spec:</p>
+<table>
+<thead>
+<tr>
+<th>Component</th>
+<th>Layer</th>
+<th>Spec</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Export declaration</td>
+<td>0 (schema)</td>
+<td><a href="specs/export-declaration.html">specs/export-declaration.md</a></td>
+</tr>
+<tr>
+<td>Manifest + gate lane</td>
+<td>0</td>
+<td><a href="specs/manifest-and-gate.html">specs/manifest-and-gate.md</a></td>
+</tr>
+<tr>
+<td>Materialise / sync lane</td>
+<td>0 (+1 PR handler)</td>
+<td><a href="specs/sync.html">specs/sync.md</a></td>
+</tr>
+<tr>
+<td>Release cutter</td>
+<td>0</td>
+<td><a href="specs/releases-and-versioning.html">specs/releases-and-versioning.md</a></td>
+</tr>
+<tr>
+<td>Release watch</td>
+<td>0 (+1 handoff handler)</td>
+<td><a href="specs/release-watch.html">specs/release-watch.md</a></td>
+</tr>
+<tr>
+<td>Migrations</td>
+<td>0 (+1 handoff handler)</td>
+<td><a href="specs/migrations.html">specs/migrations.md</a></td>
+</tr>
+<tr>
+<td>Conformance</td>
+<td>0 (formats only)</td>
+<td><a href="specs/conformance.html">specs/conformance.md</a></td>
+</tr>
+<tr>
+<td>Handler protocol + reference handlers</td>
+<td>1</td>
+<td><a href="specs/handler-protocol.html">specs/handler-protocol.md</a></td>
+</tr>
+<tr>
+<td>CI surface, credentials, differences ledger</td>
+<td>1</td>
+<td><a href="specs/platform-integration.html">specs/platform-integration.md</a></td>
+</tr>
+<tr>
+<td>Templates / actions</td>
+<td>2</td>
+<td><a href="specs/platform-integration.html">specs/platform-integration.md</a> §5</td>
+</tr>
+<tr>
+<td>Scaffolder + consumer config</td>
+<td>3</td>
+<td><a href="specs/onboarding.html">specs/onboarding.md</a></td>
+</tr>
+<tr>
+<td>CLI</td>
+<td>0 surface</td>
+<td><a href="specs/cli.html">specs/cli.md</a></td>
+</tr>
+</tbody>
+</table>
+<h2 id="3-the-invariants">3. The invariants</h2>
+<p>Numbered; other specs cite them as INV-n. The conformance kit
+(<a href="testing.html">testing.md</a>) turns each into an executable check.</p>
+<ul>
+<li><strong>INV-1 (Composition).</strong> For any release, declaration, profile and consumer
+tree: <code>sync apply</code> produces a tree and manifest that pass <code>gate verify --strict</code> with zero findings.</li>
+<li><strong>INV-2 (Purity).</strong> <code>materialise</code> output is a pure function of
+(release tree, export declaration, consumer profile, current consumer
+manifest). No clock, no network, no environment dependence.</li>
+<li><strong>INV-3 (Prediction).</strong> <code>sync check</code> reports exactly what <code>sync apply</code> would
+write. A successful check always exits 0 and prints <code>changed=true|false</code>; any
+non-zero exit is an infrastructure failure — a crash can never masquerade as
+staleness (the <em>porcelain contract</em>).</li>
+<li><strong>INV-4 (Refresh by default).</strong> Without explicit scope reconciliation, sync
+refreshes the currently tracked file set only. Scope changes (additions via
+reconcile, removals detected upstream) are always surfaced in a reviewed PR;
+files are <strong>never deleted from disk automatically</strong>.</li>
+<li><strong>INV-5 (Immutability).</strong> A released tag is never moved or reused. A fix is a
+strictly newer release. Consumers additionally record the resolved commit SHA
+so tag substitution is detectable (see security model).</li>
+<li><strong>INV-6 (Engine-version).</strong> Materialise always runs the <em>target</em> release's
+engine (the pinned platform reference resolves the same tree that supplies
+both content and engine). Gate verification always runs against the <em>pinned</em>
+release's manifest. There is no version skew inside either operation.
+With the compiled engine shipped (DR-0017), this holds as an explicit,
+checksummed engine pin with schema-competence gating (DR-0016): the
+scaffolded lane fetches and <code>self-verify</code>s the pinned binary, and the sync
+PR advances the engine pin in lockstep with content. The human-tier CLI
+documents its own relaxation (cli spec).</li>
+<li><strong>INV-7 (Disjointness).</strong> Across all slices vendored by one consumer, the
+<code>consumer_path</code> sets are pairwise disjoint. Checked by the gate lane on every
+PR.</li>
+<li><strong>INV-8 (Neutral core).</strong> Layer 0 behaves identically on every platform and
+in no-CI (local/dev) execution — it calls no vendor service (DR-0014).
+Platform behaviour differences are confined to Layer 1 (CI surface,
+handlers, dialect parsing) and are enumerated in the platform-integration
+spec's differences ledger.</li>
+<li><strong>INV-9 (Dependency-free gate).</strong> The consumer-side gate path runs a single
+static binary with no runtime prerequisites at all (DR-0016) — no
+interpreter, no third-party packages, no YAML parsing (the gate reads only
+the JSON manifest).</li>
+<li><strong>INV-10 (Review sovereignty).</strong> No machinery ever merges, pushes to a
+protected branch, or mutates consumer-owned content directly. Every change
+lands as a PR under the consumer's normal review rules.</li>
+</ul>
+<h2 id="4-repository-layout">4. Repository layout</h2>
+<pre><code>vendkit/                    # one Go module, one static binary (DR-0017)
+  cmd/vendkit/              # single entrypoint `vendkit` + subcommand dispatch:
+    main.go                 #   dispatch, flag plumbing, exit-code conventions
+    cmds.go / human.go      #   CI-tier and human-tier commands
+    handler.go              #   Layer 1: `vendkit handler &lt;scm&gt;` reference
+    │                       #   PR/handoff/fact delivery (github, ado)
+    selfverify.go           #   `vendkit self-verify` engine-pin check (DR-0016)
+  internal/core/            # Layer 0 engine: declaration, manifest, materialise,
+    │                       #   verify, versions, migrations, conformance,
+    │                       #   upstream (git-protocol reads), handler invocation
+  internal/ci/              # Layer 1 CI output surface — in-process dialects
+  internal/e2e/             # Go unit + end-to-end scenario kit; journalhandler
+    │                       #   is the neutral reference handler for tests
+  assets.go                 # embeds scaffold/ + conformance rules into the binary
+  scaffold/
+    azure-pipelines/*.tmpl  # Layer 3: consumer pipeline scaffolds (ADO)
+    github-actions/*.tmpl   # Layer 3: consumer pipeline scaffolds (GHA)
+                            #   fetch + checksum-verify the pinned engine binary,
+                            #   then run it (DR-0016); ci: none scaffolds none
+  conformance/
+    core-rules.yml          # platform-neutral wiring rules shipped by default
+  .github/workflows/        # this repo's CI + SemVer release (checksummed
+    │                       #   per-platform binaries + SHA256SUMS.txt, DR-0016)
+  vendkit-export.yml        # this repo's own export declaration (self-hosted)
+  vendkit-manifest.json     # generated + freshness-checked by the binary
+  docs/                     # this spec set, maintained as the docs of record
+</code></pre>
+<p>Layer 2 wrapper packaging (<code>platforms/</code>) is deferred (see roadmap): the
+scaffolded consumer pipelines invoke the pinned <code>vendkit</code> binary directly —
+same guarantees, fewer moving parts.</p>
+<p><strong>Self-hosting.</strong> The framework repository is its own first publisher: it
+exports the engine, handlers, templates and scaffolder as a slice, cuts releases
+with its own release command, and gates itself with its own gate lane. Downstream
+publishers vendor the machinery slice and layer their own content slices on top
+(tier chain). Bootstrap is unproblematic: the release freshness pre-gate needs
+only the working tree.</p>
+<h2 id="5-multi-slice-consumers">5. Multi-slice consumers</h2>
+<p>A consumer vendoring N slices holds, per slice: one manifest
+(<code>.vendkit/&lt;slice&gt;-manifest.json</code>), one config (<code>.vendkit/&lt;slice&gt;.yml</code>), one sync
+pipeline, and a pin inside that pipeline. It holds <strong>one</strong> gate-lane pipeline
+total: the gate discovers every <code>.vendkit/*-manifest.json</code>, verifies each, and
+enforces INV-7 across them. Watch is likewise a single pipeline reading every
+slice config. Sync pipelines stay per-slice because cadence, credentials and
+push triggers are per-publisher decisions.</p>
+<h2 id="6-the-docs-site">6. The docs site</h2>
+<p>These docs are published as a <em>versioned</em> static site so a reader sees the docs
+for the release they care about, not always <code>main</code>. The pipeline is pure Go —
+no Python, Node, or mkdocs (DR-0017, DR-0018).</p>
+<p><strong>Generator.</strong> <code>internal/docsgen</code> is a build-time <code>package main</code> (never imported
+by <code>cmd/vendkit</code>, so the shipped binary is unaffected). It renders the <code>docs/</code>
+Markdown tree to self-contained HTML with <a href="https://github.com/yuin/goldmark">goldmark</a> (GFM tables included),
+rewrites internal <code>*.md</code> links to the rendered <code>*.html</code> paths, and emits a left
+nav plus a version-selector dropdown on every page.</p>
+<p>Build the site locally:</p>
+<pre><code># Render one version into ./dist (repeat per release; dist/ is gitignored).
+go run ./internal/docsgen --docs docs --out dist --version v0.1.0
+go run ./internal/docsgen --docs docs --out dist --version v0.2.0
+# dist/v0.1.0/  dist/v0.2.0/  dist/latest/  dist/versions.json
+</code></pre>
+<p><code>go run ./internal/docsgen --help</code> documents the flags.</p>
+<p><strong>Versioning.</strong> Each run writes <code>dist/&lt;version&gt;/</code> (one page per doc plus an
+<code>index.html</code>), merges the version into <code>dist/versions.json</code> (newest first, the
+newest marked <code>latest</code> by SemVer), and mirrors the newest version into
+<code>dist/latest/</code>. Output is deterministic (stable ordering, no timestamps), so
+re-running a version is idempotent and diffs are clean. The in-page selector
+fetches <code>versions.json</code> at runtime, so a page published for an older release
+still lists releases added later.</p>
+<p><strong>Publishing.</strong> <code>.github/workflows/pages.yml</code> accumulates on a <code>gh-pages</code>
+branch: on a <code>vX.Y.Z</code> tag it seeds from the currently published site, renders
+that version into it, and republishes the whole tree — previously published
+versions stay put. A push to <code>main</code> re-overlays the hand-authored landing page
+(<code>site/index.html</code>) at the site root. The landing page's &quot;Docs&quot; links point at
+<code>/latest/</code>.</p>
+
+</article>
+<footer class="vk-foot">VendKit documentation · <code>v0.7.0</code> · <a href="../">all releases</a></footer>
+</main>
+</div>
+<script>
+(function(){
+  var sel=document.querySelector('select.vk-vers');
+  if(!sel)return;
+  var root=sel.getAttribute('data-root')||'';
+  var rel=sel.getAttribute('data-rel')||'index.html';
+  var current=sel.getAttribute('data-current');
+  sel.addEventListener('change',function(){
+    if(sel.value)location.href=root+sel.value+'/'+rel;
+  });
+  try{
+    fetch(root+'versions.json',{cache:'no-cache'}).then(function(r){return r.json();}).then(function(m){
+      if(!m||!m.versions||!m.versions.length)return;
+      sel.innerHTML='';
+      m.versions.forEach(function(v){
+        var o=document.createElement('option');
+        o.value=v.version;
+        o.textContent=v.version+(v.latest?' (latest)':'');
+        if(v.version===current)o.selected=true;
+        sel.appendChild(o);
+      });
+    }).catch(function(){});
+  }catch(e){}
+})();
+</script>
+</body>
+</html>

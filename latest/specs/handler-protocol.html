@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Spec: Handler protocol · VendKit docs v0.7.0</title>
+<link rel="stylesheet" href="../assets/docs.css">
+<script>(function(){try{var t=localStorage.getItem('vk-theme');if(t==='dark'||t==='light')document.documentElement.setAttribute('data-theme',t);}catch(e){}})();</script>
+</head>
+<body>
+<header class="vk-top"><div class="vk-topwrap">
+<a class="vk-brand" href="../index.html"><span class="vk-bdot"></span>vendkit docs</a>
+<select class="vk-vers" aria-label="Documentation version" data-current="v0.7.0" data-root="../../" data-rel="specs/handler-protocol.html">
+  <option value="v0.7.0" selected>v0.7.0 (latest)</option>
+</select>
+<button class="vk-tbtn" type="button" aria-label="Toggle color scheme" onclick="(function(d){var c=d.getAttribute('data-theme');if(!c){c=(window.matchMedia&&matchMedia('(prefers-color-scheme: dark)').matches)?'dark':'light';}var n=c==='dark'?'light':'dark';d.setAttribute('data-theme',n);try{localStorage.setItem('vk-theme',n);}catch(e){}})(document.documentElement)">◑</button>
+</div></header>
+<div class="vk-shell">
+<nav class="vk-nav" aria-label="Documentation">
+<a class="vk-nav-home" href="../index.html">Overview</a>
+<div class="vk-nav-sec">Guides</div>
+<ul class="vk-nav-list">
+  <li><a class="vk-nav-link" href="../architecture.html">Architecture</a></li>
+  <li><a class="vk-nav-link" href="../testing.html">Testing strategy and the conformance kit</a></li>
+</ul>
+<div class="vk-nav-sec">Specs</div>
+<ul class="vk-nav-list">
+  <li><a class="vk-nav-link" href="../specs/cli.html">Spec: CLI surface</a></li>
+  <li><a class="vk-nav-link" href="../specs/conformance.html">Spec: Conformance</a></li>
+  <li><a class="vk-nav-link" href="../specs/export-declaration.html">Spec: Export declaration</a></li>
+  <li><a class="vk-nav-link is-active" href="../specs/handler-protocol.html">Spec: Handler protocol</a></li>
+  <li><a class="vk-nav-link" href="../specs/manifest-and-gate.html">Spec: Manifest and gate lane</a></li>
+  <li><a class="vk-nav-link" href="../specs/migrations.html">Spec: Migrations</a></li>
+  <li><a class="vk-nav-link" href="../specs/onboarding.html">Spec: Onboarding and consumer configuration</a></li>
+  <li><a class="vk-nav-link" href="../specs/platform-integration.html">Spec: Platform integration — CI surfaces, credentials, differences ledger</a></li>
+  <li><a class="vk-nav-link" href="../specs/release-watch.html">Spec: Release watch</a></li>
+  <li><a class="vk-nav-link" href="../specs/releases-and-versioning.html">Spec: Releases and versioning</a></li>
+  <li><a class="vk-nav-link" href="../specs/security-model.html">Spec: Security model</a></li>
+  <li><a class="vk-nav-link" href="../specs/sync.html">Spec: Sync lane and materialisation</a></li>
+</ul>
+<div class="vk-nav-sec">Design</div>
+<ul class="vk-nav-list">
+  <li><a class="vk-nav-link" href="../design/DR-0001-vendored-identity-copies.html">DR-0001 — Vendored identity copies, not package distribution</a></li>
+  <li><a class="vk-nav-link" href="../design/DR-0002-identity-in-declaration.html">DR-0002 — Slice identity lives in the declaration, not the tools</a></li>
+  <li><a class="vk-nav-link" href="../design/DR-0003-two-lane-model.html">DR-0003 — Two-lane distribution: sync PRs + PR-time gate</a></li>
+  <li><a class="vk-nav-link" href="../design/DR-0004-normalised-hashing.html">DR-0004 — Normalised content hashing</a></li>
+  <li><a class="vk-nav-link" href="../design/DR-0005-tag-is-the-release.html">DR-0005 — The tag is the release: immutable, SHA-anchored, retractable</a></li>
+  <li><a class="vk-nav-link" href="../design/DR-0006-pull-with-push-hints.html">DR-0006 — Pull reconciliation with optional push hints</a></li>
+  <li><a class="vk-nav-link" href="../design/DR-0007-platform-ports.html">DR-0007 — ADO and GitHub Actions as peer backends behind a port interface</a></li>
+  <li><a class="vk-nav-link" href="../design/DR-0008-declarative-migrations.html">DR-0008 — Declarative migrations with deterministic verification</a></li>
+  <li><a class="vk-nav-link" href="../design/DR-0009-content-adapters.html">DR-0009 — Content adapters: identity copy by default, named transforms by declaration</a></li>
+  <li><a class="vk-nav-link" href="../design/DR-0010-review-gated-scope.html">DR-0010 — Scope changes are reviewed PR events, never automatic</a></li>
+  <li><a class="vk-nav-link" href="../design/DR-0011-single-cli-stdlib-gate.html">DR-0011 — One CLI; dependency-free consumer gate path</a></li>
+  <li><a class="vk-nav-link" href="../design/DR-0012-consumer-config-consolidation.html">DR-0012 — One consumer config file per slice under `.vendkit/`</a></li>
+  <li><a class="vk-nav-link" href="../design/DR-0013-seeded-files.html">DR-0013 — Seeded files: a scaffold-once lifecycle class</a></li>
+  <li><a class="vk-nav-link" href="../design/DR-0014-handler-protocol.html">DR-0014: Detection and delivery split by an exec handler protocol</a></li>
+  <li><a class="vk-nav-link" href="../design/DR-0015-scm-ci-axes.html">DR-0015: Split the platform vocabulary into SCM and CI axes; formats not services</a></li>
+  <li><a class="vk-nav-link" href="../design/DR-0016-engine-as-pinned-artefact.html">DR-0016: The engine becomes a pinned, checksummed artefact (INV-6 revision)</a></li>
+  <li><a class="vk-nav-link" href="../design/DR-0017-single-implementation-go.html">DR-0017: Single engine implementation in Go, with the scenario kit as the parity ratchet</a></li>
+  <li><a class="vk-nav-link" href="../design/DR-0018-versioned-docs-generator.html">DR-0018: Versioned docs site from a pure-Go static generator</a></li>
+  <li><a class="vk-nav-link" href="../design/README.html">Design records</a></li>
+  <li><a class="vk-nav-link" href="../design/TEMPLATE.html">DR-NNNN — Title</a></li>
+</ul>
+</nav>
+<main class="vk-main"><article class="vk-doc">
+<h1 id="spec-handler-protocol">Spec: Handler protocol</h1>
+<p>Status: draft for implementation · Protocol version: 1 · Owner: Layer 1</p>
+<p>The engine never integrates with a vendor <em>service</em> (DR-0014). Where a core
+judgment must become a delivery — a sync PR, a watch or migration work item,
+an API-verified platform fact — the engine composes a JSON <strong>intent
+document</strong> and hands it to a configured executable: a <strong>handler</strong>. Handlers
+own the vendor API, its credentials, and the idempotency obligations this
+protocol assigns them. The framework ships reference handlers for GitHub and
+Azure DevOps; any executable honouring this protocol replaces them without
+an engine change.</p>
+<p>The boundary rule (DR-0015): core may understand vendor file <em>formats</em>
+(pipeline YAML dialects, CODEOWNERS syntax, output conventions); it must not
+call vendor <em>services</em>. Handlers are where services live.</p>
+<h2 id="1-invocation-contract">1. Invocation contract</h2>
+<ul>
+<li>The engine runs the handler command with the intent document as <strong>JSON on
+stdin</strong> (UTF-8, one document).</li>
+<li>The handler prints <strong><code>key=value</code> fact lines on stdout</strong> (same convention
+as the CLI). Unknown keys are ignored; prose on stdout that is not
+<code>key=value</code>-shaped is ignored.</li>
+<li><strong>Exit 0 = delivered</strong> (facts are trusted). <strong>Nonzero = infrastructure
+failure</strong> — the engine raises it loudly (CLI exit ≥ 4, red pipeline).
+Handlers never encode <em>judgment</em> in their exit code: every decision
+(is-newer, retraction, changed-ness, rule pass/fail) happened in core
+before the handler was invoked.</li>
+<li>Handlers inherit the engine's environment (that is how wrapper-provided
+credentials like <code>VENDKIT_TOKEN_OPEN_PR</code> reach them) and run with the
+consumer root as working directory.</li>
+</ul>
+<h2 id="2-envelope">2. Envelope</h2>
+<p>Every intent document carries:</p>
+<pre><code class="language-json">{
+  &quot;vendkit_handler_protocol&quot;: 1,
+  &quot;kind&quot;: &quot;pr&quot; | &quot;handoff&quot; | &quot;fact-verify&quot; | &quot;push-hint&quot;,
+  ...kind-specific fields...
+}
+</code></pre>
+<p>A handler must reject (nonzero) a protocol version or kind it does not
+understand — silent misdelivery is worse than a red run.</p>
+<h2 id="3-kinds">3. Kinds</h2>
+<h3 id="pr--deliver-the-sync-pr"><code>pr</code> — deliver the sync PR</h3>
+<p>Sent by <code>sync-pipeline</code> after the branch is committed and pushed (the engine
+does all git work itself; the handler only speaks to the PR API).</p>
+<pre><code class="language-json">{
+  &quot;kind&quot;: &quot;pr&quot;,
+  &quot;head_branch&quot;: &quot;vendkit/docs/sync-v1.4.2-to-v1.5.0&quot;,
+  &quot;base_branch&quot;: &quot;main&quot;,
+  &quot;title&quot;: &quot;sync(docs): v1.4.2 → v1.5.0&quot;,
+  &quot;body_md&quot;: &quot;…&quot;,
+  &quot;slice&quot;: &quot;docs&quot;,
+  &quot;repo&quot;: &quot;optional explicit target; else the handler uses its platform's
+           ambient coordinates (GITHUB_REPOSITORY / SYSTEM_TEAMPROJECT…)&quot;
+}
+</code></pre>
+<p>Facts: <code>url=…</code>, <code>number=…</code>.</p>
+<p><strong>Idempotency obligation:</strong> the deterministic <code>head_branch</code> is the key. If
+an open PR with that head exists the handler must <em>update</em> it (title/body),
+never open a duplicate. The handler must never merge, approve, or bypass
+review (INV-10) — a handler with merge capability is non-conforming.</p>
+<h3 id="handoff--deliver-a-finding-as-a-work-item"><code>handoff</code> — deliver a finding as a work item</h3>
+<p>Sent by <code>watch</code> (and migration handoff) per actionable finding.</p>
+<pre><code class="language-json">{
+  &quot;kind&quot;: &quot;handoff&quot;,
+  &quot;dedup_key&quot;: &quot;vendkit-watch-docs&quot;,
+  &quot;title&quot;: &quot;vendkit(docs): update available v1.4.2 → v1.5.0&quot;,
+  &quot;body_md&quot;: &quot;…the rendered report…&quot;,
+  &quot;slice&quot;: &quot;docs&quot;
+}
+</code></pre>
+<p>Facts: <code>url=…</code>.</p>
+<p><strong>Idempotency obligation:</strong> at most one open item per <code>dedup_key</code>. If one
+exists (GitHub: open issue labelled with the key; ADO: active work item
+tagged with it), append the report as a comment — a chronological trail —
+rather than creating a sibling.</p>
+<h3 id="fact-verify--verify-an-attested-platform-fact"><code>fact-verify</code> — verify an attested platform fact</h3>
+<p>Sent by <code>conformance --verify-attestations</code> for each <code>attested</code> rule result.</p>
+<pre><code class="language-json">{ &quot;kind&quot;: &quot;fact-verify&quot;, &quot;fact&quot;: &quot;required_check_enforced&quot;, &quot;slice&quot;: &quot;docs&quot;,
+  &quot;repo&quot;: &quot;octo/demo&quot;, &quot;branch&quot;: &quot;main&quot; }
+</code></pre>
+<p>The intent carries a <strong>stable machine <code>fact</code> key</strong> (never the human <code>detail</code>
+prose) plus the coordinate the handler needs to query the platform: <code>repo</code>
+(else the handler's own env — <code>GITHUB_REPOSITORY</code> / <code>SYSTEM_TEAMPROJECT</code>),
+<code>branch</code> (the protected branch; when omitted, GitHub handlers resolve the
+repo's default branch), and any fact-specific parameters (e.g. <code>event</code> for the
+<code>_enforcement</code> facts, <code>check</code> for a named required status check). The core
+composes these from the conformance rule and CLI <code>--repo</code> / <code>--base-branch</code>;
+<strong>core itself calls no vendor API</strong> (conformance spec §4).</p>
+<p>Facts: <code>verdict=true|false|unknown</code>. <code>true</code> promotes the rule to <code>pass</code>,
+<code>false</code> makes it a <code>fail</code> (the attestation was wrong — that is a finding,
+not an error), <code>unknown</code> leaves it <code>attested</code>. <code>unknown</code> is the non-failing
+outcome the handler emits when the token lacks scope (a 401/403 → <code>unknown</code>,
+<strong>never</strong> <code>false</code>), the endpoint is unavailable, a required coordinate is
+missing, or the <code>fact</code> key is one the handler does not verify
+(forward-compatible). Exit 0 for all three verdicts.</p>
+<p>The reference handlers verify these facts against the platform API:</p>
+<table>
+<thead>
+<tr>
+<th><code>fact</code> key</th>
+<th>GitHub (<code>handler github</code>)</th>
+<th>Azure DevOps (<code>handler ado</code>)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>required_check_enforced</code></td>
+<td><code>GET /repos/{repo}/branches/{branch}/protection</code> → <code>required_status_checks</code> present (member <code>check</code> if named)</td>
+<td><code>GET .../_apis/policy/configurations</code> → an enabled <strong>blocking</strong> Build-validation policy</td>
+</tr>
+<tr>
+<td><code>pull_request_enforcement</code></td>
+<td>— (tree-decidable on GitHub)</td>
+<td>an enabled Build-validation policy (the gate runs on PRs)</td>
+</tr>
+<tr>
+<td><code>required_reviewers_policy</code></td>
+<td>— (CODEOWNERS is tree-decidable)</td>
+<td>an enabled Required-reviewers policy</td>
+</tr>
+</tbody>
+</table>
+<p>Any other key (e.g. <code>branch_protection_enabled</code>) is <code>unknown</code>. Verification
+needs a read-scoped token: <code>VENDKIT_TOKEN_FACT_VERIFY</code> (GitHub falls back to
+<code>GITHUB_TOKEN</code>/<code>GH_TOKEN</code> with <code>repo</code>/<code>administration:read</code>; ADO falls back to
+<code>SYSTEM_ACCESSTOKEN</code>/<code>ADO_PAT</code> with policy read).</p>
+<h3 id="push-hint--nudge-a-subscribers-sync-pipeline"><code>push-hint</code> — nudge a subscriber's sync pipeline</h3>
+<p>Sent by <code>push-hint</code> (the publisher-side dispatch step) once per <strong>github-actions</strong>
+subscriber after a release is published (platform-integration spec §4, DR-0006).</p>
+<pre><code class="language-json">{
+  &quot;kind&quot;: &quot;push-hint&quot;,
+  &quot;repo&quot;: &quot;acme/leaf-consumer&quot;,
+  &quot;event_type&quot;: &quot;vendkit-release&quot;,
+  &quot;client_payload&quot;: { &quot;version&quot;: &quot;v1.5.0&quot;, &quot;tag&quot;: &quot;v1.5.0&quot;, &quot;publisher&quot;: &quot;acme/framework&quot; }
+}
+</code></pre>
+<p>GitHub: POST <code>/repos/{repo}/dispatches</code> with body
+<code>{&quot;event_type&quot;: …, &quot;client_payload&quot;: …}</code>, authenticated by the dispatch-scoped
+<code>VENDKIT_TOKEN_PUSH_HINT</code> (distinct from the PR token; the reference handler
+refuses to run without it). Facts: <code>dispatched=true</code>, <code>event_type=…</code>,
+<code>repo=…</code>. Azure DevOps: a deliberate <strong>no-op</strong> — the push hint there is the
+consumer's own <code>resources.pipelines</code> trigger, so the publisher takes no action
+(<code>dispatched=false</code>, <code>skipped=ado-pull-trigger</code>).</p>
+<p>Push is a hint, not the reconciler: a lost dispatch costs latency, not
+correctness. The <em>engine's</em> dispatch step therefore treats a nonzero handler
+exit for one subscriber as a warning and continues — but the handler itself
+still obeys the protocol (a genuine API failure is a nonzero exit; the engine
+decides it is non-fatal <em>here</em> because push is best-effort).</p>
+<h2 id="4-configuration-and-resolution">4. Configuration and resolution</h2>
+<p>Handlers are wired per slice in the consumer config (onboarding spec §1):</p>
+<pre><code class="language-yaml">handlers:
+  pr:          { exec: [vendkit, handler, github] }
+  handoff:     { exec: [vendkit, handler, github],
+                 dedup_key: vendkit-watch-docs }
+  fact-verify: { exec: [vendkit, handler, github] }
+</code></pre>
+<p><code>vendkit handler &lt;scm&gt;</code> is the built-in reference handler (same static
+binary, DR-0016): it reads the intent on stdin and dispatches on <code>kind</code>.
+<code>&lt;scm&gt;</code> is <code>github</code> or <code>ado</code>. Any other protocol-honouring executable can
+replace it.</p>
+<p>Resolution order per kind: <code>VENDKIT_HANDLER_&lt;KIND&gt;</code> environment override
+(shell-split; <code>-</code> → <code>_</code>), then the slice config, else <strong>unwired</strong>. Unwired
+behaviour is defined per producer and always visible, never silent:</p>
+<ul>
+<li><code>pr</code> unwired → sync stops green after the push with <code>pr-delivered=false</code>
+and the full intent on <code>pr-intent=</code> — the manual-orchestration workflow
+(<code>ci: none</code>), not an error.</li>
+<li><code>handoff</code> unwired → findings are reported (stdout, summary) with
+<code>handoff=unwired</code>; exit 0.</li>
+<li><code>fact-verify</code> unwired → <code>--verify-attestations</code> is a usage error; without
+the flag, attestation degradation applies as normal.</li>
+</ul>
+<h2 id="5-upstream-reads-are-not-handler-territory">5. Upstream reads are NOT handler territory</h2>
+<p>Listing a publisher's release tags and reading a file at a tag are plain
+<strong>git protocol</strong> operations (<code>internal/core/upstream.go</code>): identical against GitHub,
+Azure Repos, or a local path, authenticated by ordinary git credentials. No
+handler, no vendor API. The only vendor knowledge is the clone-URL template
+that expands an <code>owner/repo</code> shorthand (<code>github</code>) or <code>org/project/repo</code>
+(<code>azure-repos</code>); a full URL or filesystem path is used verbatim.</p>
+<h2 id="6-reference-handlers">6. Reference handlers</h2>
+<p>Shipped in-tree, released and conformance-tested with the framework:</p>
+<table>
+<thead>
+<tr>
+<th>Command</th>
+<th>Serves</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>vendkit handler github</code></td>
+<td>pr, handoff, fact-verify, push-hint</td>
+<td>PR credential refuses <code>GITHUB_TOKEN</code> fallback (differences ledger #2); push-hint uses <code>VENDKIT_TOKEN_PUSH_HINT</code>; fact-verify reads branch protection (<code>required_check_enforced</code>) with <code>VENDKIT_TOKEN_FACT_VERIFY</code>/<code>GITHUB_TOKEN</code></td>
+</tr>
+<tr>
+<td><code>vendkit handler ado</code></td>
+<td>pr, handoff, fact-verify, push-hint</td>
+<td>needs <code>VENDKIT_ADO_ORG_URL</code>; Basic-auth PAT / <code>SYSTEM_ACCESSTOKEN</code>; push-hint is a no-op (pull trigger); fact-verify reads branch policies (<code>required_reviewers_policy</code>, <code>pull_request_enforcement</code>, <code>required_check_enforced</code>)</td>
+</tr>
+</tbody>
+</table>
+<p><code>github</code> / <code>ado</code> are built into the engine binary (DR-0016) — no separate
+install, no interpreter. The neutral journal handler used by the scenario
+kit (<code>internal/e2e/journalhandler</code>) records intents to
+<code>VENDKIT_NEUTRAL_JOURNAL</code> and is the template for new handlers.</p>
+<p>Writing a third handler (Jira, Slack, GitLab…) = one executable + a
+<code>handlers:</code> edit in the slice config. The scenario kit's handler tests run
+against the journal handler; a new handler can be smoke-tested by pointing
+<code>VENDKIT_HANDLER_HANDOFF</code> at it and running <code>vendkit watch</code>.</p>
+<h2 id="7-security-posture">7. Security posture</h2>
+<p>Handlers run with the credentials the consumer's pipeline grants them —
+least scope per purpose (security model §4). The engine passes no secrets in
+the intent document; credentials travel by environment only. A handler is
+consumer-configured, consumer-audited code: it lives in the consumer's trust
+boundary like any other pipeline step, and the reference handlers are
+manifest-tracked, gate-verified files when the machinery slice is vendored.</p>
+
+</article>
+<footer class="vk-foot">VendKit documentation · <code>v0.7.0</code> · <a href="../../">all releases</a></footer>
+</main>
+</div>
+<script>
+(function(){
+  var sel=document.querySelector('select.vk-vers');
+  if(!sel)return;
+  var root=sel.getAttribute('data-root')||'';
+  var rel=sel.getAttribute('data-rel')||'index.html';
+  var current=sel.getAttribute('data-current');
+  sel.addEventListener('change',function(){
+    if(sel.value)location.href=root+sel.value+'/'+rel;
+  });
+  try{
+    fetch(root+'versions.json',{cache:'no-cache'}).then(function(r){return r.json();}).then(function(m){
+      if(!m||!m.versions||!m.versions.length)return;
+      sel.innerHTML='';
+      m.versions.forEach(function(v){
+        var o=document.createElement('option');
+        o.value=v.version;
+        o.textContent=v.version+(v.latest?' (latest)':'');
+        if(v.version===current)o.selected=true;
+        sel.appendChild(o);
+      });
+    }).catch(function(){});
+  }catch(e){}
+})();
+</script>
+</body>
+</html>

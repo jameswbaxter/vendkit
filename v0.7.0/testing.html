@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Testing strategy and the conformance kit · VendKit docs v0.7.0</title>
+<link rel="stylesheet" href="assets/docs.css">
+<script>(function(){try{var t=localStorage.getItem('vk-theme');if(t==='dark'||t==='light')document.documentElement.setAttribute('data-theme',t);}catch(e){}})();</script>
+</head>
+<body>
+<header class="vk-top"><div class="vk-topwrap">
+<a class="vk-brand" href="index.html"><span class="vk-bdot"></span>vendkit docs</a>
+<select class="vk-vers" aria-label="Documentation version" data-current="v0.7.0" data-root="../" data-rel="testing.html">
+  <option value="v0.7.0" selected>v0.7.0 (latest)</option>
+</select>
+<button class="vk-tbtn" type="button" aria-label="Toggle color scheme" onclick="(function(d){var c=d.getAttribute('data-theme');if(!c){c=(window.matchMedia&&matchMedia('(prefers-color-scheme: dark)').matches)?'dark':'light';}var n=c==='dark'?'light':'dark';d.setAttribute('data-theme',n);try{localStorage.setItem('vk-theme',n);}catch(e){}})(document.documentElement)">◑</button>
+</div></header>
+<div class="vk-shell">
+<nav class="vk-nav" aria-label="Documentation">
+<a class="vk-nav-home" href="index.html">Overview</a>
+<div class="vk-nav-sec">Guides</div>
+<ul class="vk-nav-list">
+  <li><a class="vk-nav-link" href="architecture.html">Architecture</a></li>
+  <li><a class="vk-nav-link is-active" href="testing.html">Testing strategy and the conformance kit</a></li>
+</ul>
+<div class="vk-nav-sec">Specs</div>
+<ul class="vk-nav-list">
+  <li><a class="vk-nav-link" href="specs/cli.html">Spec: CLI surface</a></li>
+  <li><a class="vk-nav-link" href="specs/conformance.html">Spec: Conformance</a></li>
+  <li><a class="vk-nav-link" href="specs/export-declaration.html">Spec: Export declaration</a></li>
+  <li><a class="vk-nav-link" href="specs/handler-protocol.html">Spec: Handler protocol</a></li>
+  <li><a class="vk-nav-link" href="specs/manifest-and-gate.html">Spec: Manifest and gate lane</a></li>
+  <li><a class="vk-nav-link" href="specs/migrations.html">Spec: Migrations</a></li>
+  <li><a class="vk-nav-link" href="specs/onboarding.html">Spec: Onboarding and consumer configuration</a></li>
+  <li><a class="vk-nav-link" href="specs/platform-integration.html">Spec: Platform integration — CI surfaces, credentials, differences ledger</a></li>
+  <li><a class="vk-nav-link" href="specs/release-watch.html">Spec: Release watch</a></li>
+  <li><a class="vk-nav-link" href="specs/releases-and-versioning.html">Spec: Releases and versioning</a></li>
+  <li><a class="vk-nav-link" href="specs/security-model.html">Spec: Security model</a></li>
+  <li><a class="vk-nav-link" href="specs/sync.html">Spec: Sync lane and materialisation</a></li>
+</ul>
+<div class="vk-nav-sec">Design</div>
+<ul class="vk-nav-list">
+  <li><a class="vk-nav-link" href="design/DR-0001-vendored-identity-copies.html">DR-0001 — Vendored identity copies, not package distribution</a></li>
+  <li><a class="vk-nav-link" href="design/DR-0002-identity-in-declaration.html">DR-0002 — Slice identity lives in the declaration, not the tools</a></li>
+  <li><a class="vk-nav-link" href="design/DR-0003-two-lane-model.html">DR-0003 — Two-lane distribution: sync PRs + PR-time gate</a></li>
+  <li><a class="vk-nav-link" href="design/DR-0004-normalised-hashing.html">DR-0004 — Normalised content hashing</a></li>
+  <li><a class="vk-nav-link" href="design/DR-0005-tag-is-the-release.html">DR-0005 — The tag is the release: immutable, SHA-anchored, retractable</a></li>
+  <li><a class="vk-nav-link" href="design/DR-0006-pull-with-push-hints.html">DR-0006 — Pull reconciliation with optional push hints</a></li>
+  <li><a class="vk-nav-link" href="design/DR-0007-platform-ports.html">DR-0007 — ADO and GitHub Actions as peer backends behind a port interface</a></li>
+  <li><a class="vk-nav-link" href="design/DR-0008-declarative-migrations.html">DR-0008 — Declarative migrations with deterministic verification</a></li>
+  <li><a class="vk-nav-link" href="design/DR-0009-content-adapters.html">DR-0009 — Content adapters: identity copy by default, named transforms by declaration</a></li>
+  <li><a class="vk-nav-link" href="design/DR-0010-review-gated-scope.html">DR-0010 — Scope changes are reviewed PR events, never automatic</a></li>
+  <li><a class="vk-nav-link" href="design/DR-0011-single-cli-stdlib-gate.html">DR-0011 — One CLI; dependency-free consumer gate path</a></li>
+  <li><a class="vk-nav-link" href="design/DR-0012-consumer-config-consolidation.html">DR-0012 — One consumer config file per slice under `.vendkit/`</a></li>
+  <li><a class="vk-nav-link" href="design/DR-0013-seeded-files.html">DR-0013 — Seeded files: a scaffold-once lifecycle class</a></li>
+  <li><a class="vk-nav-link" href="design/DR-0014-handler-protocol.html">DR-0014: Detection and delivery split by an exec handler protocol</a></li>
+  <li><a class="vk-nav-link" href="design/DR-0015-scm-ci-axes.html">DR-0015: Split the platform vocabulary into SCM and CI axes; formats not services</a></li>
+  <li><a class="vk-nav-link" href="design/DR-0016-engine-as-pinned-artefact.html">DR-0016: The engine becomes a pinned, checksummed artefact (INV-6 revision)</a></li>
+  <li><a class="vk-nav-link" href="design/DR-0017-single-implementation-go.html">DR-0017: Single engine implementation in Go, with the scenario kit as the parity ratchet</a></li>
+  <li><a class="vk-nav-link" href="design/DR-0018-versioned-docs-generator.html">DR-0018: Versioned docs site from a pure-Go static generator</a></li>
+  <li><a class="vk-nav-link" href="design/README.html">Design records</a></li>
+  <li><a class="vk-nav-link" href="design/TEMPLATE.html">DR-NNNN — Title</a></li>
+</ul>
+</nav>
+<main class="vk-main"><article class="vk-doc">
+<h1 id="testing-strategy-and-the-conformance-kit">Testing strategy and the conformance kit</h1>
+<p>The invariants (architecture §3) are the product. Testing exists to make each
+one executable, on both platforms, forever. Three tiers:</p>
+<h2 id="1-unitproperty-tests-layer-0">1. Unit/property tests (Layer 0)</h2>
+<p>Pure-function coverage: normalisation (CRLF/CR/trailing-ws/binary round-trips),
+glob matching (one shared matcher — resolver, verifier, and gate must use the
+same implementation, asserted by test), version grammar/ordering incl. rc and
+retraction, declaration validation errors, adapter output stability.</p>
+<p>Property tests worth the setup:</p>
+<ul>
+<li><strong>INV-2/INV-3:</strong> for generated random trees + declarations,
+<code>check</code> prediction equals <code>apply</code> result; <code>apply</code> twice = fixed point.</li>
+<li><strong>INV-1:</strong> <code>generate → materialise → gate --strict</code> is clean across random
+profile bindings and adapter configs.</li>
+</ul>
+<h2 id="2-scenario-kit-the-machinery-testing-itself">2. Scenario kit (the machinery testing itself)</h2>
+<p>A harness that builds throwaway publisher/consumer git repos and drives the
+CLI end-to-end, no network, neutral CI surface, deliveries asserted through
+the journal handler. Core scenario matrix:</p>
+<table>
+<thead>
+<tr>
+<th>Scenario</th>
+<th>Asserts</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>clean vendored tree</td>
+<td>gate strict passes</td>
+</tr>
+<tr>
+<td>hand-edit / delete / chmod a vendored file</td>
+<td>gate strict fails; advisory reports but exits 0</td>
+</tr>
+<tr>
+<td>CRLF re-checkout</td>
+<td>gate passes (normalisation)</td>
+</tr>
+<tr>
+<td>sync same-version</td>
+<td><code>update-available=false</code>, no probe</td>
+</tr>
+<tr>
+<td>sync newer, no content delta</td>
+<td><code>changed=false</code>, green stop</td>
+</tr>
+<tr>
+<td>sync with update/removal/reconcile-addition</td>
+<td>correct report classes; files never auto-deleted; output tree passes gate (INV-1)</td>
+</tr>
+<tr>
+<td>localise + prefix adapters</td>
+<td>consumer manifest self-consistent; INV-1 holds</td>
+</tr>
+<tr>
+<td>two slices, disjoint</td>
+<td>gate <code>--all</code> passes</td>
+</tr>
+<tr>
+<td>two slices, colliding path</td>
+<td><code>collision</code> finding (INV-7)</td>
+</tr>
+<tr>
+<td>migration window resolve + verify</td>
+<td>window arithmetic incl. multi-version jump; zero obligations = green no-op</td>
+</tr>
+<tr>
+<td>retracted target</td>
+<td>sync refuses, exit 3</td>
+</tr>
+<tr>
+<td>seed scaffolded on onboard, then edited</td>
+<td>gate strict passes (free to diverge)</td>
+</tr>
+<tr>
+<td>seed path pre-exists in consumer</td>
+<td>adopted: entry added, file byte-untouched</td>
+</tr>
+<tr>
+<td>upstream template changes</td>
+<td>consumer copy untouched; <code>template-updated</code> note in PR body (informational default), suppressed by <code>seeds.notes: silent</code></td>
+</tr>
+<tr>
+<td>consumer deletes a seeded file</td>
+<td>never re-seeded; dropping the entry + reconcile re-offers it</td>
+</tr>
+<tr>
+<td>seed path claimed by second slice</td>
+<td><code>collision</code> finding (INV-7 covers seeds)</td>
+</tr>
+<tr>
+<td>template retired upstream</td>
+<td>entry dropped, copy untouched; patch-grade release allowed</td>
+</tr>
+<tr>
+<td>tag-moved simulation (rewrite tag in fixture repo)</td>
+<td>sync refuses; watch raises integrity finding</td>
+</tr>
+<tr>
+<td>release cut: stale manifest / existing tag / non-monotonic version / missing migration on removal</td>
+<td>each refused</td>
+</tr>
+<tr>
+<td>watch dry-run</td>
+<td>no network, exit 0, empty report</td>
+</tr>
+<tr>
+<td><code>ci: none</code> end-to-end</td>
+<td>no pipelines scaffolded; gate/watch/conformance run manually; pipeline rules <code>skipped</code>; sync pushes branch, <code>pr-delivered=false</code> + intent emitted</td>
+</tr>
+<tr>
+<td>stray <code>.vendkit/*.yml</code></td>
+<td>usage error (strict namespace), never a silent skip</td>
+</tr>
+<tr>
+<td>init SCM inference</td>
+<td>origin remote → <code>scm:</code>; no remote + no <code>--scm</code> = usage error</td>
+</tr>
+<tr>
+<td>CODEOWNERS opt-in</td>
+<td>absent by default; <code>--codeowners</code> writes stanza (GitHub); refused on azure-repos with policy pointer</td>
+</tr>
+<tr>
+<td>PR/handoff intents</td>
+<td>journal handler receives protocol-versioned documents; dedup keys and deterministic branch as specified</td>
+</tr>
+</tbody>
+</table>
+<h2 id="3-platform-matrix-layer-12">3. Platform matrix (Layer 1/2)</h2>
+<p>The scenario kit (§2) pins <code>VENDKIT_PLATFORM=neutral</code> by construction, so it
+proves <em>behaviour</em> platform-free but never touches the two live output
+dialects. The platform matrix closes that gap. It runs in real CI per platform
+and has two layers:</p>
+<ul>
+<li><strong>Surface dialect tests</strong> (<code>internal/ci</code>, run on every platform and locally):
+the <code>github-actions</code> and <code>azure-pipelines</code> <code>Surface</code> implementations —
+<code>GITHUB_OUTPUT</code> append, <code>::error::</code> annotation, step-summary; <code>##vso</code>
+<code>setvariable</code>/<code>logissue</code>/<code>uploadsummary</code> mapping — plus <code>Detect</code> precedence.</li>
+<li><strong>Live wiring smoke</strong> (real runner/agent, not self-injected env):
+<ul>
+<li><strong>GHA</strong> — <a href="../.github/workflows/platform-matrix.yml"><code>.github/workflows/platform-matrix.yml</code></a>:
+under a real runner <code>Detect()</code> resolves to <code>github-actions</code>, so
+<code>generate --check</code> must append <code>fresh=true</code> to the runner-provided
+<code>$GITHUB_OUTPUT</code>, and a downstream step must consume it via
+<code>steps.&lt;id&gt;.outputs.fresh</code> (isOutput round-trip). <strong>Live and green.</strong></li>
+<li><strong>ADO</strong> — <a href="../azure-pipelines.yml"><code>azure-pipelines.yml</code></a>: the mirror,
+asserting the <code>##vso[task.setvariable …;isOutput=true]</code> directive is emitted
+and consumed across steps. <strong>Authored but dormant</strong> — this repo is on
+GitHub, so it needs an Azure DevOps project + GitHub service connection
+before it can run.</li>
+</ul>
+</li>
+</ul>
+<p>Still owed (tracked here, not yet built):</p>
+<ul>
+<li>The <strong>full scenario kit re-run per platform</strong> (un-pinning the neutral
+surface) — the smoke above covers the load-bearing wiring, not every scenario.</li>
+<li>Composite-action / template <strong>parameter passthrough</strong> assertions and the
+reference PR handler's <strong><code>GITHUB_TOKEN</code> refusal</strong> (difference #2, present at
+<code>handler.go</code> but untested).</li>
+<li>The reference handlers' REST paths: <strong>contract tests against recorded HTTP
+fixtures</strong> plus a small <strong>live smoke suite</strong> in the framework repo's own CI.
+The handler <em>protocol</em> itself is already covered platform-free via the
+journal handler.</li>
+<li><strong><code>base64-safe transport of JSON outputs</code> on ADO is not implemented</strong> — the
+<code>azure-pipelines</code> surface emits raw values, so a multi-line/JSON output value
+would break the <code>##vso</code> line. All current outputs are single-line scalars, so
+this is latent; land it with the full-kit matrix (and a differences-ledger
+entry) before any output value can carry JSON.</li>
+</ul>
+<p><strong>Parity rule:</strong> a scenario or behaviour difference discovered on one platform
+must land as (a) a ledger entry (platform-integration spec §6) and (b) a
+matrix test on both platforms — the peer-backend claim (INV-8) is only as
+true as this matrix.</p>
+<h2 id="4-consumer-facing-self-tests">4. Consumer-facing self-tests</h2>
+<p>Scaffolded pipelines each carry a PR-time dry-run self-test (no secrets):
+gate runs for real; sync/watch/conformance run <code>--dry-run</code> / <code>--check</code> against
+the pinned release. A consumer PR that breaks its own vendkit wiring fails
+before merge, not at the next scheduled run.</p>
+
+</article>
+<footer class="vk-foot">VendKit documentation · <code>v0.7.0</code> · <a href="../">all releases</a></footer>
+</main>
+</div>
+<script>
+(function(){
+  var sel=document.querySelector('select.vk-vers');
+  if(!sel)return;
+  var root=sel.getAttribute('data-root')||'';
+  var rel=sel.getAttribute('data-rel')||'index.html';
+  var current=sel.getAttribute('data-current');
+  sel.addEventListener('change',function(){
+    if(sel.value)location.href=root+sel.value+'/'+rel;
+  });
+  try{
+    fetch(root+'versions.json',{cache:'no-cache'}).then(function(r){return r.json();}).then(function(m){
+      if(!m||!m.versions||!m.versions.length)return;
+      sel.innerHTML='';
+      m.versions.forEach(function(v){
+        var o=document.createElement('option');
+        o.value=v.version;
+        o.textContent=v.version+(v.latest?' (latest)':'');
+        if(v.version===current)o.selected=true;
+        sel.appendChild(o);
+      });
+    }).catch(function(){});
+  }catch(e){}
+})();
+</script>
+</body>
+</html>

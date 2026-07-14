@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Spec: Export declaration · VendKit docs v0.7.0</title>
+<link rel="stylesheet" href="../assets/docs.css">
+<script>(function(){try{var t=localStorage.getItem('vk-theme');if(t==='dark'||t==='light')document.documentElement.setAttribute('data-theme',t);}catch(e){}})();</script>
+</head>
+<body>
+<header class="vk-top"><div class="vk-topwrap">
+<a class="vk-brand" href="../index.html"><span class="vk-bdot"></span>vendkit docs</a>
+<select class="vk-vers" aria-label="Documentation version" data-current="v0.7.0" data-root="../../" data-rel="specs/export-declaration.html">
+  <option value="v0.7.0" selected>v0.7.0 (latest)</option>
+</select>
+<button class="vk-tbtn" type="button" aria-label="Toggle color scheme" onclick="(function(d){var c=d.getAttribute('data-theme');if(!c){c=(window.matchMedia&&matchMedia('(prefers-color-scheme: dark)').matches)?'dark':'light';}var n=c==='dark'?'light':'dark';d.setAttribute('data-theme',n);try{localStorage.setItem('vk-theme',n);}catch(e){}})(document.documentElement)">◑</button>
+</div></header>
+<div class="vk-shell">
+<nav class="vk-nav" aria-label="Documentation">
+<a class="vk-nav-home" href="../index.html">Overview</a>
+<div class="vk-nav-sec">Guides</div>
+<ul class="vk-nav-list">
+  <li><a class="vk-nav-link" href="../architecture.html">Architecture</a></li>
+  <li><a class="vk-nav-link" href="../testing.html">Testing strategy and the conformance kit</a></li>
+</ul>
+<div class="vk-nav-sec">Specs</div>
+<ul class="vk-nav-list">
+  <li><a class="vk-nav-link" href="../specs/cli.html">Spec: CLI surface</a></li>
+  <li><a class="vk-nav-link" href="../specs/conformance.html">Spec: Conformance</a></li>
+  <li><a class="vk-nav-link is-active" href="../specs/export-declaration.html">Spec: Export declaration</a></li>
+  <li><a class="vk-nav-link" href="../specs/handler-protocol.html">Spec: Handler protocol</a></li>
+  <li><a class="vk-nav-link" href="../specs/manifest-and-gate.html">Spec: Manifest and gate lane</a></li>
+  <li><a class="vk-nav-link" href="../specs/migrations.html">Spec: Migrations</a></li>
+  <li><a class="vk-nav-link" href="../specs/onboarding.html">Spec: Onboarding and consumer configuration</a></li>
+  <li><a class="vk-nav-link" href="../specs/platform-integration.html">Spec: Platform integration — CI surfaces, credentials, differences ledger</a></li>
+  <li><a class="vk-nav-link" href="../specs/release-watch.html">Spec: Release watch</a></li>
+  <li><a class="vk-nav-link" href="../specs/releases-and-versioning.html">Spec: Releases and versioning</a></li>
+  <li><a class="vk-nav-link" href="../specs/security-model.html">Spec: Security model</a></li>
+  <li><a class="vk-nav-link" href="../specs/sync.html">Spec: Sync lane and materialisation</a></li>
+</ul>
+<div class="vk-nav-sec">Design</div>
+<ul class="vk-nav-list">
+  <li><a class="vk-nav-link" href="../design/DR-0001-vendored-identity-copies.html">DR-0001 — Vendored identity copies, not package distribution</a></li>
+  <li><a class="vk-nav-link" href="../design/DR-0002-identity-in-declaration.html">DR-0002 — Slice identity lives in the declaration, not the tools</a></li>
+  <li><a class="vk-nav-link" href="../design/DR-0003-two-lane-model.html">DR-0003 — Two-lane distribution: sync PRs + PR-time gate</a></li>
+  <li><a class="vk-nav-link" href="../design/DR-0004-normalised-hashing.html">DR-0004 — Normalised content hashing</a></li>
+  <li><a class="vk-nav-link" href="../design/DR-0005-tag-is-the-release.html">DR-0005 — The tag is the release: immutable, SHA-anchored, retractable</a></li>
+  <li><a class="vk-nav-link" href="../design/DR-0006-pull-with-push-hints.html">DR-0006 — Pull reconciliation with optional push hints</a></li>
+  <li><a class="vk-nav-link" href="../design/DR-0007-platform-ports.html">DR-0007 — ADO and GitHub Actions as peer backends behind a port interface</a></li>
+  <li><a class="vk-nav-link" href="../design/DR-0008-declarative-migrations.html">DR-0008 — Declarative migrations with deterministic verification</a></li>
+  <li><a class="vk-nav-link" href="../design/DR-0009-content-adapters.html">DR-0009 — Content adapters: identity copy by default, named transforms by declaration</a></li>
+  <li><a class="vk-nav-link" href="../design/DR-0010-review-gated-scope.html">DR-0010 — Scope changes are reviewed PR events, never automatic</a></li>
+  <li><a class="vk-nav-link" href="../design/DR-0011-single-cli-stdlib-gate.html">DR-0011 — One CLI; dependency-free consumer gate path</a></li>
+  <li><a class="vk-nav-link" href="../design/DR-0012-consumer-config-consolidation.html">DR-0012 — One consumer config file per slice under `.vendkit/`</a></li>
+  <li><a class="vk-nav-link" href="../design/DR-0013-seeded-files.html">DR-0013 — Seeded files: a scaffold-once lifecycle class</a></li>
+  <li><a class="vk-nav-link" href="../design/DR-0014-handler-protocol.html">DR-0014: Detection and delivery split by an exec handler protocol</a></li>
+  <li><a class="vk-nav-link" href="../design/DR-0015-scm-ci-axes.html">DR-0015: Split the platform vocabulary into SCM and CI axes; formats not services</a></li>
+  <li><a class="vk-nav-link" href="../design/DR-0016-engine-as-pinned-artefact.html">DR-0016: The engine becomes a pinned, checksummed artefact (INV-6 revision)</a></li>
+  <li><a class="vk-nav-link" href="../design/DR-0017-single-implementation-go.html">DR-0017: Single engine implementation in Go, with the scenario kit as the parity ratchet</a></li>
+  <li><a class="vk-nav-link" href="../design/DR-0018-versioned-docs-generator.html">DR-0018: Versioned docs site from a pure-Go static generator</a></li>
+  <li><a class="vk-nav-link" href="../design/README.html">Design records</a></li>
+  <li><a class="vk-nav-link" href="../design/TEMPLATE.html">DR-NNNN — Title</a></li>
+</ul>
+</nav>
+<main class="vk-main"><article class="vk-doc">
+<h1 id="spec-export-declaration">Spec: Export declaration</h1>
+<p>Status: draft for implementation · Schema version: 1 · Owner: Layer 0</p>
+<p>The export declaration is the publisher-side YAML file that fully defines a
+slice. <strong>All slice identity lives here; the tools carry none</strong> (DR-0002). One
+declaration per slice; a repository publishing two slices has two declarations.</p>
+<p>Default filename: <code>vendkit-export.yml</code> at the publisher repo root. Every CLI
+command accepts <code>--export-decl &lt;path&gt;</code>.</p>
+<h2 id="1-schema">1. Schema</h2>
+<pre><code class="language-yaml">schema_version: 1
+
+slice:
+  name: docs                  # REQUIRED. Slug: [a-z][a-z0-9-]{0,15}. Namespaces every
+                              # consumer artefact: .vendkit/docs.yml, docs-manifest.json,
+                              # docs-sync pipeline, gate findings labels.
+  title: &quot;Design docs&quot;        # Optional display title (reports, PR titles). Default: name.
+
+publisher:
+  # REQUIRED. Coordinates of this repo, used by scaffolded consumer
+  # pipelines and watch entries. `scm` is provenance and shorthand-expansion
+  # metadata only — core never branches on it (DR-0015). `repo` is a
+  # shorthand (github: owner/repo; azure-repos: org/project/repo) or any
+  # git-cloneable URL/path, used verbatim.
+  scm: github                 # github | azure-repos
+  repo: example-org/design-docs
+
+include:                      # Anchored, repo-relative glob patterns.
+  - &quot;docs/standards/**/*.md&quot;  # `**` matches zero or more directories.
+  - &quot;tools/lint/**/*&quot;
+seed:                         # Optional. Scaffold-once templates (DR-0013):
+  - &quot;templates/*.md&quot;          # materialised only when the consumer path does
+                              # not exist, then consumer-owned and free to
+                              # diverge. Must be disjoint from include (a
+                              # path matched by both is a hard error). At
+                              # least one of include/seed must be non-empty.
+exclude:                      # Optional. Applied to include AND seed results.
+  - &quot;**/TEMPLATE.md&quot;
+  - &quot;**/tests/**&quot;
+
+adapters:                     # Optional. Named content transforms (DR-0009).
+  # Everything not matched by an adapter is an identity copy: verbatim bytes,
+  # identical path at every hop. Adapters are the ONLY place file content or
+  # location may lawfully differ from the publisher tree.
+  - kind: prefix-namespace    # rename files into a reserved namespace
+    match: &quot;.github/instructions/*.md&quot;
+    prefix: &quot;docs-&quot;           # consumer_path gets the prefix; never shadows local files
+  - kind: glob-localise       # prune a declared glob list per consumer profile
+    match: &quot;.github/instructions/*.md&quot;
+    field: applyTo            # front-matter key holding the glob union
+    catalogue:                # profile-owned globs; see §3
+      code-repo: [&quot;docs/standards/**&quot;, &quot;docs/specifications/**&quot;]
+      solution-docs: [&quot;docs/applications/**&quot;, &quot;docs/domain/**&quot;]
+
+profiles:                     # Optional. Consumer archetypes.
+  code-repo:
+    export_slice:             # which subset of the surface this archetype vendors
+      include: [&quot;*&quot;]          # fnmatch against exported repo-relative paths
+      exclude: [&quot;tools/onboard/*&quot;]
+  solution-docs: {}           # empty profile: whole surface, no adapter params
+
+retracted:                    # Optional. Released versions consumers must not adopt.
+  - v0.9.0                    # watch skips; sync refuses as target (see releases spec)
+
+manifest_name: docs-manifest.json   # Optional. Default: &quot;&lt;slice.name&gt;-manifest.json&quot;.
+</code></pre>
+<h2 id="2-semantics">2. Semantics</h2>
+<ul>
+<li><strong>Include/exclude.</strong> <code>include</code> uses pathlib-style globbing anchored at the
+repo root; <code>exclude</code> uses fnmatch against the resulting repo-relative paths.
+The exported surface is <code>matched(include) − matched(exclude)</code>, deduplicated,
+sorted. Directories are never entries; only regular files. Symlinks are
+rejected at generate time (they cannot be identity-copied portably).</li>
+<li><strong>Seed.</strong> Same glob and exclusion semantics as <code>include</code>, producing the
+scaffold-once surface (DR-0013, sync spec §6). The two surfaces must be
+disjoint; overlap is a generate-time hard error. Seeds flow through the
+same adapters (a <code>prefix-namespace</code> rename applies; <code>glob-localise</code> runs
+once at seed time) and the same profile <code>export_slice</code> scoping.</li>
+<li><strong>Determinism.</strong> The exported set and all adapter outputs depend only on the
+declaration and the tree (INV-2). Generate on the same tree is byte-stable.</li>
+<li><strong>Adapters</strong> apply in declaration order; at most one <code>prefix-namespace</code> and at
+most one <code>glob-localise</code> may match a given file (generate fails otherwise).
+Adapter <code>kind</code>s are an extension point but v1 ships exactly these two; unknown
+kinds are a hard generate-time error, so a consumer engine can trust that a
+manifest it reads was produced by adapters it understands.</li>
+<li><strong>Profiles.</strong> A profile with no <code>export_slice</code> takes the whole surface. A
+consumer binds to at most one profile (in its slice config); an unbound
+consumer takes the whole surface and verbatim adapter output (no
+localisation). <code>export_slice</code> affects <strong>scope reconciliation only</strong> — it never
+narrows an already-tracked consumer slice (INV-4).</li>
+<li><strong>Validation.</strong> <code>vendkit generate --check</code> and the publisher CI must fail on:
+unknown keys, unknown adapter kinds, empty export set, adapter match
+collisions, a <code>retracted</code> entry that is not release-shaped, or a <code>slice.name</code>
+that fails the slug rule.</li>
+</ul>
+<h2 id="3-glob-localise-catalogue-rules">3. Glob-localise catalogue rules</h2>
+<p>A glob listed under a profile in a <code>glob-localise</code> catalogue is <em>owned</em> by that
+profile. When materialising for a consumer bound to profile P, the adapter keeps
+a glob in the file's declared union iff it is owned by P or owned by no profile
+(universal). Globs owned only by other profiles are dropped. The pruned result
+is what the consumer manifest hashes — so localisation is drift-gate-safe.</p>
+<h2 id="4-what-the-declaration-must-never-contain">4. What the declaration must never contain</h2>
+<ul>
+<li>Consumer identities or any downstream registry (the publisher does not know
+its consumers; see DR-0006 for the one optional exception, push hints).</li>
+<li>Credentials, tokens, org-internal URLs.</li>
+<li>Platform pipeline logic (that is Layer 2's job).</li>
+</ul>
+<h2 id="5-open-questions">5. Open questions</h2>
+<ul>
+<li>OQ-1: should <code>include</code> support an explicit single-file form with a required
+flag (fail if missing) to catch typos? Leaning yes: <code>- path: docs/x.md</code>
+object form, <code>required: true</code> default.</li>
+<li>OQ-2: adapter for line-ending forcing on materialise (consumers with
+<code>.gitattributes</code> quirks) or is normalisation-at-hash enough? Leaning: hash
+normalisation is enough; do not mutate bytes.</li>
+</ul>
+
+</article>
+<footer class="vk-foot">VendKit documentation · <code>v0.7.0</code> · <a href="../../">all releases</a></footer>
+</main>
+</div>
+<script>
+(function(){
+  var sel=document.querySelector('select.vk-vers');
+  if(!sel)return;
+  var root=sel.getAttribute('data-root')||'';
+  var rel=sel.getAttribute('data-rel')||'index.html';
+  var current=sel.getAttribute('data-current');
+  sel.addEventListener('change',function(){
+    if(sel.value)location.href=root+sel.value+'/'+rel;
+  });
+  try{
+    fetch(root+'versions.json',{cache:'no-cache'}).then(function(r){return r.json();}).then(function(m){
+      if(!m||!m.versions||!m.versions.length)return;
+      sel.innerHTML='';
+      m.versions.forEach(function(v){
+        var o=document.createElement('option');
+        o.value=v.version;
+        o.textContent=v.version+(v.latest?' (latest)':'');
+        if(v.version===current)o.selected=true;
+        sel.appendChild(o);
+      });
+    }).catch(function(){});
+  }catch(e){}
+})();
+</script>
+</body>
+</html>

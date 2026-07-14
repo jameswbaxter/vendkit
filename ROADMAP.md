@@ -75,7 +75,7 @@ and GHA (testing.md §3).
 - `gate` (with `--all` + INV-7 collision detection); `sync --check/--apply`
   with adapters, reconcile-scope, provenance recording; porcelain contract.
 - ADO + GHA CI surfaces (`emit_output`/`emit_summary`) and reference handlers; Layer 2 wrappers for gate and
-  sync; scaffolder MVP (`onboard`, both platforms, primary mode only).
+  sync; scaffolder MVP (`init`, both platforms, primary mode only).
 - Scenario matrix for INV-1/3/4/7 on both platforms.
 - **Exit criteria:** a demo consumer on each platform vendors a slice from this
   repo, gate-protected, and takes a sync PR end-to-end. This repo release

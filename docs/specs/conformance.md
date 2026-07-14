@@ -123,8 +123,8 @@ The reference handlers perform real API verification (replacing the earlier
 definitively not enforced; `unknown` is emitted only when the token lacks
 scope (a 401/403 is `unknown`, never `false`), the endpoint is unavailable, or
 the fact key is unrecognised (forward-compatible). Verification uses a
-read-scoped `VENDKIT_TOKEN_FACT_VERIFY` (GitHub: `GITHUB_TOKEN` fallback;
-ADO: `SYSTEM_ACCESSTOKEN`/`ADO_PAT`).
+read-scoped `VENDKIT_TOKEN_FACT_VERIFY` (GitHub: `GITHUB_TOKEN`/`GH_TOKEN`
+fallback; ADO: `SYSTEM_ACCESSTOKEN`/`ADO_PAT`).
 
 ## 5. Fleet view
 

@@ -113,7 +113,7 @@ drift, while any substantive edit changes the hash (DR-0004).
   (advisory mode for staged adoption).
 - **Dependency-free (INV-9):** the gate reads only JSON manifests and files —
   no YAML, no third-party packages, no network, no export declaration. It must
-  run on a bare CI Python.
+  run as a bare static binary — no interpreter, no runtime prerequisites (DR-0016).
 
 ### Gate wiring per platform
 

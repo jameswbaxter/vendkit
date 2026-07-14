@@ -43,13 +43,20 @@ and GHA (testing.md §3).
 > reference handlers now confirm controls against the SCM API instead of
 > degrading to `unknown`); and a *versioned* docs site (a pure-Go
 > `internal/docsgen` generator + tag-triggered gh-pages deploy, no
-> Python/Node — DR-0018). Also shipped since v0.1.0: the GitHub Pages
-> landing page (`site/`) and its deploy workflow, live platform-matrix CI
-> (testing §3, GHA surface with a dormant ADO peer in `azure-pipelines.yml`),
-> and public-repo hygiene (SECURITY.md, issue templates). What remains are
-> integration exercises rather than new surface: the tier-chain push-hint
-> demo (framework → mid publisher → leaf) and a live download-and-run of
-> the release-attached binaries end-to-end on both platforms.
+> Python/Node — DR-0018). The two M4 integration exercises have also
+> landed: the behavioural-differences ledger audit (a Go test enforcing
+> the platform-integration §6 ledger ↔ code correspondence both ways, plus
+> a new entry #7) and the tier-chain demo (an offline e2e scenario driving
+> a release framework → mid publisher → leaf with a push-hint at each hop).
+> Also shipped since v0.1.0: the GitHub Pages landing page (`site/`) and its
+> deploy workflow (now serving *versioned* docs off the `gh-pages` branch),
+> live platform-matrix CI (testing §3, GHA surface with a dormant ADO peer
+> in `azure-pipelines.yml`), and public-repo hygiene (SECURITY.md, issue
+> templates). What remains before the M4 exit criteria (v1.0.0) are a docs
+> pass, a live download-and-run of the release-attached binaries end-to-end
+> on both platforms, and the 1.0 freeze itself (schema_version freeze, CLI
+> surface freeze, compatibility policy in force) — a deliberate one-way
+> decision, not yet taken. The current release line is v0.7.0.
 
 ## M0 — Skeleton and invariants (foundation)
 

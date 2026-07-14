@@ -51,12 +51,15 @@ and GHA (testing.md §3).
 > Also shipped since v0.1.0: the GitHub Pages landing page (`site/`) and its
 > deploy workflow (now serving *versioned* docs off the `gh-pages` branch),
 > live platform-matrix CI (testing §3, GHA surface with a dormant ADO peer
-> in `azure-pipelines.yml`), and public-repo hygiene (SECURITY.md, issue
-> templates). What remains before the M4 exit criteria (v1.0.0) are a docs
-> pass, a live download-and-run of the release-attached binaries end-to-end
-> on both platforms, and the 1.0 freeze itself (schema_version freeze, CLI
-> surface freeze, compatibility policy in force) — a deliberate one-way
-> decision, not yet taken. The current release line is v0.7.0.
+> in `azure-pipelines.yml`), the pre-1.0 docs pass (specs reconciled with the
+> shipped surface), a live download-and-run smoke of the release-attached
+> binaries (DR-0016: download → checksum-verify → run, matrixed over every
+> GitHub-hosted OS family in `release-smoke.yml`, with the authored-dormant
+> ADO peer `azure-pipelines-release-smoke.yml`), and public-repo hygiene
+> (SECURITY.md, issue templates). What remains before the M4 exit criteria
+> (v1.0.0) is the 1.0 freeze itself (schema_version freeze, CLI surface
+> freeze, compatibility policy in force) — a deliberate one-way decision, not
+> yet taken. The current release line is v0.7.0.
 
 ## M0 — Skeleton and invariants (foundation)
 

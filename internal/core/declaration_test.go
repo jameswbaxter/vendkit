@@ -125,6 +125,49 @@ profiles: {code: {}, docs-only: {}}`)
 	}
 }
 
+func TestGlobLocalisePrunesBlockList(t *testing.T) {
+	decl := declFixture(t, `adapters:
+  - kind: glob-localise
+    match: ".claude/rules/*.md"
+    field: paths
+    catalogue:
+      code-repo: ["docs/specifications/**", "docs/standards/**"]
+      solution-docs: ["docs/applications/**", "docs/domain/**"]
+profiles: {code-repo: {}, solution-docs: {}}`)
+	// The current rule shape: `paths:` as a YAML block list (not a comma string).
+	body := []byte("---\ndescription: x\npaths:\n" +
+		"  - docs/**\n" + // owned by no profile -> universal, always kept
+		"  - docs/specifications/**\n" +
+		"  - docs/standards/**\n" +
+		"  - docs/applications/**\n" +
+		"  - docs/domain/**\n---\nbody\n")
+	out, err := ApplyAdapters(decl, ".claude/rules/a.md", body, "code-repo")
+	if err != nil {
+		t.Fatal(err)
+	}
+	got := string(out)
+	for _, kept := range []string{"- docs/**", "- docs/specifications/**", "- docs/standards/**"} {
+		if !strings.Contains(got, kept) {
+			t.Errorf("glob %q should be kept:\n%s", kept, got)
+		}
+	}
+	for _, pruned := range []string{"docs/applications/**", "docs/domain/**"} {
+		if strings.Contains(got, pruned) {
+			t.Errorf("other-profile glob %q should be pruned:\n%s", pruned, got)
+		}
+	}
+	if !strings.Contains(got, "description: x") || !strings.HasSuffix(got, "---\nbody\n") {
+		t.Errorf("front-matter/body structure must be preserved:\n%s", got)
+	}
+	unbound, err := ApplyAdapters(decl, ".claude/rules/a.md", body, "")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if string(unbound) != string(body) {
+		t.Errorf("unbound consumer must keep the union verbatim:\n%s", unbound)
+	}
+}
+
 func TestSeedSurfaceAndOverlapError(t *testing.T) {
 	// Seed surface: templates/notes.md is seeded, docs/a.md is exported.
 	root := t.TempDir()

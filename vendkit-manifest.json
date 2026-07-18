@@ -96,7 +96,7 @@
       "exec": false,
       "path": "internal/core/adapters.go",
       "raw": false,
-      "sha256": "0ab3fe8a55a9629ae692e9bb58f0755afffced85dc5e3a90e5fa44d89f76e705"
+      "sha256": "76b4fa29114e410aca02d21eb0820da6320c11b6add3a4dfcf2215e9d65183cb"
     },
     {
       "consumer_path": "internal/core/canonjson.go",

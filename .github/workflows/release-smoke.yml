@@ -72,7 +72,7 @@ jobs:
       - name: Check out the repo at the released tag
         # generate --check re-derives the manifest from the tree; the tree must
         # be the exact release the downloaded binary was cut from.
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           ref: ${{ needs.resolve.outputs.version }}
 

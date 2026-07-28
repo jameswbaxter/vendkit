@@ -27,7 +27,9 @@ func cmdGenerate(args []string, surface ci.Surface) (int, error) {
 	if err := parseFlags(fs, args); err != nil {
 		return 0, err
 	}
-	decl, err := core.LoadExportDecl(c.ExportDecl)
+	// A relative --export-decl resolves against --root, like every other
+	// command resolves it against --publisher-root (cli.md §1).
+	decl, err := loadDeclFrom(*root, c.ExportDecl)
 	if err != nil {
 		return 0, err
 	}
@@ -35,18 +37,18 @@ func cmdGenerate(args []string, surface ci.Surface) (int, error) {
 	if err != nil {
 		return 0, err
 	}
-	manifestPath := filepath.Join(*root, decl.ManifestName)
+	manifestPath := decl.PublisherManifestPath(*root)
 	if *check {
 		committed, err := core.LoadManifest(manifestPath)
 		if err != nil {
 			if _, isUsage := err.(*core.UsageError); isUsage {
-				surface.EmitError(decl.ManifestName + " missing — run generate")
+				surface.EmitError(decl.ManifestRepoRel() + " missing — run generate")
 				return 1, nil
 			}
 			return 0, err
 		}
 		if !core.ManifestsEqual(fresh, committed) {
-			surface.EmitError(decl.ManifestName + " is stale — run generate")
+			surface.EmitError(decl.ManifestRepoRel() + " is stale — run generate")
 			surface.EmitOutput("fresh", "false")
 			return 1, nil
 		}

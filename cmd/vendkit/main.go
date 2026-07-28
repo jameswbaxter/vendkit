@@ -151,12 +151,18 @@ func parseFlags(fs *flag.FlagSet, args []string) error {
 	return nil
 }
 
-// loadDeclFrom resolves the export declaration like the reference CLI: it
-// lives in the publisher checkout unless --export-decl points elsewhere.
+// loadDeclFrom resolves the export declaration inside the publisher checkout:
+// --export-decl names a path RELATIVE TO THE PUBLISHER ROOT (absolute paths are
+// used verbatim), so a relocated declaration resolves the same way whichever
+// directory the command is invoked from.
 func loadDeclFrom(publisherRoot, exportDecl string) (*core.ExportDecl, error) {
-	path := filepath.Join(publisherRoot, core.DefaultDecl)
-	if exportDecl != "" && exportDecl != core.DefaultDecl {
-		path = exportDecl
+	rel := exportDecl
+	if rel == "" {
+		rel = core.DefaultDecl
+	}
+	path := rel
+	if !filepath.IsAbs(path) {
+		path = filepath.Join(publisherRoot, path)
 	}
 	return core.LoadExportDecl(path)
 }

@@ -7,6 +7,9 @@ prerequisites (DR-0017). The only truly global flag is `--platform` (CI output
 surface override: `github-actions` | `azure-pipelines` | `neutral`), parsed
 before the command. `--export-decl`, `--consumer-root`, `--publisher-root`, and
 `--json` are common flags added to the commands that need them (not universal).
+A relative `--export-decl` is resolved against the publisher root — `--root` for
+`generate`, `--publisher-root` elsewhere — never against the process working
+directory; absolute paths are used verbatim.
 
 | Command | Role | Layer | Spec |
 |---|---|---|---|

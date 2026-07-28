@@ -7,7 +7,9 @@ slice. **All slice identity lives here; the tools carry none** (DR-0002). One
 declaration per slice; a repository publishing two slices has two declarations.
 
 Default filename: `vendkit-export.yml` at the publisher repo root. Every CLI
-command accepts `--export-decl <path>`.
+command accepts `--export-decl <path>`; a relative path is resolved against the
+publisher root (`--publisher-root`, or `--root` for `generate`), so a relocated
+declaration resolves identically whatever the working directory.
 
 ## 1. Schema
 
@@ -28,6 +30,12 @@ publisher:
   # git-cloneable URL/path, used verbatim.
   scm: github                 # github | azure-repos
   repo: example-org/design-docs
+  manifest_dir: .governance   # Optional. Publisher-local directory holding the
+                              # generated manifest. Default: "" (repo root); "."
+                              # means the same. Must be a relative path inside
+                              # the repo. PUBLISHER-SIDE ONLY — it never travels
+                              # with the slice: a vendored manifest always lands
+                              # at `.vendkit/<manifest_name>` in the consumer.
 
 include:                      # Anchored, repo-relative glob patterns.
   - "docs/standards/**/*.md"  # `**` matches zero or more directories.
@@ -67,6 +75,10 @@ retracted:                    # Optional. Released versions consumers must not a
   - v0.9.0                    # watch skips; sync refuses as target (see releases spec)
 
 manifest_name: docs-manifest.json   # Optional. Default: "<slice.name>-manifest.json".
+                                    # A BARE FILENAME: it also names the consumer
+                                    # copy under `.vendkit/`, so a path here is a
+                                    # hard error — relocate the publisher copy
+                                    # with `publisher.manifest_dir`.
 ```
 
 ## 2. Semantics
@@ -76,6 +88,12 @@ manifest_name: docs-manifest.json   # Optional. Default: "<slice.name>-manifest.
   The exported surface is `matched(include) − matched(exclude)`, deduplicated,
   sorted. Directories are never entries; only regular files. Symlinks are
   rejected at generate time (they cannot be identity-copied portably).
+- **Manifest location.** `manifest_name` is the slice's manifest filename on both
+  sides; `publisher.manifest_dir` relocates only the publisher's generated copy
+  (`<manifest_dir>/<manifest_name>`), which is where `generate --check` and the
+  release freshness and surface-delta gates read it — including out of git history
+  at the previous tag. The consumer copy is always `.vendkit/<manifest_name>`, so
+  `--all` gate discovery and multi-slice coexistence are unaffected.
 - **Seed.** Same glob and exclusion semantics as `include`, producing the
   scaffold-once surface (DR-0013, sync spec §6). The two surfaces must be
   disjoint; overlap is a generate-time hard error. Seeds flow through the

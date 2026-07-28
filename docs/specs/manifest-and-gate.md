@@ -8,8 +8,9 @@ vendored files and fails on any hand-edit or deletion.
 
 ## 1. Manifest schema (v1)
 
-One manifest per slice. Publisher-side it lives at the repo root under
-`manifest_name`; consumer-side at `.vendkit/<manifest_name>`.
+One manifest per slice. Publisher-side it lives under `manifest_name`, at the repo
+root or in `publisher.manifest_dir` when the declaration sets one; consumer-side
+always at `.vendkit/<manifest_name>`.
 
 ```json
 {

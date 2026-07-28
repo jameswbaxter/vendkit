@@ -237,3 +237,78 @@ func TestProfileExportSlice(t *testing.T) {
 		t.Error("an unbound consumer takes the whole surface")
 	}
 }
+
+// -- publisher-local manifest directory ------------------------------------------
+
+// declRaw writes a full declaration YAML — needed where the fixed `publisher:`
+// line itself must change — and returns the load result.
+func declRaw(t *testing.T, pubExtra, extra string) (*ExportDecl, error) {
+	t.Helper()
+	root := t.TempDir()
+	if err := os.MkdirAll(filepath.Join(root, "docs"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(root, "docs", "a.md"),
+		[]byte("# a\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	yaml := `schema_version: 1
+slice: {name: docs, title: Docs}
+publisher: {scm: github, repo: example-org/pub` + pubExtra + `}
+include: ["docs/**/*.md"]
+` + extra + "\n"
+	declPath := filepath.Join(root, "vendkit-export.yml")
+	if err := os.WriteFile(declPath, []byte(yaml), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	return LoadExportDecl(declPath)
+}
+
+func TestManifestDirRelocatesPublisherCopyOnly(t *testing.T) {
+	decl, err := declRaw(t, ", manifest_dir: .governance", "")
+	if err != nil {
+		t.Fatal(err)
+	}
+	// The consumer-facing name is untouched: a vendored manifest still lands at
+	// .vendkit/<manifest_name>, so manifest_dir never travels with the slice.
+	if decl.ManifestName != "docs-manifest.json" {
+		t.Errorf("ManifestName = %q, want docs-manifest.json", decl.ManifestName)
+	}
+	if got := decl.ManifestRepoRel(); got != ".governance/docs-manifest.json" {
+		t.Errorf("ManifestRepoRel = %q, want .governance/docs-manifest.json", got)
+	}
+	want := filepath.Join("/pub", ".governance", "docs-manifest.json")
+	if got := decl.PublisherManifestPath("/pub"); got != want {
+		t.Errorf("PublisherManifestPath = %q, want %q", got, want)
+	}
+}
+
+func TestManifestDirDefaultsToRepoRoot(t *testing.T) {
+	for _, pubExtra := range []string{"", ", manifest_dir: ''", ", manifest_dir: '.'"} {
+		decl, err := declRaw(t, pubExtra, "")
+		if err != nil {
+			t.Fatalf("publisher%q: %v", pubExtra, err)
+		}
+		if got := decl.ManifestRepoRel(); got != "docs-manifest.json" {
+			t.Errorf("publisher%q: ManifestRepoRel = %q, want docs-manifest.json",
+				pubExtra, got)
+		}
+	}
+}
+
+func TestManifestDirOutsideRepoRejected(t *testing.T) {
+	for _, bad := range []string{"../outside", "/etc", "a/../../b"} {
+		if _, err := declRaw(t, ", manifest_dir: '"+bad+"'", ""); err == nil ||
+			!strings.Contains(err.Error(), "must be a relative path inside the repo") {
+			t.Errorf("manifest_dir %q error = %v, want relative-path refusal", bad, err)
+		}
+	}
+}
+
+func TestManifestNameMustBeBareFilename(t *testing.T) {
+	// A path in manifest_name would be joined into the consumer's .vendkit/ too.
+	if _, err := declRaw(t, "", "manifest_name: sub/docs.json"); err == nil ||
+		!strings.Contains(err.Error(), "must be a bare filename") {
+		t.Errorf("error = %v, want bare-filename refusal", err)
+	}
+}

@@ -1492,3 +1492,96 @@ func TestPushHintFlagGatesTheReceiver(t *testing.T) {
 	mustContain(t, on, "repository_dispatch:")
 	mustContain(t, on, "types: [vendkit-release]")
 }
+
+// -- relocated publisher manifest ------------------------------------------------
+
+// publisher.manifest_dir moves the PUBLISHER's generated manifest out of the repo
+// root. The vendored copy still lands at the consumer's canonical
+// `.vendkit/<slice>-manifest.json`: the key is publisher-local and never travels.
+func TestManifestDirIsPublisherLocal(t *testing.T) {
+	tmp := t.TempDir()
+	pub := filepath.Join(tmp, "publisher")
+	write(t, filepath.Join(pub, "docs", "standard.md"), "# Standard\n\nRule one.\n")
+	write(t, filepath.Join(pub, "vendkit-export.yml"), `schema_version: 1
+slice: {name: docs, title: "Design docs"}
+publisher: {scm: github, repo: example-org/pub, manifest_dir: .governance}
+include: ["docs/**/*.md"]
+profiles:
+  code-repo: {}
+`)
+	git(t, pub, "init", "-q", "-b", "main")
+	vk(t, pub, nil, true, "generate")
+
+	if !exists(filepath.Join(pub, ".governance", "docs-manifest.json")) {
+		t.Fatal("manifest was not written to .governance/")
+	}
+	if exists(filepath.Join(pub, "docs-manifest.json")) {
+		t.Fatal("manifest was also written at the repo root")
+	}
+	vk(t, pub, nil, true, "generate", "--check")
+
+	// Staleness is detected against the relocated copy, and the refusal names the
+	// real path rather than the bare manifest name.
+	appendText(t, filepath.Join(pub, "docs", "standard.md"), "drift\n")
+	_, se, code := vk(t, pub, nil, false, "generate", "--check")
+	if code != 1 {
+		t.Fatalf("stale check exit = %d, want 1", code)
+	}
+	mustContain(t, se, ".governance/docs-manifest.json")
+	vk(t, pub, nil, true, "generate")
+
+	// A relative --export-decl resolves against --root, so generate works from a
+	// working directory that is not the publisher root.
+	vk(t, tmp, nil, true, "generate", "--check", "--root", pub)
+
+	// Release twice: the freshness pre-gate reads the relocated copy, and the
+	// surface delta for v0.2.0 reads the v0.1.0 copy out of git history.
+	git(t, pub, "add", "-A")
+	git(t, pub, "commit", "-q", "-m", "init")
+	pubOrigin := filepath.Join(tmp, "publisher-origin.git")
+	git(t, tmp, "init", "-q", "--bare", pubOrigin)
+	git(t, pub, "remote", "add", "origin", pubOrigin)
+	git(t, pub, "push", "-q", "origin", "main")
+	vk(t, pub, nil, true, "release", "--version", "v0.1.0")
+	write(t, filepath.Join(pub, "docs", "extra.md"), "# Extra\n")
+	release(t, pub, "v0.2.0")
+
+	// The consumer is unaffected: canonical .vendkit/ location, no leaked dir.
+	con := filepath.Join(tmp, "consumer")
+	mkdirAll(t, con)
+	write(t, filepath.Join(con, "CODEOWNERS"), "/.vendkit/ @example-org/owners\n")
+	git(t, con, "init", "-q", "-b", "main")
+	vk(t, pub, nil, true, "init", "--ci", "github-actions", "--scm", "github",
+		"--version", "v0.2.0", "--profile", "code-repo",
+		"--publisher-root", pub, "--consumer-root", con)
+	if !exists(filepath.Join(con, ".vendkit", "docs-manifest.json")) {
+		t.Fatal("consumer manifest is not at .vendkit/docs-manifest.json")
+	}
+	if exists(filepath.Join(con, ".vendkit", ".governance")) {
+		t.Fatal("publisher manifest_dir leaked into the consumer tree")
+	}
+	gateOut, _, _ := vk(t, con, nil, true, "gate", "--strict")
+	mustContain(t, gateOut, "findings=0")
+}
+
+// A publisher may relocate the declaration itself; --export-decl is resolved
+// relative to the publisher root, not the process working directory.
+func TestRelocatedExportDeclaration(t *testing.T) {
+	tmp := t.TempDir()
+	pub := filepath.Join(tmp, "publisher")
+	write(t, filepath.Join(pub, "docs", "standard.md"), "# Standard\n")
+	write(t, filepath.Join(pub, ".governance", "export-declaration.yml"),
+		`schema_version: 1
+slice: {name: docs, title: "Design docs"}
+publisher: {scm: github, repo: example-org/pub, manifest_dir: .governance}
+include: ["docs/**/*.md"]
+`)
+	git(t, pub, "init", "-q", "-b", "main")
+	decl := filepath.Join(".governance", "export-declaration.yml")
+	vk(t, pub, nil, true, "generate", "--export-decl", decl)
+	if !exists(filepath.Join(pub, ".governance", "docs-manifest.json")) {
+		t.Fatal("manifest not written beside the relocated declaration")
+	}
+	// From an unrelated working directory, with --root naming the publisher.
+	vk(t, tmp, nil, true, "generate", "--check", "--root", pub, "--export-decl", decl)
+}

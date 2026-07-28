@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
-	"path/filepath"
 	"strings"
 )
 
@@ -56,7 +55,7 @@ func tagExists(root, tag string) (bool, error) {
 // release's manifest. Seed-entry removals are excluded (DR-0013): retiring
 // a template never demands a MAJOR or a migration payload.
 func surfaceDelta(root string, decl *ExportDecl, previous string) ([]string, []string, error) {
-	cmd := exec.Command("git", "show", previous+":"+decl.ManifestName)
+	cmd := exec.Command("git", "show", previous+":"+decl.ManifestRepoRel())
 	cmd.Dir = root
 	out, err := cmd.Output()
 	if err != nil {
@@ -102,9 +101,9 @@ func surfaceDelta(root string, decl *ExportDecl, previous string) ([]string, []s
 func Cut(root string, decl *ExportDecl, bumpKind, explicitVersion, summary string,
 	noMigrationsNeeded, dryRun bool) (*CutResult, error) {
 	// 1. Freshness pre-gate: a release never ships a stale manifest.
-	manifestPath := filepath.Join(root, decl.ManifestName)
+	manifestPath := decl.PublisherManifestPath(root)
 	if _, err := os.Stat(manifestPath); err != nil {
-		return nil, Usagef("missing manifest %s — run generate", decl.ManifestName)
+		return nil, Usagef("missing manifest %s — run generate", decl.ManifestRepoRel())
 	}
 	committed, err := LoadManifest(manifestPath)
 	if err != nil {

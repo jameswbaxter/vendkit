@@ -19,7 +19,7 @@
       "exec": false,
       "path": "cmd/vendkit/cmds.go",
       "raw": false,
-      "sha256": "50dcc1fa01f368933df7b907f6d701607a124709870acd41cbd4cdff966dd6ed"
+      "sha256": "127c0bdfd55ac3c177142eb3bea14d896b3d903b81ba25214a6f2df62141600d"
     },
     {
       "consumer_path": "cmd/vendkit/fleet.go",
@@ -47,7 +47,7 @@
       "exec": false,
       "path": "cmd/vendkit/main.go",
       "raw": false,
-      "sha256": "e142dc06682e8bf76093a71b57dc7fbc99dc985ea097ea0657fe05ad2a83bb20"
+      "sha256": "24e0b82521d0029626f6aefa5e85df2f3d981c3fa9de83061108e860417ad5be"
     },
     {
       "consumer_path": "cmd/vendkit/pushhint.go",
@@ -117,7 +117,7 @@
       "exec": false,
       "path": "internal/core/declaration.go",
       "raw": false,
-      "sha256": "f55b19c837a7d35c003b63d1d609faf5c92d302beb7c18476df3a51e73722322"
+      "sha256": "4c023cd9dfdb6ab04a31d59e56f10b465342bcc0d50f929566c84f3cc31e38ee"
     },
     {
       "consumer_path": "internal/core/difflib.go",
@@ -187,7 +187,7 @@
       "exec": false,
       "path": "internal/core/release.go",
       "raw": false,
-      "sha256": "079796ad2b605e986f1bc962d1377c5b546fadf0bd04c70b6c78327485d7ed44"
+      "sha256": "5d9666891eb007e0bc806c82905a7777dd66205818b9b85ac1a62d72b97df74e"
     },
     {
       "consumer_path": "internal/core/sliceconfig.go",

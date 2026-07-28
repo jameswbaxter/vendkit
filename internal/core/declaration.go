@@ -5,12 +5,47 @@ package core
 
 import (
 	"fmt"
+	"path"
+	"path/filepath"
 	"regexp"
 	"sort"
 	"strings"
 )
 
 var slugRx = regexp.MustCompile(`^[a-z][a-z0-9-]{0,15}$`)
+
+// cleanManifestDir normalises publisher.manifest_dir to a clean repo-relative
+// POSIX directory, or reports invalid. "" and "." both mean the repo root.
+// (Package-level so the `path` import is not shadowed by LoadExportDecl's
+// `path` parameter.)
+func cleanManifestDir(raw string) (string, bool) {
+	if raw == "" {
+		return "", true
+	}
+	clean := path.Clean(strings.ReplaceAll(raw, `\`, "/"))
+	if clean == "." {
+		return "", true
+	}
+	if path.IsAbs(clean) || clean == ".." || strings.HasPrefix(clean, "../") {
+		return "", false
+	}
+	return clean, true
+}
+
+// ManifestRepoRel: the publisher-side, repo-relative POSIX path of the generated
+// manifest. The consumer-side path is always `.vendkit/<ManifestName>`, so
+// ManifestDir is publisher-local and never travels with the slice.
+func (d *ExportDecl) ManifestRepoRel() string {
+	if d.ManifestDir == "" {
+		return d.ManifestName
+	}
+	return path.Join(d.ManifestDir, d.ManifestName)
+}
+
+// PublisherManifestPath: filesystem path of the manifest under a publisher root.
+func (d *ExportDecl) PublisherManifestPath(root string) string {
+	return filepath.Join(root, filepath.FromSlash(d.ManifestRepoRel()))
+}
 
 const DefaultDecl = "vendkit-export.yml"
 
@@ -35,14 +70,17 @@ type ExportDecl struct {
 	SliceTitle    string
 	PublisherSCM  string
 	PublisherRepo string
-	Include       []string
-	Exclude       []string
-	Seed          []string
-	Adapters      []Adapter
-	Profiles      map[string]Profile
-	Retracted     []string
-	ManifestName  string
-	Path          string
+	// ManifestDir: publisher-local directory holding the generated manifest
+	// (empty = repo root). Publisher-side only — see ManifestRepoRel.
+	ManifestDir  string
+	Include      []string
+	Exclude      []string
+	Seed         []string
+	Adapters     []Adapter
+	Profiles     map[string]Profile
+	Retracted    []string
+	ManifestName string
+	Path         string
 }
 
 func LoadExportDecl(path string) (*ExportDecl, error) {
@@ -73,6 +111,16 @@ func LoadExportDecl(path string) (*ExportDecl, error) {
 	repo := getStr(pub, "repo")
 	if repo == "" {
 		errs = append(errs, "publisher.repo is required (git URL or shorthand)")
+	}
+	// Publisher-local manifest directory. Nested under `publisher:` deliberately:
+	// the consumer-side location is NOT configurable — a vendored manifest always
+	// lands in `.vendkit/<manifest_name>` (manifest-and-gate spec §2) — so this
+	// key must not read as if it travelled with the slice.
+	manifestDir, dirOK := cleanManifestDir(getStr(pub, "manifest_dir"))
+	if !dirOK {
+		errs = append(errs, fmt.Sprintf(
+			"publisher.manifest_dir %q must be a relative path inside the repo",
+			getStr(pub, "manifest_dir")))
 	}
 
 	include, ok1 := strList(data["include"])
@@ -139,6 +187,11 @@ func LoadExportDecl(path string) (*ExportDecl, error) {
 	manifestName := getStr(data, "manifest_name")
 	if manifestName == "" {
 		manifestName = name + "-manifest.json"
+	} else if strings.ContainsAny(manifestName, `/\`) {
+		// A path here would be joined into the consumer's `.vendkit/` too, so it
+		// is rejected: relocate the publisher-side copy with publisher.manifest_dir.
+		errs = append(errs, fmt.Sprintf("manifest_name %q must be a bare filename "+
+			"(use publisher.manifest_dir to relocate the publisher-side copy)", manifestName))
 	}
 
 	known := map[string]bool{"schema_version": true, "slice": true,
@@ -161,7 +214,7 @@ func LoadExportDecl(path string) (*ExportDecl, error) {
 	}
 	return &ExportDecl{
 		SliceName: name, SliceTitle: title,
-		PublisherSCM: scm, PublisherRepo: repo,
+		PublisherSCM: scm, PublisherRepo: repo, ManifestDir: manifestDir,
 		Include: include, Exclude: exclude, Seed: seed,
 		Adapters: adapters, Profiles: profiles, Retracted: retracted,
 		ManifestName: manifestName, Path: path,

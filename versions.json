@@ -1,9 +1,14 @@
 {
   "versions": [
     {
+      "version": "v2.0.0",
+      "path": "v2.0.0",
+      "latest": true
+    },
+    {
       "version": "v1.1.0",
       "path": "v1.1.0",
-      "latest": true
+      "latest": false
     },
     {
       "version": "v1.0.0",

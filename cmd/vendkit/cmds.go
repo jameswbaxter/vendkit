@@ -289,7 +289,7 @@ func syncPipeline(opts syncPipelineOpts, surface ci.Surface) (int, error) {
 
 	// PINNED: the manifest's provenance is authoritative for what is
 	// vendored; ReadPin is the pre-first-sync bootstrap fallback.
-	manifestPath := filepath.Join(opts.ConsumerRoot, core.VendkitDir, decl.ManifestName)
+	manifestPath := filepath.Join(opts.ConsumerRoot, core.VendkitDir, core.ConsumerSubdir, decl.ManifestName)
 	manifest, err := core.LoadManifest(manifestPath)
 	if err != nil {
 		return 0, err
@@ -647,7 +647,9 @@ func cmdConformance(args []string, surface ci.Surface) (int, error) {
 	// branch to inspect (empty → the handler resolves the repo default branch).
 	baseBranch := fs.String("base-branch", "", "")
 	repoCoord := fs.String("repo", "", "")
-	addCommon(fs, &c, false, true, false)
+	// --publisher-root locates the publisher checkout the rule set is read from
+	// when --rules is not given explicitly.
+	addCommon(fs, &c, false, true, true)
 	if err := parseFlags(fs, args); err != nil {
 		return 0, err
 	}
@@ -666,12 +668,30 @@ func cmdConformance(args []string, surface ci.Surface) (int, error) {
 		return 0, core.Errf("embedded core rules: %v", err)
 	}
 	sources := []core.RuleSource{{Name: "core-rules.yml", Data: coreRules}}
-	if *rulesPath != "" {
-		data, err := os.ReadFile(*rulesPath)
-		if err != nil {
-			return 0, core.Usagef("cannot read %s: %v", *rulesPath, err)
+	// Publisher rules: an explicit --rules must resolve (a typo is an error, never
+	// a silent core-rules-only run); otherwise fall back to the conventional
+	// location in the publisher checkout and skip quietly when absent.
+	rp, explicit := *rulesPath, *rulesPath != ""
+	if !explicit {
+		cand := filepath.Join(c.PublisherRoot, filepath.FromSlash(core.DefaultRules))
+		if _, statErr := os.Stat(cand); statErr == nil {
+			rp = cand
 		}
-		sources = append(sources, core.RuleSource{Name: *rulesPath, Data: data})
+	}
+	if rp != "" {
+		data, err := os.ReadFile(rp)
+		if err != nil {
+			return 0, core.Usagef("cannot read %s: %v", rp, err)
+		}
+		sources = append(sources, core.RuleSource{Name: rp, Data: data})
+	}
+	// Never silent: a core-rules-only evaluation is stated as a fact, so a
+	// consumer cannot mistake "the publisher's slice rules all passed" for
+	// "the publisher's slice rules were never loaded".
+	if len(sources) > 1 {
+		surface.EmitOutput("rules", "core+publisher")
+	} else {
+		surface.EmitOutput("rules", "core-only")
 	}
 	rules, err := core.LoadRules(sources)
 	if err != nil {

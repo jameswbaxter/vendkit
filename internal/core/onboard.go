@@ -144,7 +144,7 @@ func Onboard(publisherRoot, consumerRoot string, decl *ExportDecl,
 	}
 
 	// 1. Slice config first (materialise reads the profile from it).
-	cfgPath := filepath.Join(consumerRoot, VendkitDir, decl.SliceName+".yml")
+	cfgPath := filepath.Join(consumerRoot, VendkitDir, ConsumerSubdir, decl.SliceName+".yml")
 	if _, err := os.Stat(cfgPath); err == nil {
 		return nil, Usagef("slice already onboarded: %s", cfgPath)
 	}
@@ -181,7 +181,7 @@ func Onboard(publisherRoot, consumerRoot string, decl *ExportDecl,
 	}
 	result.Vendored = len(report.Added)
 	result.Written = append(result.Written,
-		filepath.Join(consumerRoot, VendkitDir, decl.ManifestName))
+		filepath.Join(consumerRoot, VendkitDir, ConsumerSubdir, decl.ManifestName))
 
 	// 3. Scaffold pipelines (none under ci: none).
 	for _, o := range outputs {
@@ -339,11 +339,23 @@ func sliceConfigYAML(decl *ExportDecl, p OnboardParams, pinFiles []string) strin
 			"    windows/amd64: \"\"\n" +
 			"    windows/arm64: \"\"\n"
 	}
+	var aliasBlock string
+	if len(decl.SliceAliases) > 0 {
+		var items []string
+		for _, a := range decl.SliceAliases {
+			items = append(items, "    - "+a)
+		}
+		aliasBlock = "  # Names this publisher is known by, as it declares them (DR-0019).\n" +
+			"  # Vendored down so tooling can recognise an upward reference without a\n" +
+			"  # hand-maintained registry of the whole family.\n" +
+			"  aliases:\n" + strings.Join(items, "\n") + "\n"
+	}
 	return "schema_version: 1\n" +
 		"slice: " + decl.SliceName + "\n" +
 		"publisher:\n" +
 		"  scm: " + decl.PublisherSCM + "\n" +
 		"  repo: " + decl.PublisherRepo + "\n" +
+		aliasBlock +
 		"scm: " + p.SCM + "\n" +
 		"ci: " + p.CI + "\n" +
 		profileLine + "\n" +

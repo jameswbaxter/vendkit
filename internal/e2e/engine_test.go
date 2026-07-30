@@ -48,7 +48,7 @@ func sha256Hex(t *testing.T, path string) string {
 
 func TestSelfVerifyEnforcesTheEnginePin(t *testing.T) {
 	_, con := world(t)
-	cfgPath := filepath.Join(con, ".vendkit", "docs.yml")
+	cfgPath := filepath.Join(con, ".vendkit", "consumer", "docs.yml")
 	platform := runtime.GOOS + "/" + runtime.GOARCH
 	if !strings.Contains(read(t, cfgPath), platform+`: ""`) {
 		t.Skipf("host platform %s has no scaffolded engine.sha256 slot", platform)

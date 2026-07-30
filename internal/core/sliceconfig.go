@@ -17,26 +17,36 @@ var (
 	HandlerKinds = []string{"pr", "handoff", "fact-verify"}
 )
 
+// aliasesOf: the publisher's self-declared aliases, tolerant of absence.
+func aliasesOf(pub map[string]any) []string {
+	out, _ := strList(pub["aliases"])
+	return out
+}
+
 type HandlerSpec struct {
 	Exec     []string
 	DedupKey string
 }
 
 type SliceConfig struct {
-	SliceName       string
-	PublisherSCM    string
-	PublisherRepo   string
-	SCM             string
-	CI              string
-	Profile         string
-	PinPattern      string
-	PinFiles        []string
-	Channel         string
-	Handlers        map[string]HandlerSpec
-	HandoffDedupKey string
-	SeedNotes       string
-	Attestations    map[string]bool
-	Waivers         []map[string]any
+	SliceName     string
+	PublisherSCM  string
+	PublisherRepo string
+	// PublisherAliases: the upstream's self-declared names, vendored down with
+	// the slice (DR-0019). The consumer's legal upward-reference set is the union
+	// of these across its slice configs — no family-wide registry.
+	PublisherAliases []string
+	SCM              string
+	CI               string
+	Profile          string
+	PinPattern       string
+	PinFiles         []string
+	Channel          string
+	Handlers         map[string]HandlerSpec
+	HandoffDedupKey  string
+	SeedNotes        string
+	Attestations     map[string]bool
+	Waivers          []map[string]any
 	// EngineVersion / EngineSHA256: the pinned, checksummed engine binary
 	// (DR-0016). EngineSHA256 keys are "<goos>/<goarch>"; an empty value is
 	// an unrecorded (advisory) pin. Absent under ci: none — the human tier
@@ -167,7 +177,8 @@ func LoadSliceConfig(path string) (*SliceConfig, error) {
 	return &SliceConfig{
 		SliceName:    name,
 		PublisherSCM: getStr(pub, "scm"), PublisherRepo: getStr(pub, "repo"),
-		SCM: scm, CI: ci,
+		PublisherAliases: aliasesOf(pub),
+		SCM:              scm, CI: ci,
 		Profile:    getStr(data, "profile"),
 		PinPattern: pinPattern, PinFiles: pinFiles,
 		Channel: channel, Handlers: handlers, HandoffDedupKey: dedup,
@@ -180,7 +191,7 @@ func LoadSliceConfig(path string) (*SliceConfig, error) {
 // DiscoverSliceConfigs: every .vendkit/*.yml is a slice config (DR-0012).
 // A stray YAML file there is a usage error, never a silent skip.
 func DiscoverSliceConfigs(consumerRoot string) ([]*SliceConfig, error) {
-	pattern := filepath.Join(consumerRoot, VendkitDir, "*.yml")
+	pattern := filepath.Join(consumerRoot, VendkitDir, ConsumerSubdir, "*.yml")
 	paths, _ := filepath.Glob(pattern)
 	sort.Strings(paths)
 	var out []*SliceConfig
@@ -212,7 +223,7 @@ var pinTailRx = regexp.MustCompile(`^([0-9][0-9A-Za-z.\-]*)`)
 // ReadPin: the consumer's pinned-release intent (release-watch spec §2).
 func ReadPin(consumerRoot string, cfg *SliceConfig) (string, error) {
 	if cfg.CI == "none" {
-		mpath := filepath.Join(consumerRoot, VendkitDir, cfg.SliceName+"-manifest.json")
+		mpath := filepath.Join(consumerRoot, VendkitDir, ConsumerSubdir, cfg.SliceName+"-manifest.json")
 		manifest, err := LoadManifest(mpath)
 		if err != nil {
 			return "", err

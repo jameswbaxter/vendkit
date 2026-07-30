@@ -34,6 +34,12 @@ them — or alters its documented semantics — is a **breaking change**:
   subscribers, conformance rules. The engine accepts `schema_version: 1` and
   refuses newer values (`internal/core`); bumping the schema is a MAJOR event
   that ships a migration.
+- **The `.vendkit/` layout.** `.vendkit/consumer/` holds slice configs and
+  vendored manifests; `.vendkit/publisher/` holds the export declaration, the
+  generated manifest, the conformance rule set, and the subscribers file. The
+  discovery globs over `consumer/` are fixed (INV-8). Relocating either half is
+  MAJOR — it happened once, in v2.0.0 (DR-0019, migration
+  `2026-07-vendkit-dir-split`).
 - **The CLI surface.** The top-level command set and each command's documented
   flags in [docs/specs/cli.md](docs/specs/cli.md). The command set is
   test-enforced against the binary — see `cmd/vendkit/surface_test.go`

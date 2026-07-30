@@ -27,3 +27,4 @@ sequentially, never reused.
 | [DR-0016](DR-0016-engine-as-pinned-artefact.md) | The engine becomes a pinned, checksummed artefact (INV-6 revision) | accepted (effective with DR-0017) |
 | [DR-0017](DR-0017-single-implementation-go.md) | Single engine implementation in Go; scenario kit as parity ratchet | accepted |
 | [DR-0018](DR-0018-versioned-docs-generator.md) | Versioned docs site from a pure-Go static generator | accepted |
+| [DR-0019](DR-0019-vendkit-dir-two-halves.md) | `.vendkit/` splits into `consumer/` and `publisher/`; publisher paths become defaults | accepted |

@@ -13,6 +13,13 @@ import (
 const (
 	SchemaVersion = 1
 	VendkitDir    = ".vendkit"
+	// The two halves of .vendkit/ are separated so neither is reachable by the
+	// other's discovery globs, and so a repository that both publishes and
+	// consumes keeps the roles legible (DR-0019). Publisher-side: the export
+	// declaration, the generated manifest, the conformance rule set, the
+	// subscribers list. Consumer-side: slice configs and vendored manifests.
+	PublisherSubdir = "publisher"
+	ConsumerSubdir  = "consumer"
 )
 
 func isExec(path string) (bool, error) {
@@ -150,7 +157,7 @@ type GateReport struct {
 
 // DiscoverManifests: the fixed discovery convention (DR-0012).
 func DiscoverManifests(consumerRoot string) []string {
-	pattern := filepath.Join(consumerRoot, VendkitDir, "*-manifest.json")
+	pattern := filepath.Join(consumerRoot, VendkitDir, ConsumerSubdir, "*-manifest.json")
 	hits, _ := filepath.Glob(pattern)
 	sort.Strings(hits)
 	return hits

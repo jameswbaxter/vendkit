@@ -282,7 +282,7 @@ func Evaluate(consumerRoot string, cfg *SliceConfig, rules []map[string]any) *Co
 	for _, w := range cfg.Waivers {
 		waived[getStr(w, "rule")] = getStr(w, "reason")
 	}
-	manifestPath := filepath.Join(consumerRoot, VendkitDir, cfg.SliceName+"-manifest.json")
+	manifestPath := filepath.Join(consumerRoot, VendkitDir, ConsumerSubdir, cfg.SliceName+"-manifest.json")
 	var manifest map[string]any
 	if m, err := LoadManifest(manifestPath); err == nil {
 		manifest = m

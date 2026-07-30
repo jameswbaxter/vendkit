@@ -16,7 +16,7 @@ import (
 )
 
 // DefaultSubscribersPath is where `vendkit push-hint` looks by default.
-var DefaultSubscribersPath = filepath.Join(VendkitDir, "subscribers.yml")
+var DefaultSubscribersPath = filepath.Join(VendkitDir, PublisherSubdir, "subscribers.yml")
 
 // DefaultPushHintEventType is the repository_dispatch event type the
 // scaffolded GHA receiver subscribes to.

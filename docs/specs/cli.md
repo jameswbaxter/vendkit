@@ -21,7 +21,7 @@ directory; absolute paths are used verbatim.
 | `vendkit watch [--slice <s>] [--dry-run] [--no-handoff]` | detect upstream releases; findings → handoff handler | 0+1 | release-watch |
 | `vendkit migrations --pinned <v> --target <v>` | resolve migration window | 0 | migrations §2 |
 | `vendkit migrations-verify --obligations <json>` | deterministic obligation check | 0 | migrations §4 |
-| `vendkit conformance --slice <s> [--strict] [--rules <p>] [--verify-attestations [--repo <r>] [--base-branch <b>]]` | adoption check; verification → fact-verify handler (`--repo`/`--base-branch` default to the ambient CI coordinate) | 0+1 | conformance |
+| `vendkit conformance --slice <s> [--strict] [--rules <p>] [--publisher-root <r>] [--verify-attestations [--repo <r>] [--base-branch <b>]]` | adoption check; verification → fact-verify handler (`--repo`/`--base-branch` default to the ambient CI coordinate). Without `--rules`, publisher rules resolve from `<publisher-root>/.vendkit/publisher/conformance-rules.yml`; the `rules=core-only\|core+publisher` fact always states which ran | 0+1 | conformance |
 | `vendkit fleet [--json] [<path>…]` | read-only aggregation of consumer `conformance --json` documents into one fleet report; no clone/fetch/API | 3 | conformance §5 |
 | `vendkit self-verify [--slice <s>]` | re-assert the running engine binary against the recorded engine pin (advisory until the pin is filled) | 0 | DR-0016 · platform-integration |
 | `vendkit handler <github\|ado>` | reference delivery handler: reads an intent on stdin, emits facts on stdout; invoked by the lanes above, not run directly in normal use | 1 | handler-protocol |

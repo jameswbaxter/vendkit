@@ -118,7 +118,7 @@ func watchOne(consumerRoot string, cfg *SliceConfig) ([]WatchFinding, error) {
 
 	// 3. Provenance: pinned tag must still resolve to the recorded commit
 	// (security model §3).
-	manifestPath := filepath.Join(consumerRoot, VendkitDir, cfg.SliceName+"-manifest.json")
+	manifestPath := filepath.Join(consumerRoot, VendkitDir, ConsumerSubdir, cfg.SliceName+"-manifest.json")
 	if manifest, err := LoadManifest(manifestPath); err == nil {
 		source := getMap(manifest, "source")
 		recorded := getStr(source, "commit")

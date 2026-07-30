@@ -6,10 +6,12 @@ The export declaration is the publisher-side YAML file that fully defines a
 slice. **All slice identity lives here; the tools carry none** (DR-0002). One
 declaration per slice; a repository publishing two slices has two declarations.
 
-Default filename: `vendkit-export.yml` at the publisher repo root. Every CLI
-command accepts `--export-decl <path>`; a relative path is resolved against the
-publisher root (`--publisher-root`, or `--root` for `generate`), so a relocated
-declaration resolves identically whatever the working directory.
+Default location: `.vendkit/publisher/export-declaration.yml` — publisher-side
+configuration sits alongside the consumer control plane under one `.vendkit/`
+root, in its own half (DR-0019). Every CLI command accepts `--export-decl <path>`;
+a relative path is resolved against the publisher root (`--publisher-root`, or
+`--root` for `generate`), so a relocated declaration resolves identically whatever
+the working directory.
 
 ## 1. Schema
 
@@ -18,9 +20,15 @@ schema_version: 1
 
 slice:
   name: docs                  # REQUIRED. Slug: [a-z][a-z0-9-]{0,15}. Namespaces every
-                              # consumer artefact: .vendkit/docs.yml, docs-manifest.json,
+                              # consumer artefact: .vendkit/consumer/docs.yml, docs-manifest.json,
                               # docs-sync pipeline, gate findings labels.
   title: "Design docs"        # Optional display title (reports, PR titles). Default: name.
+  aliases:                    # Optional. Names this publisher is known by in prose.
+    - design-docs             # Vendored into each consumer's slice config, so a
+    - "the docs framework"    # consumer can recognise an upward reference to this
+                              # publisher without a hand-maintained registry of the
+                              # whole family (DR-0019). Self-declared: a publisher
+                              # names itself, never its downstreams.
 
 publisher:
   # REQUIRED. Coordinates of this repo, used by scaffolded consumer
@@ -31,11 +39,12 @@ publisher:
   scm: github                 # github | azure-repos
   repo: example-org/design-docs
   manifest_dir: .governance   # Optional. Publisher-local directory holding the
-                              # generated manifest. Default: "" (repo root); "."
-                              # means the same. Must be a relative path inside
-                              # the repo. PUBLISHER-SIDE ONLY — it never travels
-                              # with the slice: a vendored manifest always lands
-                              # at `.vendkit/<manifest_name>` in the consumer.
+                              # generated manifest. Default: `.vendkit/publisher`;
+                              # an explicit "." opts back out to the repo root.
+                              # Must be a relative path inside the repo.
+                              # PUBLISHER-SIDE ONLY — it never travels with the
+                              # slice: a vendored manifest always lands at
+                              # `.vendkit/consumer/<manifest_name>` in the consumer.
 
 include:                      # Anchored, repo-relative glob patterns.
   - "docs/standards/**/*.md"  # `**` matches zero or more directories.
@@ -88,11 +97,16 @@ manifest_name: docs-manifest.json   # Optional. Default: "<slice.name>-manifest.
   The exported surface is `matched(include) − matched(exclude)`, deduplicated,
   sorted. Directories are never entries; only regular files. Symlinks are
   rejected at generate time (they cannot be identity-copied portably).
+- **Aliases.** `slice.aliases` is the publisher's self-declaration: the names it
+  answers to in prose. It is copied into each consumer's slice config at onboard
+  and sync time, so a consumer's set of legal upward references is the union of
+  what its upstreams say about themselves. No repository declares another
+  repository's identity, and nothing enumerates downstreams.
 - **Manifest location.** `manifest_name` is the slice's manifest filename on both
   sides; `publisher.manifest_dir` relocates only the publisher's generated copy
   (`<manifest_dir>/<manifest_name>`), which is where `generate --check` and the
   release freshness and surface-delta gates read it — including out of git history
-  at the previous tag. The consumer copy is always `.vendkit/<manifest_name>`, so
+  at the previous tag. The consumer copy is always `.vendkit/consumer/<manifest_name>`, so
   `--all` gate discovery and multi-slice coexistence are unaffected.
 - **Seed.** Same glob and exclusion semantics as `include`, producing the
   scaffold-once surface (DR-0013, sync spec §6). The two surfaces must be

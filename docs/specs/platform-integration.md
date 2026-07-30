@@ -111,7 +111,7 @@ Mechanisms differ by *consumer CI*:
 
 ### The subscribers file and the dispatch step
 
-The publisher-held subscribers file (default `.vendkit/subscribers.yml`,
+The publisher-held subscribers file (default `.vendkit/publisher/subscribers.yml`,
 overridable with `push-hint --subscribers`) is *publisher-side* config — read
 only by `vendkit push-hint`, never by the gate/sync/watch lanes. It is the
 audit surface for the one relaxation above: consumers add themselves by PR.

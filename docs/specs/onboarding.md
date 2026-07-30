@@ -4,11 +4,18 @@ Status: stable (frozen at v1.0.0) · Owner: Layer 3
 
 ## 1. Consumer configuration file
 
-One file per vendored slice: `.vendkit/<slice>.yml`. Consumer-owned (scaffolded
+One file per vendored slice: `.vendkit/consumer/<slice>.yml`. Consumer-owned (scaffolded
 once, then hand-maintained; **not** manifest-tracked — it holds consumer-local
 values). This is the single consumer config surface: environment axes,
 profile binding, pin location, watch channel, delivery handlers,
 attestations, waivers.
+
+`.vendkit/` has two halves and they are never mixed (DR-0019): `consumer/` holds
+the control plane described here, `publisher/` holds this repository's own
+publishing configuration if it publishes a slice of its own. A repository can be
+both without either side's discovery globs reaching the other's files. The
+publisher's `slice.aliases`, if declared, are copied into the slice config so the
+consumer knows the names its upstream answers to.
 
 ```yaml
 schema_version: 1
@@ -17,6 +24,8 @@ publisher:
   scm: github                         # github | azure-repos — provenance and
   repo: example-org/design-docs       #   shorthand-expansion hint only; any
                                       #   git URL or path is used verbatim
+  aliases: ["design-docs"]            # copied from the publisher's declaration:
+                                      #   the names this upstream answers to
 scm: github                           # the CONSUMER's SCM host (DR-0015)
 ci: github-actions                    # github-actions | azure-pipelines | none
 profile: code-repo                    # optional; must exist in the declaration
@@ -52,10 +61,10 @@ attestations:
 waivers: []                           # [{rule: <id>, reason: "…"}]
 ```
 
-Beside it, engine-owned: `.vendkit/<slice>-manifest.json` (manifest spec).
-Discovery convention (fixed; INV-8): tools enumerate `.vendkit/*.yml` for
-slices and `.vendkit/*-manifest.json` for manifests — nothing else, nowhere
-else. The namespace is **strict**: a `.vendkit/*.yml` that does not parse as
+Beside it, engine-owned: `.vendkit/consumer/<slice>-manifest.json` (manifest spec).
+Discovery convention (fixed; INV-8): tools enumerate `.vendkit/consumer/*.yml` for
+slices and `.vendkit/consumer/*-manifest.json` for manifests — nothing else, nowhere
+else. The namespace is **strict**: a `.vendkit/consumer/*.yml` that does not parse as
 a slice config is a usage error, never a silent skip (DR-0012).
 
 Field notes:
@@ -106,8 +115,8 @@ usage error, never a guess. Three phases:
 | Sync pipeline (per slice; schedule + optional push hint) | `.github/workflows/<slice>-sync.yml` | `azure-pipelines/<slice>-sync.yml` | — | always |
 | Watch pipeline (all slices; weekly + PR dry-run self-test) | `.github/workflows/vendkit-watch.yml` | `azure-pipelines/vendkit-watch.yml` | — | primary only |
 | Conformance pipeline (advisory) | `.github/workflows/vendkit-conformance.yml` | `azure-pipelines/vendkit-conformance.yml` | — | primary only |
-| Slice config | `.vendkit/<slice>.yml` | same | same | always |
-| Slice manifest | `.vendkit/<slice>-manifest.json` | same | same | always |
+| Slice config | `.vendkit/consumer/<slice>.yml` | same | same | always |
+| Slice manifest | `.vendkit/consumer/<slice>-manifest.json` | same | same | always |
 | CODEOWNERS stanza covering `.vendkit/` | **opt-in** via `--codeowners` (scm github only) | refused: Azure Repos does not honour CODEOWNERS — required-reviewers policy on the checklist instead | scm-dependent | opt-in |
 
 **`primary` vs `additive`:** the first slice onboards the shared machinery

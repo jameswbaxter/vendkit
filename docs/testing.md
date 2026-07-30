@@ -48,7 +48,7 @@ the journal handler. Core scenario matrix:
 | release cut: stale manifest / existing tag / non-monotonic version / missing migration on removal | each refused |
 | watch dry-run | no network, exit 0, empty report |
 | `ci: none` end-to-end | no pipelines scaffolded; gate/watch/conformance run manually; pipeline rules `skipped`; sync pushes branch, `pr-delivered=false` + intent emitted |
-| stray `.vendkit/*.yml` | usage error (strict namespace), never a silent skip |
+| stray `.vendkit/consumer/*.yml` | usage error (strict namespace), never a silent skip |
 | init SCM inference | origin remote → `scm:`; no remote + no `--scm` = usage error |
 | CODEOWNERS opt-in | absent by default; `--codeowners` writes stanza (GitHub); refused on azure-repos with policy pointer |
 | PR/handoff intents | journal handler receives protocol-versioned documents; dedup keys and deterministic branch as specified |

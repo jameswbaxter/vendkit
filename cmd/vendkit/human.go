@@ -177,7 +177,7 @@ func sliceOrOnly(consumerRoot, slice string) (*core.SliceConfig, error) {
 }
 
 func pinnedRelease(consumerRoot string, cfg *core.SliceConfig) (string, error) {
-	mpath := filepath.Join(consumerRoot, core.VendkitDir, cfg.SliceName+"-manifest.json")
+	mpath := filepath.Join(consumerRoot, core.VendkitDir, core.ConsumerSubdir, cfg.SliceName+"-manifest.json")
 	if manifest, err := core.LoadManifest(mpath); err == nil {
 		if release := stringAt(manifest, "source", "release"); release != "" {
 			return release, nil
@@ -305,7 +305,7 @@ func cmdStatus(args []string, surface ci.Surface) (int, error) {
 				r.Bump, _ = core.ClassifyBump(r.Pinned, r.Latest)
 			}
 		}
-		mpath := filepath.Join(c.ConsumerRoot, core.VendkitDir,
+		mpath := filepath.Join(c.ConsumerRoot, core.VendkitDir, core.ConsumerSubdir,
 			cfg.SliceName+"-manifest.json")
 		if _, err := os.Stat(mpath); err == nil {
 			if report, err := core.GateCheck(c.ConsumerRoot, []string{mpath}); err == nil {

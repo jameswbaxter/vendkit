@@ -59,8 +59,8 @@ flowchart LR
     GATE[gate lane] -->|every PR| OK{merge allowed}
     MR[migration resolve] --> H2[migration handoff] --> V[migration verify]
     C[conformance check] --> H
-    CFG[.vendkit/&lt;slice&gt;.yml] --- W & S & C
-    CM[(.vendkit/&lt;slice&gt;-manifest.json)] --- GATE & S
+    CFG[.vendkit/consumer/&lt;slice&gt;.yml] --- W & S & C
+    CM[(.vendkit/consumer/&lt;slice&gt;-manifest.json)] --- GATE & S
   end
 
   T -->|pull: schedule / push: release trigger| S
@@ -176,9 +176,9 @@ only the working tree.
 ## 5. Multi-slice consumers
 
 A consumer vendoring N slices holds, per slice: one manifest
-(`.vendkit/<slice>-manifest.json`), one config (`.vendkit/<slice>.yml`), one sync
+(`.vendkit/consumer/<slice>-manifest.json`), one config (`.vendkit/consumer/<slice>.yml`), one sync
 pipeline, and a pin inside that pipeline. It holds **one** gate-lane pipeline
-total: the gate discovers every `.vendkit/*-manifest.json`, verifies each, and
+total: the gate discovers every `.vendkit/consumer/*-manifest.json`, verifies each, and
 enforces INV-7 across them. Watch is likewise a single pipeline reading every
 slice config. Sync pipelines stay per-slice because cadence, credentials and
 push triggers are per-publisher decisions.

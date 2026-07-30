@@ -7,9 +7,9 @@ rules:
     title: "Slice manifest committed"
     category: vendoring
     severity: mandatory
-    detector: { kind: file-exists, path: ".vendkit/<slice>-manifest.json" }
+    detector: { kind: file-exists, path: ".vendkit/consumer/<slice>-manifest.json" }
     remediation: >-
-      Vendor the slice and commit .vendkit/<slice>-manifest.json
+      Vendor the slice and commit .vendkit/consumer/<slice>-manifest.json
       (vendkit init does both).
 
   - id: gate-wired
@@ -102,5 +102,5 @@ rules:
     detector: { kind: profile-bound }
     remediation: >-
       Bind the consumer to one of the publisher's profiles in
-      .vendkit/<slice>.yml, or waive with a reason if the whole surface is
+      .vendkit/consumer/<slice>.yml, or waive with a reason if the whole surface is
       intended.

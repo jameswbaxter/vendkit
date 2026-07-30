@@ -15,12 +15,13 @@ import (
 var slugRx = regexp.MustCompile(`^[a-z][a-z0-9-]{0,15}$`)
 
 // cleanManifestDir normalises publisher.manifest_dir to a clean repo-relative
-// POSIX directory, or reports invalid. "" and "." both mean the repo root.
+// POSIX directory, or reports invalid. Absent (empty) means the default
+// .vendkit/publisher/; an explicit "." means the repo root.
 // (Package-level so the `path` import is not shadowed by LoadExportDecl's
 // `path` parameter.)
 func cleanManifestDir(raw string) (string, bool) {
 	if raw == "" {
-		return "", true
+		return VendkitDir + "/" + PublisherSubdir, true
 	}
 	clean := path.Clean(strings.ReplaceAll(raw, `\`, "/"))
 	if clean == "." {
@@ -33,8 +34,8 @@ func cleanManifestDir(raw string) (string, bool) {
 }
 
 // ManifestRepoRel: the publisher-side, repo-relative POSIX path of the generated
-// manifest. The consumer-side path is always `.vendkit/<ManifestName>`, so
-// ManifestDir is publisher-local and never travels with the slice.
+// manifest. The consumer-side path is always `.vendkit/consumer/<ManifestName>`,
+// so ManifestDir is publisher-local and never travels with the slice.
 func (d *ExportDecl) ManifestRepoRel() string {
 	if d.ManifestDir == "" {
 		return d.ManifestName
@@ -47,7 +48,13 @@ func (d *ExportDecl) PublisherManifestPath(root string) string {
 	return filepath.Join(root, filepath.FromSlash(d.ManifestRepoRel()))
 }
 
-const DefaultDecl = "vendkit-export.yml"
+// DefaultDecl / DefaultRules: publisher-side config lives under
+// .vendkit/publisher/ by default (DR-0019). Slash form — these are flag
+// defaults and display strings; join them with filepath.FromSlash.
+const (
+	DefaultDecl  = ".vendkit/publisher/export-declaration.yml"
+	DefaultRules = ".vendkit/publisher/conformance-rules.yml"
+)
 
 var AdapterKinds = []string{"prefix-namespace", "glob-localise"}
 
@@ -66,8 +73,12 @@ type Profile struct {
 }
 
 type ExportDecl struct {
-	SliceName     string
-	SliceTitle    string
+	SliceName  string
+	SliceTitle string
+	// SliceAliases: names this publisher is known by in prose, exported so a
+	// consumer can recognise an upward reference to it without a hand-maintained
+	// registry of the whole family (DR-0019).
+	SliceAliases  []string
 	PublisherSCM  string
 	PublisherRepo string
 	// ManifestDir: publisher-local directory holding the generated manifest
@@ -102,6 +113,15 @@ func LoadExportDecl(path string) (*ExportDecl, error) {
 	if title == "" {
 		title = name
 	}
+	aliases, aliasesOK := strList(sl["aliases"])
+	if !aliasesOK {
+		errs = append(errs, "slice.aliases must be a list of strings")
+	}
+	for i, a := range aliases {
+		if strings.TrimSpace(a) == "" {
+			errs = append(errs, fmt.Sprintf("slice.aliases[%d] is empty", i))
+		}
+	}
 
 	pub := getMap(data, "publisher")
 	scm := getStr(pub, "scm")
@@ -112,9 +132,10 @@ func LoadExportDecl(path string) (*ExportDecl, error) {
 	if repo == "" {
 		errs = append(errs, "publisher.repo is required (git URL or shorthand)")
 	}
-	// Publisher-local manifest directory. Nested under `publisher:` deliberately:
-	// the consumer-side location is NOT configurable — a vendored manifest always
-	// lands in `.vendkit/<manifest_name>` (manifest-and-gate spec §2) — so this
+	// Publisher-local manifest directory (default .vendkit/publisher/). Nested
+	// under `publisher:` deliberately: the consumer-side location is NOT
+	// configurable — a vendored manifest always lands in
+	// `.vendkit/consumer/<manifest_name>` (manifest-and-gate spec §2) — so this
 	// key must not read as if it travelled with the slice.
 	manifestDir, dirOK := cleanManifestDir(getStr(pub, "manifest_dir"))
 	if !dirOK {
@@ -213,7 +234,7 @@ func LoadExportDecl(path string) (*ExportDecl, error) {
 		return nil, Usagef("%s: %s", path, strings.Join(errs, "; "))
 	}
 	return &ExportDecl{
-		SliceName: name, SliceTitle: title,
+		SliceName: name, SliceTitle: title, SliceAliases: aliases,
 		PublisherSCM: scm, PublisherRepo: repo, ManifestDir: manifestDir,
 		Include: include, Exclude: exclude, Seed: seed,
 		Adapters: adapters, Profiles: profiles, Retracted: retracted,

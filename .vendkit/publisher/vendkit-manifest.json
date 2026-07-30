@@ -19,7 +19,7 @@
       "exec": false,
       "path": "cmd/vendkit/cmds.go",
       "raw": false,
-      "sha256": "127c0bdfd55ac3c177142eb3bea14d896b3d903b81ba25214a6f2df62141600d"
+      "sha256": "737d63b7797a8531c9388e14b01fbcbc1b4b3c9943cdb0208bdab87c50f91c39"
     },
     {
       "consumer_path": "cmd/vendkit/fleet.go",
@@ -40,7 +40,7 @@
       "exec": false,
       "path": "cmd/vendkit/human.go",
       "raw": false,
-      "sha256": "d64e4fbd2b5486215d1642fd690ac04456bb86b64b515190d98a8d60bfa7b0ec"
+      "sha256": "5e267fed6e787487f9c8a0bf727b61cc318273161ece78fa602172fd4cf4da46"
     },
     {
       "consumer_path": "cmd/vendkit/main.go",
@@ -68,7 +68,7 @@
       "exec": false,
       "path": "conformance/core-rules.yml",
       "raw": false,
-      "sha256": "321190d2127e9a2824ae7874f4686328263e26c462af38a535f0ebacb6c95551"
+      "sha256": "1998d76b0667b8251266abc20d21fb389545fd8b44b8be0ce964528ad63080f7"
     },
     {
       "consumer_path": "go.mod",
@@ -110,14 +110,14 @@
       "exec": false,
       "path": "internal/core/conformance.go",
       "raw": false,
-      "sha256": "34b2e48c68342360e599f1e463717611d04d5216830a3a16baff8a792244c314"
+      "sha256": "10e1abef5fe8561dfd01a2c5ffc950496c51a280af200b53a14074761e037b0d"
     },
     {
       "consumer_path": "internal/core/declaration.go",
       "exec": false,
       "path": "internal/core/declaration.go",
       "raw": false,
-      "sha256": "4c023cd9dfdb6ab04a31d59e56f10b465342bcc0d50f929566c84f3cc31e38ee"
+      "sha256": "1e85a3fdedfe87c0656f9f2291d87bfbdd429c86e70b8ff5c4f127c29ef8384f"
     },
     {
       "consumer_path": "internal/core/difflib.go",
@@ -152,14 +152,14 @@
       "exec": false,
       "path": "internal/core/manifest.go",
       "raw": false,
-      "sha256": "87baf554f64d412797459b7722085b77c956dcabbd29313a65df1b315740a15b"
+      "sha256": "b70f81ea4c78bb0daddaa4d08d854456bd6dbb1d695506520dfad0d9034c5f87"
     },
     {
       "consumer_path": "internal/core/materialise.go",
       "exec": false,
       "path": "internal/core/materialise.go",
       "raw": false,
-      "sha256": "94929b3ca4f8a0450a9b773b09640767cf295eec9175b10dde0d9fc3cd52c742"
+      "sha256": "2654ab0c90387a8fbeee39941405f8be03a12d6441bbbaafd1bd6ad08236626a"
     },
     {
       "consumer_path": "internal/core/migrations.go",
@@ -180,7 +180,7 @@
       "exec": false,
       "path": "internal/core/onboard.go",
       "raw": false,
-      "sha256": "5b6902d79466fc5c9165e30589f63a33ca153fe270bfd1293a1bff7419426b31"
+      "sha256": "973ad15e69c42ca7a88a68baa415fbe7e887021c842807158d19424d343e19d6"
     },
     {
       "consumer_path": "internal/core/release.go",
@@ -194,14 +194,14 @@
       "exec": false,
       "path": "internal/core/sliceconfig.go",
       "raw": false,
-      "sha256": "37d12f44906b5f48510e5e8f0ad9288449c774dbc500fc40c856419cc46a0f2a"
+      "sha256": "2b94447cbc692942cfcae9a2cf4448710fa4037b43994c017fce5cc35269a646"
     },
     {
       "consumer_path": "internal/core/subscribers.go",
       "exec": false,
       "path": "internal/core/subscribers.go",
       "raw": false,
-      "sha256": "4b5a94b385b924046f84cca0f8ca7b2a090b1ecc98c181e9d9662846839bdd98"
+      "sha256": "e6e1d63135650cd0f225454a4046ae611cbfaa3b9f73c6c21f8e36e9a686713d"
     },
     {
       "consumer_path": "internal/core/treeglob.go",
@@ -236,7 +236,7 @@
       "exec": false,
       "path": "internal/core/watch.go",
       "raw": false,
-      "sha256": "c424fb658ba5e09bd8febb231b5336fdf6951c81eb56a3873e969c52010c415c"
+      "sha256": "fbfd7955e6eaacf57912a40bd43dbba2d98b356e4a18b296f17372e3807dd103"
     },
     {
       "consumer_path": "internal/core/yamlutil.go",

@@ -8,9 +8,10 @@ vendored files and fails on any hand-edit or deletion.
 
 ## 1. Manifest schema (v1)
 
-One manifest per slice. Publisher-side it lives under `manifest_name`, at the repo
-root or in `publisher.manifest_dir` when the declaration sets one; consumer-side
-always at `.vendkit/<manifest_name>`.
+One manifest per slice. Publisher-side it lives under `manifest_name` in
+`publisher.manifest_dir` — `.vendkit/publisher/` by default; consumer-side always
+at `.vendkit/consumer/<manifest_name>`. The two halves of `.vendkit/` never share a
+discovery glob (DR-0019).
 
 ```json
 {
@@ -97,7 +98,7 @@ drift, while any substantive edit changes the hash (DR-0004).
 
 `vendkit gate [--strict] [--manifest <path> | --all]`
 
-- `--all` (the scaffolded default) discovers every `.vendkit/*-manifest.json`.
+- `--all` (the scaffolded default) discovers every `.vendkit/consumer/*-manifest.json`.
 - For each manifest entry: recompute the normalised (or raw) hash of
   `consumer_path` and compare `sha256` and `exec`. Findings:
   - `changed` — hash or exec bit differs (hand-edit, chmod);

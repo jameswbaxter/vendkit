@@ -313,7 +313,7 @@ func world(t *testing.T) (pub, con string) {
 	tool := filepath.Join(pub, "tools", "check")
 	write(t, tool, "#!/bin/sh\nexit 0\n")
 	chmodExec(t, tool)
-	write(t, filepath.Join(pub, "vendkit-export.yml"), `schema_version: 1
+	write(t, filepath.Join(pub, ".vendkit", "publisher", "export-declaration.yml"), `schema_version: 1
 slice: {name: docs, title: "Design docs"}
 publisher: {scm: github, repo: example-org/pub}
 include: ["docs/**/*.md", "tools/*"]
@@ -341,7 +341,7 @@ profiles:
 		"--publisher-root", pub, "--consumer-root", con)
 	// Local-world coordinates: the publisher is a path git can clone, and
 	// deliveries go to the (Go) journal handler instead of the GitHub API.
-	cfgPath := filepath.Join(con, ".vendkit", "docs.yml")
+	cfgPath := filepath.Join(con, ".vendkit", "consumer", "docs.yml")
 	cfg := read(t, cfgPath)
 	cfg = strings.ReplaceAll(cfg, "repo: example-org/pub", "repo: "+pub)
 	cfg = strings.ReplaceAll(cfg, "[vendkit, handler, github]",
@@ -409,14 +409,14 @@ func TestCRLFRecheckoutDoesNotTripGate(t *testing.T) {
 
 func TestCollisionBetweenSlicesDetected(t *testing.T) {
 	_, con := world(t)
-	manifest := loadJSON(t, filepath.Join(con, ".vendkit", "docs-manifest.json"))
+	manifest := loadJSON(t, filepath.Join(con, ".vendkit", "consumer", "docs-manifest.json"))
 	rogue := map[string]any{}
 	for k, v := range manifest {
 		rogue[k] = v
 	}
 	rogue["slice"] = "rogue"
 	rogue["entries"] = []any{entriesOf(manifest)[0]}
-	writeJSON(t, filepath.Join(con, ".vendkit", "rogue-manifest.json"), rogue)
+	writeJSON(t, filepath.Join(con, ".vendkit", "consumer", "rogue-manifest.json"), rogue)
 	so, _, code := vk(t, con, nil, false, "gate", "--strict")
 	if code != 1 {
 		t.Fatalf("strict gate exit = %d, want 1", code)
@@ -470,11 +470,11 @@ func TestSyncUpgradeComposesWithGate(t *testing.T) {
 		mustContain(t, text, "refs/tags/v0.2.0")
 	}
 	// Engine pin advanced in lockstep (DR-0016 §3): version → target.
-	mustContain(t, read(t, filepath.Join(con, ".vendkit", "docs.yml")),
+	mustContain(t, read(t, filepath.Join(con, ".vendkit", "consumer", "docs.yml")),
 		"version: v0.2.0")
 
 	// Provenance recorded (manifest spec §1).
-	manifest := loadJSON(t, filepath.Join(con, ".vendkit", "docs-manifest.json"))
+	manifest := loadJSON(t, filepath.Join(con, ".vendkit", "consumer", "docs-manifest.json"))
 	source := asMap(manifest["source"])
 	if toStr(source["release"]) != "v0.2.0" {
 		t.Errorf("source.release = %q, want v0.2.0", source["release"])
@@ -496,7 +496,7 @@ func TestRetractedTargetRefused(t *testing.T) {
 	pub, con := world(t)
 	write(t, filepath.Join(pub, "docs", "guide.md"), "# Guide v2\n")
 	release(t, pub, "v0.2.0")
-	appendText(t, filepath.Join(pub, "vendkit-export.yml"), "retracted: [v0.2.0]\n")
+	appendText(t, filepath.Join(pub, ".vendkit", "publisher", "export-declaration.yml"), "retracted: [v0.2.0]\n")
 	release(t, pub, "v0.2.1")
 	// Publisher checkout sits at v0.2.0 (the retracted one): refuse, exit 3.
 	git(t, pub, "checkout", "-q", "v0.2.0")
@@ -699,7 +699,7 @@ func TestConformanceReportsAndAttestations(t *testing.T) {
 		t.Fatalf("strict conformance exit = %d, want 1", code)
 	}
 	// Attest + record the non-tree-decidable facts: strict goes green.
-	cfgPath := filepath.Join(con, ".vendkit", "docs.yml")
+	cfgPath := filepath.Join(con, ".vendkit", "consumer", "docs.yml")
 	cfg := read(t, cfgPath)
 	cfg = strings.ReplaceAll(cfg, "branch_protection_enabled: false",
 		"branch_protection_enabled: true")
@@ -719,7 +719,7 @@ func TestConformanceVerifyAttestationsAPI(t *testing.T) {
 	_, con := world(t)
 	// Record the required-check attestation so gate-wired degrades to `attested`
 	// (the state --verify-attestations then confirms against the platform).
-	cfgPath := filepath.Join(con, ".vendkit", "docs.yml")
+	cfgPath := filepath.Join(con, ".vendkit", "consumer", "docs.yml")
 	cfg := read(t, cfgPath)
 	cfg = strings.ReplaceAll(cfg, "attestations:",
 		"attestations:\n  required_check_enforced: true")
@@ -828,7 +828,7 @@ func TestSeedScaffoldedOnceAndFreeToDiverge(t *testing.T) {
 	_, con := world(t)
 	seeded := filepath.Join(con, "templates", "CONTRIBUTING.md")
 	mustContain(t, read(t, seeded), "Starter text") // onboard seeded it
-	manifest := loadJSON(t, filepath.Join(con, ".vendkit", "docs-manifest.json"))
+	manifest := loadJSON(t, filepath.Join(con, ".vendkit", "consumer", "docs-manifest.json"))
 	var entry map[string]any
 	for _, e := range entriesOf(manifest) {
 		if toStr(asMap(e)["path"]) == "templates/CONTRIBUTING.md" {
@@ -853,7 +853,7 @@ func TestSeedAdoptsPreexistingFileWithoutClobbering(t *testing.T) {
 	if read(t, filepath.Join(con2, "templates", "CONTRIBUTING.md")) != own {
 		t.Error("pre-existing seed file was clobbered")
 	}
-	manifest := loadJSON(t, filepath.Join(con2, ".vendkit", "docs-manifest.json"))
+	manifest := loadJSON(t, filepath.Join(con2, ".vendkit", "consumer", "docs-manifest.json"))
 	found := false
 	for _, e := range entriesOf(manifest) {
 		em := asMap(e)
@@ -911,7 +911,7 @@ func TestSeedDeletionRespectedWithEscapeHatch(t *testing.T) {
 		t.Error("deleted seed was re-seeded")
 	}
 	// Escape hatch: drop the entry, reconcile re-offers the seed.
-	mpath := filepath.Join(con, ".vendkit", "docs-manifest.json")
+	mpath := filepath.Join(con, ".vendkit", "consumer", "docs-manifest.json")
 	manifest := loadJSON(t, mpath)
 	var kept []any
 	for _, e := range entriesOf(manifest) {
@@ -931,7 +931,7 @@ func TestSeedDeletionRespectedWithEscapeHatch(t *testing.T) {
 
 func TestSeedPathStillClaimsINV7Collision(t *testing.T) {
 	_, con := world(t)
-	manifest := loadJSON(t, filepath.Join(con, ".vendkit", "docs-manifest.json"))
+	manifest := loadJSON(t, filepath.Join(con, ".vendkit", "consumer", "docs-manifest.json"))
 	var seedEntry any
 	for _, e := range entriesOf(manifest) {
 		if asMap(e)["seed"] == true {
@@ -948,7 +948,7 @@ func TestSeedPathStillClaimsINV7Collision(t *testing.T) {
 	}
 	rogue["slice"] = "rogue"
 	rogue["entries"] = []any{seedEntry}
-	writeJSON(t, filepath.Join(con, ".vendkit", "rogue-manifest.json"), rogue)
+	writeJSON(t, filepath.Join(con, ".vendkit", "consumer", "rogue-manifest.json"), rogue)
 	so, _, code := vk(t, con, nil, false, "gate", "--strict")
 	if code != 1 {
 		t.Fatalf("exit = %d, want 1", code)
@@ -973,7 +973,7 @@ func TestSeedRetirementIsPatchGrade(t *testing.T) {
 	if !exists(filepath.Join(con, "templates", "CONTRIBUTING.md")) {
 		t.Error("consumer copy was deleted") // copy untouched
 	}
-	manifest := loadJSON(t, filepath.Join(con, ".vendkit", "docs-manifest.json"))
+	manifest := loadJSON(t, filepath.Join(con, ".vendkit", "consumer", "docs-manifest.json"))
 	for _, e := range entriesOf(manifest) {
 		if toStr(asMap(e)["path"]) == "templates/CONTRIBUTING.md" {
 			t.Error("retired template still tracked")
@@ -998,7 +998,7 @@ func TestCINoneIsFullyManual(t *testing.T) {
 	if exists(filepath.Join(con, ".github")) {
 		t.Error("ci: none scaffolded pipelines")
 	}
-	cfgPath := filepath.Join(con, ".vendkit", "docs.yml")
+	cfgPath := filepath.Join(con, ".vendkit", "consumer", "docs.yml")
 	cfg := read(t, cfgPath)
 	mustContain(t, cfg, "ci: none")
 	write(t, cfgPath, strings.ReplaceAll(cfg, "repo: example-org/pub", "repo: "+pub))
@@ -1047,7 +1047,7 @@ func TestStrayVendkitYAMLIsLoud(t *testing.T) {
 	// The .vendkit/ namespace is strict: a YAML file that is not a slice
 	// config is a usage error, never a silent skip (DR-0012).
 	_, con := world(t)
-	write(t, filepath.Join(con, ".vendkit", "notes.yml"), "just: notes\n")
+	write(t, filepath.Join(con, ".vendkit", "consumer", "notes.yml"), "just: notes\n")
 	_, _, code := vk(t, con, nil, false, "watch", "--dry-run")
 	if code != 2 {
 		t.Fatalf("exit = %d, want 2", code)
@@ -1065,7 +1065,7 @@ func TestInitInfersSCMFromRemote(t *testing.T) {
 	vk(t, pub, nil, true, "init", "--ci", "github-actions", "--version", "v0.1.0",
 		"--profile", "code-repo", "--publisher-root", pub,
 		"--consumer-root", con) // no --scm: inferred
-	mustContain(t, read(t, filepath.Join(con, ".vendkit", "docs.yml")), "scm: github")
+	mustContain(t, read(t, filepath.Join(con, ".vendkit", "consumer", "docs.yml")), "scm: github")
 	// No remote and no --scm: loud usage error, never a guess.
 	con2 := filepath.Join(tmp, "no-remote-consumer")
 	mkdirAll(t, con2)
@@ -1145,7 +1145,7 @@ func TestUpdateLocalAppliesAndComposesWithGate(t *testing.T) {
 	so, _, _ := vk(t, con, nil, true, "update")
 	mustContain(t, so, "applied to the working tree")
 	mustContain(t, read(t, filepath.Join(con, "docs", "standard.md")), "Rule two.")
-	manifest := loadJSON(t, filepath.Join(con, ".vendkit", "docs-manifest.json"))
+	manifest := loadJSON(t, filepath.Join(con, ".vendkit", "consumer", "docs-manifest.json"))
 	if toStr(asMap(manifest["source"])["release"]) != "v0.2.0" {
 		t.Error("manifest pin not advanced")
 	}
@@ -1220,7 +1220,7 @@ func TestGatePathIsStandaloneOnly(t *testing.T) {
 // contract — the actual repository_dispatch POST is the handler's job (DR-0014).
 func TestPushHintDispatchesToGHASubscribersOnly(t *testing.T) {
 	pub, _ := world(t)
-	write(t, filepath.Join(pub, ".vendkit", "subscribers.yml"), `schema_version: 1
+	write(t, filepath.Join(pub, ".vendkit", "publisher", "subscribers.yml"), `schema_version: 1
 subscribers:
   - repo: acme/leaf-a
   - repo: acme/leaf-b
@@ -1310,7 +1310,7 @@ func TestTierChainPropagatesFrameworkReleaseToLeaf(t *testing.T) {
 	// -- framework: publisher of slice `docs`, released v0.1.0 -----------------
 	write(t, filepath.Join(framework, "docs", "standard.md"), "# Standard\n\nRule one.\n")
 	write(t, filepath.Join(framework, "docs", "guide.md"), "# Guide\n")
-	write(t, filepath.Join(framework, "vendkit-export.yml"), `schema_version: 1
+	write(t, filepath.Join(framework, ".vendkit", "publisher", "export-declaration.yml"), `schema_version: 1
 slice: {name: docs, title: "Design docs"}
 publisher: {scm: github, repo: example-org/framework}
 include: ["docs/**/*.md"]
@@ -1331,13 +1331,13 @@ profiles:
 	vk(t, framework, nil, true, "init", "--ci", "github-actions", "--scm", "github",
 		"--version", "v0.1.0", "--profile", "code-repo",
 		"--publisher-root", framework, "--consumer-root", mid)
-	rewriteOffline(t, filepath.Join(mid, ".vendkit", "docs.yml"),
+	rewriteOffline(t, filepath.Join(mid, ".vendkit", "consumer", "docs.yml"),
 		"example-org/framework", framework)
 	// (b) publisher: a platform slice that RE-EXPORTS the vendored framework docs
 	// alongside a mid-owned file (identity copy of docs/** plus platform/**).
 	write(t, filepath.Join(mid, "platform", "rules.md"),
 		"# Platform Rules\n\nMid-owned.\n")
-	write(t, filepath.Join(mid, "vendkit-export.yml"), `schema_version: 1
+	write(t, filepath.Join(mid, ".vendkit", "publisher", "export-declaration.yml"), `schema_version: 1
 slice: {name: platform, title: "Platform bundle"}
 publisher: {scm: github, repo: example-org/mid}
 include: ["docs/**/*.md", "platform/**/*"]
@@ -1356,7 +1356,7 @@ profiles:
 	vk(t, mid, nil, true, "init", "--ci", "github-actions", "--scm", "github",
 		"--version", "v0.1.0", "--profile", "code-repo",
 		"--publisher-root", mid, "--consumer-root", leaf)
-	rewriteOffline(t, filepath.Join(leaf, ".vendkit", "platform.yml"),
+	rewriteOffline(t, filepath.Join(leaf, ".vendkit", "consumer", "platform.yml"),
 		"example-org/mid", mid)
 	git(t, leaf, "add", "-A")
 	git(t, leaf, "commit", "-q", "-m", "onboard platform v0.1.0")
@@ -1374,7 +1374,7 @@ profiles:
 	release(t, framework, "v0.2.0")
 
 	// 2. HINT #1: framework nudges its subscriber (the mid).
-	write(t, filepath.Join(framework, ".vendkit", "subscribers.yml"), `schema_version: 1
+	write(t, filepath.Join(framework, ".vendkit", "publisher", "subscribers.yml"), `schema_version: 1
 subscribers:
   - repo: acme/mid
 `)
@@ -1405,7 +1405,7 @@ subscribers:
 	mustContain(t, so, "update-available=true")
 	mustContain(t, so, "changed=true")
 	mustContain(t, read(t, filepath.Join(mid, "docs", "standard.md")), "Rule two.")
-	mustContain(t, read(t, filepath.Join(mid, ".vendkit", "docs.yml")), "version: v0.2.0")
+	mustContain(t, read(t, filepath.Join(mid, ".vendkit", "consumer", "docs.yml")), "version: v0.2.0")
 	gso, _, _ := vk(t, mid, nil, true, "gate", "--strict") // INV-1 at the mid
 	mustContain(t, gso, "findings=0")
 
@@ -1416,7 +1416,7 @@ subscribers:
 	release(t, mid, "v0.2.0") // vk generate re-exports the updated docs, then tag
 
 	// 5. HINT #2: the mid nudges its subscriber (the leaf).
-	write(t, filepath.Join(mid, ".vendkit", "subscribers.yml"), `schema_version: 1
+	write(t, filepath.Join(mid, ".vendkit", "publisher", "subscribers.yml"), `schema_version: 1
 subscribers:
   - repo: acme/leaf
 `)
@@ -1447,8 +1447,8 @@ subscribers:
 	mustContain(t, so, "update-available=true")
 	mustContain(t, so, "changed=true")
 	mustContain(t, read(t, filepath.Join(leaf, "docs", "standard.md")), "Rule two.")
-	mustContain(t, read(t, filepath.Join(leaf, ".vendkit", "platform.yml")), "version: v0.2.0")
-	leafManifest := loadJSON(t, filepath.Join(leaf, ".vendkit", "platform-manifest.json"))
+	mustContain(t, read(t, filepath.Join(leaf, ".vendkit", "consumer", "platform.yml")), "version: v0.2.0")
+	leafManifest := loadJSON(t, filepath.Join(leaf, ".vendkit", "consumer", "platform-manifest.json"))
 	if got := toStr(asMap(leafManifest["source"])["release"]); got != "v0.2.0" {
 		t.Errorf("leaf platform source.release = %q, want v0.2.0", got)
 	}
@@ -1502,7 +1502,7 @@ func TestManifestDirIsPublisherLocal(t *testing.T) {
 	tmp := t.TempDir()
 	pub := filepath.Join(tmp, "publisher")
 	write(t, filepath.Join(pub, "docs", "standard.md"), "# Standard\n\nRule one.\n")
-	write(t, filepath.Join(pub, "vendkit-export.yml"), `schema_version: 1
+	write(t, filepath.Join(pub, ".vendkit", "publisher", "export-declaration.yml"), `schema_version: 1
 slice: {name: docs, title: "Design docs"}
 publisher: {scm: github, repo: example-org/pub, manifest_dir: .governance}
 include: ["docs/**/*.md"]
@@ -1554,10 +1554,10 @@ profiles:
 	vk(t, pub, nil, true, "init", "--ci", "github-actions", "--scm", "github",
 		"--version", "v0.2.0", "--profile", "code-repo",
 		"--publisher-root", pub, "--consumer-root", con)
-	if !exists(filepath.Join(con, ".vendkit", "docs-manifest.json")) {
+	if !exists(filepath.Join(con, ".vendkit", "consumer", "docs-manifest.json")) {
 		t.Fatal("consumer manifest is not at .vendkit/docs-manifest.json")
 	}
-	if exists(filepath.Join(con, ".vendkit", ".governance")) {
+	if exists(filepath.Join(con, ".vendkit", "consumer", ".governance")) {
 		t.Fatal("publisher manifest_dir leaked into the consumer tree")
 	}
 	gateOut, _, _ := vk(t, con, nil, true, "gate", "--strict")
@@ -1584,4 +1584,79 @@ include: ["docs/**/*.md"]
 	}
 	// From an unrelated working directory, with --root naming the publisher.
 	vk(t, tmp, nil, true, "generate", "--check", "--root", pub, "--export-decl", decl)
+}
+
+// -- .vendkit/ split (DR-0019) ----------------------------------------------------
+
+// The publisher's self-declared aliases travel down into the consumer's slice
+// config, and publisher rules resolve from the conventional location without an
+// explicit --rules (with a fact stating which happened).
+func TestPublisherSelfDeclarationAndRulesDefault(t *testing.T) {
+	tmp := t.TempDir()
+	pub := filepath.Join(tmp, "publisher")
+	write(t, filepath.Join(pub, "docs", "standard.md"), "# Standard\n")
+	write(t, filepath.Join(pub, ".vendkit", "publisher", "export-declaration.yml"),
+		`schema_version: 1
+slice:
+  name: docs
+  title: "Design docs"
+  aliases: ["design-docs", "the docs framework"]
+publisher: {scm: github, repo: example-org/pub}
+include: ["docs/**/*.md"]
+profiles:
+  code-repo: {}
+`)
+	// A publisher rule set at the conventional path: no --rules flag anywhere.
+	write(t, filepath.Join(pub, ".vendkit", "publisher", "conformance-rules.yml"),
+		`schema_version: 1
+rules:
+  - id: docs-shelf-present
+    title: "The vendored docs shelf exists"
+    category: custom
+    severity: waivable
+    detector: { kind: file-exists, path: "docs/standard.md" }
+    remediation: "Vendor the slice."
+`)
+	git(t, pub, "init", "-q", "-b", "main")
+	vk(t, pub, nil, true, "generate")
+	if !exists(filepath.Join(pub, ".vendkit", "publisher", "docs-manifest.json")) {
+		t.Fatal("manifest not written to the default .vendkit/publisher/")
+	}
+	git(t, pub, "add", "-A")
+	git(t, pub, "commit", "-q", "-m", "init")
+	pubOrigin := filepath.Join(tmp, "publisher-origin.git")
+	git(t, tmp, "init", "-q", "--bare", pubOrigin)
+	git(t, pub, "remote", "add", "origin", pubOrigin)
+	git(t, pub, "push", "-q", "origin", "main")
+	vk(t, pub, nil, true, "release", "--version", "v0.1.0")
+
+	con := filepath.Join(tmp, "consumer")
+	mkdirAll(t, con)
+	git(t, con, "init", "-q", "-b", "main")
+	vk(t, pub, nil, true, "init", "--ci", "github-actions", "--scm", "github",
+		"--version", "v0.1.0", "--profile", "code-repo",
+		"--publisher-root", pub, "--consumer-root", con)
+
+	// Consumer control plane is under .vendkit/consumer/, and carries the
+	// upstream's self-declared identity.
+	cfg := read(t, filepath.Join(con, ".vendkit", "consumer", "docs.yml"))
+	mustContain(t, cfg, "aliases:")
+	mustContain(t, cfg, "- design-docs")
+	mustContain(t, cfg, "- the docs framework")
+	if !exists(filepath.Join(con, ".vendkit", "consumer", "docs-manifest.json")) {
+		t.Fatal("vendored manifest not at .vendkit/consumer/docs-manifest.json")
+	}
+	if exists(filepath.Join(con, ".vendkit", "docs.yml")) {
+		t.Fatal("slice config still at the pre-split location")
+	}
+
+	// Rules resolve from the publisher checkout with no --rules flag.
+	so, _, _ := vk(t, con, nil, true, "conformance", "--slice", "docs",
+		"--publisher-root", pub)
+	mustContain(t, so, "rules=core+publisher")
+	mustContain(t, so, "docs-shelf-present")
+
+	// Without a publisher root there are no slice rules — stated, never silent.
+	bare, _, _ := vk(t, con, nil, true, "conformance", "--slice", "docs")
+	mustContain(t, bare, "rules=core-only")
 }

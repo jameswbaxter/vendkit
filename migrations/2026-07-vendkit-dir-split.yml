@@ -1,0 +1,42 @@
+schema_version: 1
+id: 2026-07-vendkit-dir-split
+applies_from: v2.0.0
+kind: structural
+profiles: ["*"]
+summary: >-
+  The .vendkit/ control plane splits into .vendkit/consumer/ (slice configs and
+  vendored manifests) and .vendkit/publisher/ (export declaration, generated
+  manifest, conformance rules, subscribers).
+rationale: >-
+  Consumer control-plane files and publisher authoring config shared one
+  directory, discovered by two non-recursive globs — .vendkit/*.yml for slice
+  configs and .vendkit/*-manifest.json for manifests. A repository that both
+  publishes and consumes could not keep the roles apart, and any publisher-side
+  YAML placed there was a hard usage error because every .vendkit/*.yml is
+  required to be a slice config. Separating the halves makes each side's
+  discovery precise and lets a publisher hold its own configuration under the
+  same root. See DR-0019.
+detection:
+  - glob: ".vendkit/*.yml"
+  - glob: ".vendkit/*-manifest.json"
+instructions: >-
+  Move every slice config and vendored manifest from .vendkit/ into
+  .vendkit/consumer/, preserving filenames: .vendkit/<slice>.yml becomes
+  .vendkit/consumer/<slice>.yml and .vendkit/<slice>-manifest.json becomes
+  .vendkit/consumer/<slice>-manifest.json. Leave .vendkit/subscribers.yml, if
+  present, at .vendkit/publisher/subscribers.yml — it is publisher-side.
+  Update any path filters, CODEOWNERS entries, or branch policies that name
+  .vendkit/<slice>.yml or .vendkit/<slice>-manifest.json directly; an entry
+  scoped to .vendkit/ as a whole still covers both halves and needs no change.
+  Publishers additionally move their export declaration to
+  .vendkit/publisher/export-declaration.yml (or keep the old path and pass
+  --export-decl), and their conformance rules to
+  .vendkit/publisher/conformance-rules.yml, which `vendkit conformance` then
+  resolves without an explicit --rules.
+verification:
+  must_be_absent:
+    - ".vendkit/*.yml"
+    - ".vendkit/*-manifest.json"
+  must_be_present:
+    - ".vendkit/consumer/*.yml"
+    - ".vendkit/consumer/*-manifest.json"

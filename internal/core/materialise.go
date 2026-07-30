@@ -90,7 +90,7 @@ func writeVendored(consumerRoot, cpath string, data []byte, execBit bool) error 
 func Materialise(publisherRoot, consumerRoot string, decl *ExportDecl,
 	target string, apply, reconcileScope bool) (*SyncReport, error) {
 	report := &SyncReport{}
-	manifestPath := filepath.Join(consumerRoot, VendkitDir, decl.ManifestName)
+	manifestPath := filepath.Join(consumerRoot, VendkitDir, ConsumerSubdir, decl.ManifestName)
 	current, err := LoadManifest(manifestPath)
 	if err != nil {
 		return nil, err
@@ -281,7 +281,7 @@ type PreviewChange struct {
 // never rewritten; unwritten upstream removals do not appear.
 func Preview(publisherRoot, consumerRoot string, decl *ExportDecl,
 	reconcileScope bool) ([]PreviewChange, error) {
-	manifestPath := filepath.Join(consumerRoot, VendkitDir, decl.ManifestName)
+	manifestPath := filepath.Join(consumerRoot, VendkitDir, ConsumerSubdir, decl.ManifestName)
 	current, err := LoadManifest(manifestPath)
 	if err != nil {
 		return nil, err
@@ -368,7 +368,7 @@ func Preview(publisherRoot, consumerRoot string, decl *ExportDecl,
 // SeedEmptyManifest: onboarding seed — an empty tracked slice for reconcile
 // to expand.
 func SeedEmptyManifest(consumerRoot string, decl *ExportDecl) error {
-	path := filepath.Join(consumerRoot, VendkitDir, decl.ManifestName)
+	path := filepath.Join(consumerRoot, VendkitDir, ConsumerSubdir, decl.ManifestName)
 	if _, err := os.Stat(path); err == nil {
 		return Usagef("manifest already exists: %s", path)
 	}

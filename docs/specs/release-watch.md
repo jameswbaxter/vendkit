@@ -11,11 +11,11 @@ findings; turning findings into tickets is the handoff handler's job (§3).
 ## 1. Configuration
 
 Watch has **no config file of its own**: it iterates every consumer slice config
-(`.vendkit/*.yml`, see onboarding spec), each of which carries the fields watch
+(`.vendkit/consumer/*.yml`, see onboarding spec), each of which carries the fields watch
 needs:
 
 ```yaml
-# inside .vendkit/docs.yml
+# inside .vendkit/consumer/docs.yml
 publisher:
   scm: github                 # shorthand-expansion hint for the clone URL
   repo: example-org/design-docs

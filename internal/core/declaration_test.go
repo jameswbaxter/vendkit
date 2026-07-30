@@ -32,7 +32,10 @@ publisher: {scm: github, repo: example-org/pub}
 include: ["docs/**/*.md"]
 exclude: ["**/TEMPLATE.md"]
 ` + extra + "\n"
-	declPath := filepath.Join(root, "vendkit-export.yml")
+	declPath := filepath.Join(root, ".vendkit", "publisher", "export-declaration.yml")
+	if err := os.MkdirAll(filepath.Dir(declPath), 0o755); err != nil {
+		t.Fatal(err)
+	}
 	if err := os.WriteFile(declPath, []byte(yaml), 0o644); err != nil {
 		t.Fatal(err)
 	}
@@ -59,7 +62,10 @@ publisher: {scm: github, repo: example-org/pub}
 include: ["docs/**/*.md"]
 exclude: ["**/TEMPLATE.md"]
 ` + extra + "\n"
-	declPath := filepath.Join(root, "vendkit-export.yml")
+	declPath := filepath.Join(root, ".vendkit", "publisher", "export-declaration.yml")
+	if err := os.MkdirAll(filepath.Dir(declPath), 0o755); err != nil {
+		t.Fatal(err)
+	}
 	os.WriteFile(declPath, []byte(yaml), 0o644)
 	_, err := LoadExportDecl(declPath)
 	if err == nil || !strings.Contains(err.Error(), want) {
@@ -67,7 +73,10 @@ exclude: ["**/TEMPLATE.md"]
 	}
 }
 
-func rootOf(d *ExportDecl) string { return filepath.Dir(d.Path) }
+// rootOf: the repo root from a declaration path (.vendkit/publisher/<file>).
+func rootOf(d *ExportDecl) string {
+	return filepath.Dir(filepath.Dir(filepath.Dir(d.Path)))
+}
 
 func TestDeclarationSurface(t *testing.T) {
 	decl := declFixture(t, "")
@@ -183,7 +192,10 @@ publisher: {scm: github, repo: example-org/pub}
 include: ["docs/**/*.md"]
 exclude: ["**/TEMPLATE.md"]
 ` + extra + "\n"
-		p := filepath.Join(root, "vendkit-export.yml")
+		p := filepath.Join(root, ".vendkit", "publisher", "export-declaration.yml")
+		if err := os.MkdirAll(filepath.Dir(p), 0o755); err != nil {
+			t.Fatal(err)
+		}
 		os.WriteFile(p, []byte(yaml), 0o644)
 		return p
 	}
@@ -257,7 +269,10 @@ slice: {name: docs, title: Docs}
 publisher: {scm: github, repo: example-org/pub` + pubExtra + `}
 include: ["docs/**/*.md"]
 ` + extra + "\n"
-	declPath := filepath.Join(root, "vendkit-export.yml")
+	declPath := filepath.Join(root, ".vendkit", "publisher", "export-declaration.yml")
+	if err := os.MkdirAll(filepath.Dir(declPath), 0o755); err != nil {
+		t.Fatal(err)
+	}
 	if err := os.WriteFile(declPath, []byte(yaml), 0o644); err != nil {
 		t.Fatal(err)
 	}
@@ -283,16 +298,25 @@ func TestManifestDirRelocatesPublisherCopyOnly(t *testing.T) {
 	}
 }
 
-func TestManifestDirDefaultsToRepoRoot(t *testing.T) {
-	for _, pubExtra := range []string{"", ", manifest_dir: ''", ", manifest_dir: '.'"} {
+func TestManifestDirDefaultsToPublisherDir(t *testing.T) {
+	// Absent (and explicitly empty) means the conventional publisher directory.
+	for _, pubExtra := range []string{"", ", manifest_dir: ''"} {
 		decl, err := declRaw(t, pubExtra, "")
 		if err != nil {
 			t.Fatalf("publisher%q: %v", pubExtra, err)
 		}
-		if got := decl.ManifestRepoRel(); got != "docs-manifest.json" {
-			t.Errorf("publisher%q: ManifestRepoRel = %q, want docs-manifest.json",
+		if got := decl.ManifestRepoRel(); got != ".vendkit/publisher/docs-manifest.json" {
+			t.Errorf("publisher%q: ManifestRepoRel = %q, want .vendkit/publisher/docs-manifest.json",
 				pubExtra, got)
 		}
+	}
+	// An explicit "." opts back out to the repo root.
+	decl, err := declRaw(t, ", manifest_dir: '.'", "")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := decl.ManifestRepoRel(); got != "docs-manifest.json" {
+		t.Errorf("manifest_dir '.': ManifestRepoRel = %q, want docs-manifest.json", got)
 	}
 }
 

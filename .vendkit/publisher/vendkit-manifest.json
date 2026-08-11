@@ -75,14 +75,14 @@
       "exec": false,
       "path": "go.mod",
       "raw": false,
-      "sha256": "e2a786e124925135723a3fe149ae701acd0eee38fe4941a63f15251bf89a4f8c"
+      "sha256": "c8ab390d5a4591c88792dbbaea463f0582588d81237cfa0e84cb3075693e2197"
     },
     {
       "consumer_path": "go.sum",
       "exec": false,
       "path": "go.sum",
       "raw": false,
-      "sha256": "cc9803544069f90b73f74ee4dfbf4ab48a6171897b6cb927d33de5e109a43a87"
+      "sha256": "33a1c9072aa31477ef0977987f8f49934492d6c2abcb7b4591f46fe7ade52eea"
     },
     {
       "consumer_path": "internal/ci/ci.go",

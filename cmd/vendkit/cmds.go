@@ -65,7 +65,7 @@ func cmdGenerate(args []string, surface ci.Surface) (int, error) {
 			}
 			return 0, err
 		}
-		if !core.ManifestsEqual(fresh, committed) {
+		if !core.ManifestsEquivalent(fresh, committed) {
 			surface.EmitError(decl.ManifestRepoRel() + " is stale — run generate")
 			surface.EmitOutput("fresh", "false")
 			return 1, nil

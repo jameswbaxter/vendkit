@@ -19,7 +19,7 @@
       "exec": false,
       "path": "cmd/vendkit/cmds.go",
       "raw": false,
-      "sha256": "0e6b27daf55d59a65642a8158bb0b66674b7a870070030cf892ca9bf386e3439"
+      "sha256": "c588e26cafb933fc1a3798fe32dfead2f5582205c91b6885929db3d609b9ef50"
     },
     {
       "consumer_path": "cmd/vendkit/fleet.go",
@@ -159,7 +159,7 @@
       "exec": false,
       "path": "internal/core/manifest.go",
       "raw": false,
-      "sha256": "b70f81ea4c78bb0daddaa4d08d854456bd6dbb1d695506520dfad0d9034c5f87"
+      "sha256": "f9b2e1527abba547795ab7957c8417874bf9958dfdbd6924fc1b763c5cd24bb9"
     },
     {
       "consumer_path": "internal/core/materialise.go",
@@ -194,7 +194,7 @@
       "exec": false,
       "path": "internal/core/release.go",
       "raw": false,
-      "sha256": "5d9666891eb007e0bc806c82905a7777dd66205818b9b85ac1a62d72b97df74e"
+      "sha256": "3a9815d5af064633ed5ccb701134d428fc6b1c1e748ceccf433be3eac09cd41b"
     },
     {
       "consumer_path": "internal/core/sliceconfig.go",

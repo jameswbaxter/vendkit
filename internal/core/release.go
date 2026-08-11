@@ -113,7 +113,7 @@ func Cut(root string, decl *ExportDecl, bumpKind, explicitVersion, summary strin
 	if err != nil {
 		return nil, err
 	}
-	if !ManifestsEqual(committed, fresh) {
+	if !ManifestsEquivalent(committed, fresh) {
 		return nil, &Refusal{Reason: "stale-manifest",
 			Msg: "committed manifest is stale — run generate and commit"}
 	}

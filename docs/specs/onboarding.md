@@ -153,10 +153,12 @@ conformance `pipeline-wired` rules keep the wiring honest.
 - **Launcher + fetch template (DR-0016 amendment):** the same
   resolve → fetch → verify-before-exec order is scaffolded twice over for
   everything that is *not* a scaffolded lane: `./vendkitw` for humans and
-  `ci: none` repos (resolves `engine.version` from the slice config, caches
-  under XDG outside the repo, and never degrades to an unpinned or
-  unverified fetch), and the reusable fetch template for consumer-authored
-  pipelines. Both are engine-owned: a consumer never hand-rolls the
+  `ci: none` repos (resolves `engine.version` — and the release-asset root
+  `engine.base_url`, needed when the slice's publisher is not on GitHub —
+  from the slice config, or from `.vendkit/publisher/vendkit-engine.yml` in
+  a publisher checkout (#15); caches under XDG outside the repo, and never
+  degrades to an unpinned or unverified fetch), and the reusable fetch
+  template for consumer-authored pipelines. Both are engine-owned: a consumer never hand-rolls the
   trust-boundary fetch. The launcher and the fetch template are
   consumer-owned files after scaffolding (like every scaffold output) and
   are deliberately byte-identical to / derived from the released,
@@ -212,6 +214,19 @@ From here the launcher fetches, verifies, and caches the engine itself
 (`VENDKIT_VERSION=$V ./vendkitw …` until a slice config carries the pin), and
 once `vendkit init` has run it owns the in-tree copy — the bootstrap file and
 the scaffolded file are byte-identical, so `SHA256SUMS.txt` vouches for both.
+A publisher checkout has no slice config to grow a pin; instead of exporting
+`VENDKIT_VERSION` in every environment, commit the pin to
+`.vendkit/publisher/vendkit-engine.yml` (#15) — the same key paths a slice
+config uses, read by the launcher whenever the checkout has
+`.vendkit/publisher/export-declaration.yml` and no `.vendkit/consumer/`:
+
+```yaml
+engine:
+  version: vX.Y.Z
+  # Version-independent release root; the launcher appends /<version>.
+  # Needed when the engine's releases are not derivable (e.g. a mirror):
+  base_url: https://github.com/jameswbaxter/vendkit/releases/download
+```
 Equivalently, download the full engine binary the same verified way and run
 `init` from it; the launcher is then purely the convenience for subsequent
 runs. Either way the acquisition step is documented, tagged, and checksummed —

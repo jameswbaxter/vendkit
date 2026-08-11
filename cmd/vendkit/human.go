@@ -20,6 +20,23 @@ import (
 
 // -- init ------------------------------------------------------------------------
 
+// capturedEngineBaseURL (issue #15): a non-GitHub publisher's engine releases
+// cannot be derived from publisher.repo, and the operator had to set
+// VENDKIT_BASE_URL to bootstrap this very run — init is the one moment the
+// value is reliably at hand to commit as engine.base_url. Only the
+// per-release form <root>/<version> is captured (as its root); anything else
+// is not provably version-independent, so it is left for the operator.
+func capturedEngineBaseURL(publisherSCM, version string) string {
+	if publisherSCM == "github" {
+		return "" // derivation from publisher.repo covers it
+	}
+	v := strings.TrimRight(os.Getenv("VENDKIT_BASE_URL"), "/")
+	if strings.HasSuffix(v, "/"+version) {
+		return strings.TrimSuffix(v, "/"+version)
+	}
+	return ""
+}
+
 // inferSCM: the origin remote discriminates the SCM host (DR-0015).
 func inferSCM(consumerRoot string) string {
 	cmd := exec.Command("git", "-C", consumerRoot, "remote", "get-url", "origin")
@@ -131,7 +148,8 @@ func cmdInit(args []string, surface ci.Surface) (int, error) {
 			CI: *ciHost, SCM: resolvedSCM, Version: *version,
 			Profile: *profile, Mode: *mode, BaseBranch: *baseBranch,
 			PRTokenSecret: *prTokenSecret, Codeowners: *codeowners,
-			PushHint: *pushHint,
+			PushHint:      *pushHint,
+			EngineBaseURL: capturedEngineBaseURL(decl.PublisherSCM, *version),
 		}, vendkitassets.FS)
 	if err != nil {
 		return 0, err

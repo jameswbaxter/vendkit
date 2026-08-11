@@ -80,11 +80,21 @@ Amended decision:
    byte-identical to the release asset), together with a per-pack reusable
    `vendkit-fetch` CI template for consumer-authored pipelines
    (onboarding spec §2–§3).
-3. **The launcher resolves its own pin** from `.vendkit/consumer/<slice>.yml`
-   `engine.version` (override: `VENDKIT_VERSION`; escape hatch:
-   `VENDKIT_BIN`; mirror: `VENDKIT_BASE_URL`), caches outside the repository
-   keyed by version/os/arch, verifies before exec, and fails loudly — it
-   never degrades to an unpinned or unverified fetch.
+3. **The launcher resolves its own pin from committed files** (#15): in a
+   consumer, `engine.version` from `.vendkit/consumer/<slice>.yml`; in a
+   publisher checkout — identified without guessing by
+   `.vendkit/publisher/export-declaration.yml` with no `.vendkit/consumer/`
+   beside it — from `.vendkit/publisher/vendkit-engine.yml`, the same key
+   paths one level up (override: `VENDKIT_VERSION`; escape hatch:
+   `VENDKIT_BIN`). The release-asset URL likewise: `VENDKIT_BASE_URL`
+   (a full per-release URL) beats `engine.base_url` in the same file the
+   pin came from (the version-independent release root — written once,
+   never advanced by the sync PR; the launcher appends `/<version>`), which
+   beats derivation from `publisher: {scm: github, repo}` — safe as a
+   fallback because it is correct exactly when the slice's publisher and
+   the engine's releases share a GitHub repo. The launcher caches outside
+   the repository keyed by version/os/arch, verifies before exec, and fails
+   loudly — it never degrades to an unpinned or unverified fetch.
 4. **Acquisition is documented and checksummable** (onboarding spec §5): a
    one-time verified download of `vendkitw` (or of a full binary) from a
    tagged release — not a package-manager alias that cannot be checksummed

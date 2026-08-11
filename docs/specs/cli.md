@@ -14,7 +14,7 @@ directory; absolute paths are used verbatim.
 | Command | Role | Layer | Spec |
 |---|---|---|---|
 | `vendkit generate [--check]` | build/verify publisher manifest; `--check` also emits advisory glob-localise declaration-validity findings (`localisation-findings=<n>`, never the exit code) | 0 | manifest-and-gate §3 · export-declaration §3.1 |
-| `vendkit verify-localisation --expected <p> [--profile <p>] [--consumer-root <d>] [--write]` | glob-localise expectation oracle: diff localised output (materialised from the publisher tree, or an already-materialised consumer via `--consumer-root`) against a publisher-authored expectation file; `--write` refreshes the file after a reviewed change | 0 | export-declaration §3.2 |
+| `vendkit verify-localisation --expected <p> [--profile <p>] [--consumer-root <d>] [--publisher-root <r>] [--write]` | glob-localise expectation oracle: diff localised output (materialised from the publisher tree, or an already-materialised consumer via `--consumer-root`) against a publisher-authored expectation file; from inside a consumer tree, `--publisher-root` names the publisher checkout the declaration (and, without `--consumer-root`, the tree to materialise) is read from; `--write` refreshes the file after a reviewed change | 0 | export-declaration §3.2 |
 | `vendkit gate [--strict] [--all\|--manifest <p>]` | consumer integrity verify + INV-7 | 0 | manifest-and-gate §4 |
 | `vendkit sync --check\|--apply --target <v> [--reconcile-scope] [--porcelain]` | materialise (low-level) | 0 | sync §2 |
 | `vendkit sync-pipeline --slice <s> [--base-branch <b>]` | full sync lane: versions, probe, apply, pin advance, branch, push, PR intent → handler | 0+1 | sync §3 |

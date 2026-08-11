@@ -13,18 +13,28 @@
 # Version resolution order (loud failure — never a silent fallback to an
 # unpinned or unverified fetch):
 #   1. VENDKIT_BIN      escape hatch: exec this binary directly, no fetch;
-#   2. VENDKIT_VERSION  explicit version override (also the publisher-side
-#                       path, where no consumer slice config exists);
-#   3. engine.version   from .vendkit/consumer/*.yml, found by walking up
-#                       from the current directory; every slice config that
-#                       carries an engine pin must agree.
+#   2. VENDKIT_VERSION  explicit version override;
+#   3. engine.version   from the nearest .vendkit/ control plane, walking up
+#                       from the current directory: a consumer's slice
+#                       configs (.vendkit/consumer/*.yml; every config that
+#                       carries an engine pin must agree), or — in a
+#                       publisher checkout, identified without guessing by
+#                       .vendkit/publisher/export-declaration.yml with no
+#                       .vendkit/consumer/ beside it — the publisher-side
+#                       pin file .vendkit/publisher/vendkit-engine.yml.
 #
 # Release-asset base URL:
 #   1. VENDKIT_BASE_URL override — mirror, feed, or blob store for
-#      offline/air-gapped use; the checksum still decides trust;
-#   2. derived from the slice config's `publisher: {scm: github,
+#      offline/air-gapped use; the checksum still decides trust. Points at
+#      one release's asset directory (the version segment included);
+#   2. engine.base_url  from the same file the pin came from — the
+#      VERSION-INDEPENDENT release root, written once and never advanced by
+#      the sync PR; the launcher appends /<version> (mirroring the GitHub
+#      layout <repo>/releases/download/<version>);
+#   3. derived from the slice config's `publisher: {scm: github,
 #      repo: owner/name}` as that repo's GitHub release assets. Anything
-#      else (azure-repos, full URLs) requires VENDKIT_BASE_URL.
+#      else (azure-repos, full URLs) needs engine.base_url or
+#      VENDKIT_BASE_URL.
 #
 # Cache: ${VENDKIT_CACHE_DIR:-${XDG_CACHE_HOME:-$HOME/.cache}/vendkit}/
 # <version>/<os>_<arch>/ — keyed by version and platform, outside the repo.
@@ -42,64 +52,103 @@ if [ -n "${VENDKIT_BIN:-}" ]; then
   exec "$VENDKIT_BIN" "$@"
 fi
 
-# find_root: nearest ancestor (including .) holding .vendkit/consumer/.
+# find_root: nearest ancestor (including .) holding a .vendkit/ control
+# plane; prints "<kind> <dir>", kind `consumer` or `publisher`. The consumer
+# check comes first at every level, so a publisher-side pin can never shadow
+# a consumer whose own pin says something else; a publisher checkout is
+# identified without guessing — export-declaration.yml is present and
+# .vendkit/consumer/ is not.
 find_root() {
   dir="$PWD"
   while :; do
-    if [ -d "$dir/.vendkit/consumer" ]; then printf '%s\n' "$dir"; return 0; fi
+    if [ -d "$dir/.vendkit/consumer" ]; then printf 'consumer %s\n' "$dir"; return 0; fi
+    if [ -f "$dir/.vendkit/publisher/export-declaration.yml" ]; then printf 'publisher %s\n' "$dir"; return 0; fi
     [ "$dir" = "/" ] && return 1
     dir="$(dirname "$dir")"
   done
 }
 
 # cfg_value <file> <key>: a two-space-indented "  key: value" line — the
-# indent the scaffolder emits for engine.version and the publisher block;
-# nothing else in a slice config carries these keys at that indent.
+# indent the scaffolder emits for the engine block (version, base_url) and
+# the publisher block; nothing else in a slice config (or the publisher-side
+# pin file, which reuses the engine block shape) carries these keys at that
+# indent.
 cfg_value() {
   sed -n "s/^  $2: //p" "$1" | head -n 1 | tr -d '\r' | sed 's/^"//;s/"$//'
 }
 
+root_kind=""; root=""
+if found="$(find_root)"; then
+  root_kind="${found%% *}"
+  root="${found#* }"
+fi
+# The publisher-side pin file: same engine.version / engine.base_url key
+# paths a consumer's slice config uses, one level up — committed so a
+# publisher's own invocations (generate --check, release pre-gates, CI)
+# need no per-environment VENDKIT_VERSION.
+pub_pin="$root/.vendkit/publisher/vendkit-engine.yml"
+
 version="${VENDKIT_VERSION:-}"
 pin_cfg=""
 if [ -z "$version" ]; then
-  root="$(find_root)" || die "no .vendkit/consumer/ found above $PWD — run from a consumer repo, or set VENDKIT_VERSION (or VENDKIT_BIN)"
-  for cfg in "$root"/.vendkit/consumer/*.yml; do
-    [ -e "$cfg" ] || continue
-    v="$(cfg_value "$cfg" version)"
-    [ -n "$v" ] || continue
-    if [ -z "$version" ]; then
-      version="$v"; pin_cfg="$cfg"
-    elif [ "$v" != "$version" ]; then
-      die "slice configs disagree on engine.version ($version vs $v in ${cfg#"$root"/}) — set VENDKIT_VERSION to arbitrate"
-    fi
-  done
-  [ -n "$version" ] || die "no engine.version in $root/.vendkit/consumer/*.yml — fill the engine pin (DR-0016) or set VENDKIT_VERSION"
+  [ -n "$root" ] || die "no .vendkit/consumer/ or .vendkit/publisher/ found above $PWD — run from a consumer or publisher repo, or set VENDKIT_VERSION (or VENDKIT_BIN)"
+  if [ "$root_kind" = consumer ]; then
+    for cfg in "$root"/.vendkit/consumer/*.yml; do
+      [ -e "$cfg" ] || continue
+      v="$(cfg_value "$cfg" version)"
+      [ -n "$v" ] || continue
+      if [ -z "$version" ]; then
+        version="$v"; pin_cfg="$cfg"
+      elif [ "$v" != "$version" ]; then
+        die "slice configs disagree on engine.version ($version vs $v in ${cfg#"$root"/}) — set VENDKIT_VERSION to arbitrate"
+      fi
+    done
+    [ -n "$version" ] || die "no engine.version in $root/.vendkit/consumer/*.yml — fill the engine pin (DR-0016) or set VENDKIT_VERSION"
+  else
+    [ -f "$pub_pin" ] && version="$(cfg_value "$pub_pin" version)"
+    [ -n "$version" ] || die "no engine.version in ${pub_pin#"$root"/} — fill the publisher-side pin or set VENDKIT_VERSION"
+  fi
 fi
 
 base="${VENDKIT_BASE_URL:-}"
 if [ -z "$base" ]; then
-  # VENDKIT_VERSION skips config discovery; a slice config can still supply
-  # the publisher coordinates for the URL.
-  if [ -z "$pin_cfg" ]; then
-    if root="$(find_root)"; then
+  if [ "$root_kind" = publisher ]; then
+    # A publisher has no slice config; its pin file carries the engine
+    # coordinates too.
+    root_url=""
+    [ -f "$pub_pin" ] && root_url="$(cfg_value "$pub_pin" base_url)"
+    [ -n "$root_url" ] || die "no engine.base_url in ${pub_pin#"$root"/} to derive the release-asset URL from — set engine.base_url (the version-independent release root) or VENDKIT_BASE_URL"
+    base="${root_url%/}/${version}"
+  else
+    # VENDKIT_VERSION skips config discovery; a slice config can still supply
+    # the engine coordinates for the URL.
+    if [ -z "$pin_cfg" ] && [ "$root_kind" = consumer ]; then
       for cfg in "$root"/.vendkit/consumer/*.yml; do
         [ -e "$cfg" ] || continue
-        if [ -n "$(cfg_value "$cfg" repo)" ]; then pin_cfg="$cfg"; break; fi
+        if [ -n "$(cfg_value "$cfg" base_url)" ] || [ -n "$(cfg_value "$cfg" repo)" ]; then pin_cfg="$cfg"; break; fi
       done
     fi
+    [ -n "$pin_cfg" ] || die "no slice config to derive the release-asset URL from — set VENDKIT_BASE_URL"
+    root_url="$(cfg_value "$pin_cfg" base_url)"
+    if [ -n "$root_url" ]; then
+      # engine.base_url is the version-independent release root (written
+      # once, never advanced by the sync PR) — the version segment is
+      # appended here, mirroring the GitHub release-asset layout.
+      base="${root_url%/}/${version}"
+    else
+      scm="$(cfg_value "$pin_cfg" scm)"
+      repo="$(cfg_value "$pin_cfg" repo)"
+      [ "$scm" = "github" ] || die "publisher.scm is ${scm:-unset} — release assets can only be derived for github; set engine.base_url in the slice config (the version-independent release root) or VENDKIT_BASE_URL"
+      case "$repo" in
+        ""|*://*|*@*|*/*/*)
+          die "publisher.repo ${repo:-is unset and} is not an owner/name shorthand — set VENDKIT_BASE_URL" ;;
+        */*) : ;;
+        *)
+          die "publisher.repo $repo is not an owner/name shorthand — set VENDKIT_BASE_URL" ;;
+      esac
+      base="https://github.com/${repo}/releases/download/${version}"
+    fi
   fi
-  [ -n "$pin_cfg" ] || die "no slice config to derive the release-asset URL from — set VENDKIT_BASE_URL"
-  scm="$(cfg_value "$pin_cfg" scm)"
-  repo="$(cfg_value "$pin_cfg" repo)"
-  [ "$scm" = "github" ] || die "publisher.scm is ${scm:-unset} — release assets can only be derived for github; set VENDKIT_BASE_URL (always required for azure-repos publishers)"
-  case "$repo" in
-    ""|*://*|*@*|*/*/*)
-      die "publisher.repo ${repo:-is unset and} is not an owner/name shorthand — set VENDKIT_BASE_URL" ;;
-    */*) : ;;
-    *)
-      die "publisher.repo $repo is not an owner/name shorthand — set VENDKIT_BASE_URL" ;;
-  esac
-  base="https://github.com/${repo}/releases/download/${version}"
 fi
 
 case "$(uname -s)" in

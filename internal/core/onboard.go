@@ -113,6 +113,12 @@ type OnboardParams struct {
 	// the ADO resources.pipelines trigger. Off by default — the schedule is
 	// always the reconciler; the receiver is a latency optimisation (DR-0006).
 	PushHint bool
+	// EngineBaseURL: version-independent release root for engine.base_url in
+	// the scaffolded slice config. The cmd layer captures it from
+	// VENDKIT_BASE_URL for non-GitHub publishers — the operator had to set
+	// that variable to bootstrap at all, so init is the one moment the value
+	// is reliably at hand to commit (issue #15). Empty = emit the key blank.
+	EngineBaseURL string
 }
 
 func Onboard(publisherRoot, consumerRoot string, decl *ExportDecl,
@@ -367,6 +373,14 @@ func sliceConfigYAML(decl *ExportDecl, p OnboardParams, pinFiles []string) strin
 			"  # target release's SHA256SUMS.txt when the version moves (a blank value\n" +
 			"  # is advisory-only — self-verify skips it).\n" +
 			"  version: " + p.Version + "\n" +
+			"  # base_url: the VERSION-INDEPENDENT root the engine's release assets\n" +
+			"  # live under — vendkitw fetches from <base_url>/<version>/. Written\n" +
+			"  # once, never advanced by the sync PR. Blank = derive from publisher\n" +
+			"  # coordinates, which only works for a GitHub publisher; fill it when\n" +
+			"  # the publisher is elsewhere (issue #15). VENDKIT_BASE_URL (a full\n" +
+			"  # per-release URL) overrides it either way; the checksum still\n" +
+			"  # decides trust (DR-0016).\n" +
+			"  base_url: \"" + p.EngineBaseURL + "\"\n" +
 			"  sha256:\n" +
 			"    linux/amd64: \"\"\n" +
 			"    linux/arm64: \"\"\n" +

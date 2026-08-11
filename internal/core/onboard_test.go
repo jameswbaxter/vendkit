@@ -124,6 +124,48 @@ func TestOnboardNeverClobbersAnExistingLauncher(t *testing.T) {
 	}
 }
 
+func TestOnboardEmitsEngineBaseURL(t *testing.T) {
+	// issue #15: engine.base_url gives the engine pin its own coordinates —
+	// scaffolded blank by default (github derivation covers it), carrying the
+	// captured value when the cmd layer supplies one, and readable back
+	// through the parser either way.
+	decl, pub := onboardFixture(t)
+	con := t.TempDir()
+	p := onboardParams("github-actions")
+	p.EngineBaseURL = "https://mirror.example/vendkit"
+	if _, err := Onboard(pub, con, decl, p, vendkitassets.FS); err != nil {
+		t.Fatal(err)
+	}
+	cfgPath := filepath.Join(con, VendkitDir, ConsumerSubdir, "docs.yml")
+	data, err := os.ReadFile(cfgPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(string(data), `base_url: "https://mirror.example/vendkit"`) {
+		t.Errorf("engine.base_url not scaffolded:\n%s", data)
+	}
+	cfg, err := LoadSliceConfig(cfgPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if cfg.EngineBaseURL != "https://mirror.example/vendkit" {
+		t.Errorf("EngineBaseURL = %q, want the scaffolded value", cfg.EngineBaseURL)
+	}
+
+	con2 := t.TempDir()
+	if _, err := Onboard(pub, con2, decl, onboardParams("github-actions"),
+		vendkitassets.FS); err != nil {
+		t.Fatal(err)
+	}
+	data2, err := os.ReadFile(filepath.Join(con2, VendkitDir, ConsumerSubdir, "docs.yml"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(string(data2), `base_url: ""`) {
+		t.Errorf("blank engine.base_url key not scaffolded:\n%s", data2)
+	}
+}
+
 func TestOnboardCINoneStillWritesLauncher(t *testing.T) {
 	// ci: none forgoes pipelines, not the pinned-engine trust path — local
 	// gate/conformance runs bootstrap through the launcher.

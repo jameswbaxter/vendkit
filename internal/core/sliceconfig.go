@@ -53,6 +53,13 @@ type SliceConfig struct {
 	// runs its installed engine (DR-0016 §4).
 	EngineVersion string
 	EngineSHA256  map[string]string
+	// EngineBaseURL: the version-independent release-asset root the engine
+	// is fetched from (the launcher and lanes append /<version>). Needed
+	// when the slice's publisher is not on GitHub — the engine's releases
+	// then cannot be derived from publisher.repo. Written once by onboard;
+	// never advanced by the sync PR (it is not a version). Empty = derive
+	// from publisher.* (github only) or require VENDKIT_BASE_URL.
+	EngineBaseURL string
 	Path          string
 }
 
@@ -184,7 +191,8 @@ func LoadSliceConfig(path string) (*SliceConfig, error) {
 		Channel: channel, Handlers: handlers, HandoffDedupKey: dedup,
 		SeedNotes: seedNotes, Attestations: attest, Waivers: waivers,
 		EngineVersion: engineVersion, EngineSHA256: engineSHA,
-		Path: path,
+		EngineBaseURL: getStr(engine, "base_url"),
+		Path:          path,
 	}, nil
 }
 

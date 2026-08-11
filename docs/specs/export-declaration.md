@@ -138,6 +138,76 @@ a glob in the file's declared union iff it is owned by P or owned by no profile
 (universal). Globs owned only by other profiles are dropped. The pruned result
 is what the consumer manifest hashes — so localisation is drift-gate-safe.
 
+`glob-localise` is the only adapter that transforms content, and both of its
+failure modes are silent to publisher and consumer alike: over-pruning ships a
+rule that matches nothing, under-pruning ships globs for shelves the consumer
+does not have. The two subsections below are the engine-level verification of
+that transformation (issue #10).
+
+### 3.1 Declaration-validity findings (`generate --check`)
+
+`vendkit generate --check` evaluates consistency rules over each
+`glob-localise` adapter against the matched tree — exported and seeded files
+both, since both flow through adapters (§2). No fixture or external input is
+involved; this is the declaration checked against itself and the tree.
+
+| Rule | Condition |
+|---|---|
+| `profile-unknown` | a catalogue key that is not a declared profile |
+| `glob-uncatalogued` | a glob in a matched rule's field that no catalogue entry claims — it vendors to every profile (universal); deliberate universals may stay, the finding is informational |
+| `catalogue-glob-orphan` | a catalogue glob appearing in no matched rule's field (dead entry) |
+| `localisation-empty` | a rule whose localised field for some profile would be **empty** — it arrives matching nothing and can never load |
+
+Findings are **advisory**: printed, counted as `localisation-findings=<n>`
+(full documents under `--json`), and never the exit code, so a currently-green
+declaration does not turn red. The checks parse the field exactly as the
+adapter does, and `localisation-empty` applies the actual transform, so they
+cannot disagree with materialisation.
+
+### 3.2 The expectation oracle — `vendkit verify-localisation`
+
+```
+vendkit verify-localisation --expected <file> [--profile P] [--consumer-root DIR] [--write]
+```
+
+The publisher declares the *intended* per-profile, per-rule localised field
+values in a file it owns:
+
+```yaml
+schema_version: 1
+expectations:
+  code-repo:                              # profile
+    ".github/instructions/std.md":        # publisher repo-relative rule file
+      - "docs/standards/**"               # the localised field, in order
+```
+
+The command materialises each profile's output in memory through the real
+adapter chain (or, with `--consumer-root`, reads an already-materialised
+consumer tree — the profile then comes from `--profile` or the consumer's
+slice config) and diffs actual against expected. Findings, each exit-1:
+
+| Finding | Meaning |
+|---|---|
+| `mismatch` | the localised field differs from the expectation (ordered comparison) |
+| `rule-absent` | an expected rule has no localised field — not in the exported surface or profile scope, or the field is missing |
+| `expectation-stale` | a localised rule has no expectation entry — the expected file has fallen behind the surface |
+
+The oracle covers the drift-gated (exported) surface only; seeds are
+consumer-owned after materialisation and lawfully diverge. Without
+`--profile`, all profiles in declared ∪ expected are verified.
+
+Two constraints are load-bearing:
+
+- **The expected file is publisher-authored input, never engine-derived at
+  check time.** `--write` refreshes it from current engine output as a
+  deliberate, reviewed step; deriving it while checking would compare the
+  engine against itself and always pass.
+- **No predictor lives in the engine.** An independent reimplementation of
+  the pruning that computes expected output from the catalogue must stay with
+  the publisher that wants one: a predictor sharing a codebase with the
+  adapter agrees with the adapter's bugs by construction. VendKit owns the
+  harness and the diff; the oracle values are input.
+
 ## 4. What the declaration must never contain
 
 - Consumer identities or any downstream registry (the publisher does not know

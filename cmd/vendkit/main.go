@@ -38,9 +38,9 @@ func run(args []string) int {
 	}
 	if len(args) == 0 {
 		fmt.Fprintln(os.Stderr, "usage error: a command is required "+
-			"(generate, gate, sync, sync-pipeline, release, watch, migrations, "+
-			"migrations-verify, conformance, fleet, self-verify, handler, "+
-			"push-hint, init, status, diff, update, explain)")
+			"(generate, verify-localisation, gate, sync, sync-pipeline, release, "+
+			"watch, migrations, migrations-verify, conformance, fleet, "+
+			"self-verify, handler, push-hint, init, status, diff, update, explain)")
 		return 2
 	}
 	cmd, rest := args[0], args[1:]
@@ -55,6 +55,8 @@ func run(args []string) int {
 	switch cmd {
 	case "generate":
 		code, err = cmdGenerate(rest, surface)
+	case "verify-localisation":
+		code, err = cmdVerifyLocalisation(rest, surface)
 	case "gate":
 		code, err = cmdGate(rest, surface)
 	case "sync":

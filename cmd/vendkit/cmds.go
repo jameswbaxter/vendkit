@@ -39,6 +39,24 @@ func cmdGenerate(args []string, surface ci.Surface) (int, error) {
 	}
 	manifestPath := decl.PublisherManifestPath(*root)
 	if *check {
+		// Declaration-validity findings (export-declaration spec §3.1):
+		// advisory-first — printed and counted, never the exit code, so a
+		// currently-green declaration does not turn red (issue #10 A).
+		lfindings, err := core.CheckLocalisation(decl, *root)
+		if err != nil {
+			return 0, err
+		}
+		for _, f := range lfindings {
+			fmt.Println(f.String())
+		}
+		surface.EmitOutput("localisation-findings", fmt.Sprint(len(lfindings)))
+		if c.JSON {
+			if lfindings == nil {
+				lfindings = []core.LocalisationFinding{}
+			}
+			doc, _ := json.Marshal(lfindings)
+			fmt.Println(string(doc))
+		}
 		committed, err := core.LoadManifest(manifestPath)
 		if err != nil {
 			if _, isUsage := err.(*core.UsageError); isUsage {
@@ -60,6 +78,74 @@ func cmdGenerate(args []string, surface ci.Surface) (int, error) {
 	}
 	entries := len(fresh["entries"].([]any))
 	surface.EmitOutput("entries", fmt.Sprint(entries))
+	return 0, nil
+}
+
+// cmdVerifyLocalisation — the expectation oracle for glob-localise output
+// (issue #10 B, export-declaration spec §3.2). VendKit owns the harness and
+// the diff; the expected file is publisher-authored input, never derived at
+// check time.
+func cmdVerifyLocalisation(args []string, surface ci.Surface) (int, error) {
+	fs := newFlagSet("verify-localisation")
+	var c commonFlags
+	expected := fs.String("expected", "", "")
+	profile := fs.String("profile", "", "")
+	// Deliberately NOT the common --consumer-root: its empty default selects
+	// publisher-side materialisation; a value switches to reading an
+	// already-materialised consumer tree.
+	consumerRoot := fs.String("consumer-root", "", "")
+	write := fs.Bool("write", false, "")
+	addCommon(fs, &c, true, false, true)
+	if err := parseFlags(fs, args); err != nil {
+		return 0, err
+	}
+	if *expected == "" {
+		return 0, core.Usagef("--expected is required")
+	}
+	decl, err := loadDeclFrom(c.PublisherRoot, c.ExportDecl)
+	if err != nil {
+		return 0, err
+	}
+	if *write {
+		if *consumerRoot != "" {
+			return 0, core.Usagef("--write refreshes from the publisher " +
+				"tree; it cannot be combined with --consumer-root")
+		}
+		entries, err := core.WriteExpectedLocalisation(decl, c.PublisherRoot, *expected)
+		if err != nil {
+			return 0, err
+		}
+		surface.EmitOutput("written", fmt.Sprint(entries))
+		return 0, nil
+	}
+	exp, err := core.LoadLocalisationExpectations(*expected)
+	if err != nil {
+		return 0, err
+	}
+	report, err := core.VerifyLocalisation(decl, c.PublisherRoot, *consumerRoot,
+		exp, *profile)
+	if err != nil {
+		return 0, err
+	}
+	for _, f := range report.Findings {
+		fmt.Println(f.String())
+	}
+	surface.EmitOutput("findings", fmt.Sprint(len(report.Findings)))
+	surface.EmitOutput("checked", fmt.Sprint(report.Checked))
+	if c.JSON {
+		findings := report.Findings
+		if findings == nil {
+			findings = []core.LocalisationFinding{}
+		}
+		doc, _ := json.Marshal(findings)
+		fmt.Println(string(doc))
+	}
+	if len(report.Findings) > 0 {
+		surface.EmitError(fmt.Sprintf("verify-localisation: %d finding(s) — "+
+			"localised output does not match the declared expectations",
+			len(report.Findings)))
+		return 1, nil
+	}
 	return 0, nil
 }
 

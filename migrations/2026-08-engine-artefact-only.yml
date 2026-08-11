@@ -1,0 +1,37 @@
+schema_version: 1
+id: 2026-08-engine-artefact-only
+applies_from: v3.0.0
+kind: structural
+profiles: ["*"]
+summary: >-
+  The engine's Go sources leave the machinery slice: the engine now ships only
+  as the pinned, checksummed release artefact (DR-0016, DR-0020).
+rationale: >-
+  The vendored engine source was inert in every consumer tree — execution moved
+  to the pinned release binary in DR-0016, and correctness is ratcheted
+  upstream by the scenario kit, not by downstream review. Meanwhile the inert
+  copy churned every consumer on engine-internal refactors and failed the
+  manifest freshness gate on every dependency bump. DR-0020 re-classes the
+  engine from content to executor: its integrity story is the consumer-held
+  checksum pin, not the vendored-tree manifest. See DR-0020.
+detection:
+  - glob: "cmd/vendkit/**"
+  - glob: "internal/**"
+  - glob: "assets.go"
+instructions: >-
+  Sync deletes the vendored engine sources (cmd/, internal/, assets.go, and
+  the engine's go.mod/go.sum) as an ordinary deletions-only delta. Before
+  adopting v3.0.0, make sure the slice config's engine pin (engine: {version,
+  sha256}) is populated and the scaffolded pipelines fetch the pinned binary —
+  with the sources gone there is no in-tree fallback. Update any CODEOWNERS
+  entries, path filters, or branch policies that name the vendored engine
+  paths. If your repository wants a Go module of its own after the vendored
+  go.mod/go.sum are removed, author fresh files — the removed ones described
+  the engine, not your repository.
+verification:
+  must_be_absent:
+    - "cmd/vendkit/**"
+    - "internal/ci/**"
+    - "internal/core/**"
+    - "internal/docsgen/**"
+    - "assets.go"

@@ -40,6 +40,20 @@ One static Go binary, scaffolds embedded:
 go install github.com/jameswbaxter/vendkit/cmd/vendkit@latest
 ```
 
+For the pinned, checksum-verified path (what CI and consumers should run),
+bootstrap the released `vendkitw` launcher instead — it fetches the pinned
+engine, verifies it against the release's `SHA256SUMS.txt` before executing
+anything, and caches it outside the repo. One verified download, after which
+`vendkit init` scaffolds the copy your repo keeps:
+
+```sh
+V=vX.Y.Z   # pick a release tag (vendkitw ships from v2.1.0)
+BASE=https://github.com/jameswbaxter/vendkit/releases/download/$V
+curl -fsSLO "$BASE/vendkitw" && curl -fsSLO "$BASE/SHA256SUMS.txt"
+grep ' vendkitw$' SHA256SUMS.txt | sha256sum -c -   # macOS: shasum -a 256 -c -
+chmod +x vendkitw && VENDKIT_VERSION=$V ./vendkitw explain list
+```
+
 ### Publish a slice
 
 In the repo that owns the canonical files, `vendkit-export.yml` declares

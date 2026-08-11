@@ -3,8 +3,9 @@ name: Release
 # Cut a release by pushing a SemVer tag, e.g.:
 #   git tag v0.1.0 && git push origin v0.1.0
 # Builds static binaries for every supported platform, checksums them, and
-# publishes a GitHub Release with the binaries + SHA256SUMS.txt attached
-# (DR-0016: the engine ships as a checksummed, pinnable artefact).
+# publishes a GitHub Release with the binaries + the vendkitw bootstrap
+# launcher + SHA256SUMS.txt attached (DR-0016: the engine — and its
+# bootstrap — ship as checksummed, pinnable artefacts).
 
 on:
   push:
@@ -48,15 +49,21 @@ jobs:
             GOOS=$os GOARCH=$arch go build -trimpath -ldflags='-s -w' -o "$out" ./cmd/vendkit
           done
 
+      - name: Attach the bootstrap launcher (DR-0016 amendment)
+        # vendkitw is released byte-identical to the in-tree copy `vendkit
+        # init` scaffolds, so either can be verified against SHA256SUMS.txt.
+        run: cp scaffold/vendkitw dist/vendkitw
+
       - name: Checksums
         working-directory: dist
-        run: sha256sum vendkit_* > SHA256SUMS.txt
+        run: sha256sum vendkit_* vendkitw > SHA256SUMS.txt
 
       - name: Publish GitHub Release
         uses: softprops/action-gh-release@v3
         with:
           files: |
             dist/vendkit_*
+            dist/vendkitw
             dist/SHA256SUMS.txt
           generate_release_notes: true
 

@@ -167,11 +167,13 @@ scaffolded consumer pipelines invoke the pinned `vendkit` binary directly —
 same guarantees, fewer moving parts.
 
 **Self-hosting.** The framework repository is its own first publisher: it
-exports the engine, handlers, templates and scaffolder as a slice, cuts releases
-with its own release command, and gates itself with its own gate lane. Downstream
-publishers vendor the machinery slice and layer their own content slices on top
-(tier chain). Bootstrap is unproblematic: the release freshness pre-gate needs
-only the working tree.
+exports its pipeline scaffolds and core conformance rules as a slice, cuts
+releases with its own release command, and gates itself with its own gate lane.
+The engine is not part of the slice — it reaches every tier as the pinned,
+checksummed release artefact (DR-0016, DR-0020). Downstream publishers vendor
+the machinery slice and layer their own content slices on top (tier chain).
+Bootstrap is unproblematic: the release freshness pre-gate needs only the
+working tree.
 
 ## 5. Multi-slice consumers
 

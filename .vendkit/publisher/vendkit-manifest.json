@@ -19,7 +19,7 @@
       "exec": false,
       "path": "cmd/vendkit/cmds.go",
       "raw": false,
-      "sha256": "737d63b7797a8531c9388e14b01fbcbc1b4b3c9943cdb0208bdab87c50f91c39"
+      "sha256": "0e6b27daf55d59a65642a8158bb0b66674b7a870070030cf892ca9bf386e3439"
     },
     {
       "consumer_path": "cmd/vendkit/fleet.go",
@@ -47,7 +47,7 @@
       "exec": false,
       "path": "cmd/vendkit/main.go",
       "raw": false,
-      "sha256": "24e0b82521d0029626f6aefa5e85df2f3d981c3fa9de83061108e860417ad5be"
+      "sha256": "5b1d781b750cf59d88ee7510bf207c4a2500ae5df82dc957064973538a299054"
     },
     {
       "consumer_path": "cmd/vendkit/pushhint.go",
@@ -96,7 +96,7 @@
       "exec": false,
       "path": "internal/core/adapters.go",
       "raw": false,
-      "sha256": "76b4fa29114e410aca02d21eb0820da6320c11b6add3a4dfcf2215e9d65183cb"
+      "sha256": "0ce0b62ac6183cada6716c11495a265febad7cefa2cec42ad46e72e9eb56b329"
     },
     {
       "consumer_path": "internal/core/canonjson.go",
@@ -146,6 +146,13 @@
       "path": "internal/core/handlers.go",
       "raw": false,
       "sha256": "5780f9daf3331d83f7963263c43ef3678fb73642bcbc81f8adb0ae62a75b5673"
+    },
+    {
+      "consumer_path": "internal/core/localisation.go",
+      "exec": false,
+      "path": "internal/core/localisation.go",
+      "raw": false,
+      "sha256": "0d9c7f2953495a487ca48a1bf8701e8f4b9bfe1fcadd318d1bde910f7cde17cf"
     },
     {
       "consumer_path": "internal/core/manifest.go",

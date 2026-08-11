@@ -3,14 +3,14 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>DR-0009 — Content adapters: identity copy by default, named transforms by declaration · VendKit docs v3.0.0</title>
+<title>DR-0020 — Slim the machinery slice: the engine ships as artefact only · VendKit docs v3.0.0</title>
 <link rel="stylesheet" href="../assets/docs.css">
 <script>(function(){try{var t=localStorage.getItem('vk-theme');if(t==='dark'||t==='light')document.documentElement.setAttribute('data-theme',t);}catch(e){}})();</script>
 </head>
 <body>
 <header class="vk-top"><div class="vk-topwrap">
 <a class="vk-brand" href="../index.html"><span class="vk-bdot"></span>vendkit docs</a>
-<select class="vk-vers" aria-label="Documentation version" data-current="v3.0.0" data-root="../../" data-rel="design/DR-0009-content-adapters.html">
+<select class="vk-vers" aria-label="Documentation version" data-current="v3.0.0" data-root="../../" data-rel="design/DR-0020-slim-machinery-slice.html">
   <option value="v3.0.0" selected>v3.0.0 (latest)</option>
   <option value="v2.1.1">v2.1.1</option>
   <option value="v2.1.0">v2.1.0</option>
@@ -56,7 +56,7 @@
   <li><a class="vk-nav-link" href="../design/DR-0006-pull-with-push-hints.html">DR-0006 — Pull reconciliation with optional push hints</a></li>
   <li><a class="vk-nav-link" href="../design/DR-0007-platform-ports.html">DR-0007 — ADO and GitHub Actions as peer backends behind a port interface</a></li>
   <li><a class="vk-nav-link" href="../design/DR-0008-declarative-migrations.html">DR-0008 — Declarative migrations with deterministic verification</a></li>
-  <li><a class="vk-nav-link is-active" href="../design/DR-0009-content-adapters.html">DR-0009 — Content adapters: identity copy by default, named transforms by declaration</a></li>
+  <li><a class="vk-nav-link" href="../design/DR-0009-content-adapters.html">DR-0009 — Content adapters: identity copy by default, named transforms by declaration</a></li>
   <li><a class="vk-nav-link" href="../design/DR-0010-review-gated-scope.html">DR-0010 — Scope changes are reviewed PR events, never automatic</a></li>
   <li><a class="vk-nav-link" href="../design/DR-0011-single-cli-stdlib-gate.html">DR-0011 — One CLI; dependency-free consumer gate path</a></li>
   <li><a class="vk-nav-link" href="../design/DR-0012-consumer-config-consolidation.html">DR-0012 — One consumer config file per slice under `.vendkit/`</a></li>
@@ -67,55 +67,105 @@
   <li><a class="vk-nav-link" href="../design/DR-0017-single-implementation-go.html">DR-0017: Single engine implementation in Go, with the scenario kit as the parity ratchet</a></li>
   <li><a class="vk-nav-link" href="../design/DR-0018-versioned-docs-generator.html">DR-0018: Versioned docs site from a pure-Go static generator</a></li>
   <li><a class="vk-nav-link" href="../design/DR-0019-vendkit-dir-two-halves.html">DR-0019 — `.vendkit/` has two halves: `consumer/` and `publisher/`</a></li>
-  <li><a class="vk-nav-link" href="../design/DR-0020-slim-machinery-slice.html">DR-0020 — Slim the machinery slice: the engine ships as artefact only</a></li>
+  <li><a class="vk-nav-link is-active" href="../design/DR-0020-slim-machinery-slice.html">DR-0020 — Slim the machinery slice: the engine ships as artefact only</a></li>
   <li><a class="vk-nav-link" href="../design/README.html">Design records</a></li>
   <li><a class="vk-nav-link" href="../design/TEMPLATE.html">DR-NNNN — Title</a></li>
 </ul>
 </nav>
 <main class="vk-main"><article class="vk-doc">
-<h1 id="dr-0009--content-adapters-identity-copy-by-default-named-transforms-by-declaration">DR-0009 — Content adapters: identity copy by default, named transforms by declaration</h1>
+<h1 id="dr-0020--slim-the-machinery-slice-the-engine-ships-as-artefact-only">DR-0020 — Slim the machinery slice: the engine ships as artefact only</h1>
 <ul>
 <li><strong>Status:</strong> accepted</li>
-<li><strong>Date:</strong> 2026-07-08</li>
+<li><strong>Date:</strong> 2026-08-11</li>
+<li><strong>Supersedes:</strong> amends <a href="DR-0001-vendored-identity-copies.html">DR-0001</a>'s
+engine clause; completes the direction set by
+<a href="DR-0016-engine-as-pinned-artefact.html">DR-0016</a></li>
 </ul>
 <h2 id="context">Context</h2>
-<p>Vendoring is most trustworthy when the consumer's copy is byte-identical to the
-publisher's at the same path — diffable against upstream, identical at every
-tier hop. But two real needs break pure identity: vendored files landing in a
-shared directory can shadow consumer-owned files with the same name
-(namespacing), and some file formats carry publisher-side unions that should be
-pruned to what a given consumer actually hosts (localisation) to avoid
-permanent dead configuration.</p>
+<p>DR-0001 committed the framework to identity copies at every hop of the tier
+chain, &quot;including the framework's own engine, which downstream publishers
+vendor rather than install.&quot; That sentence was written when the engine was
+interpreted Python: the vendored source <em>was</em> the executable, so vendoring it
+put the engine under the same manifest, checksum and review regime as every
+other slice file at zero extra cost.</p>
+<p>Two later decisions removed that identity. DR-0017 replaced the Python engine
+with a compiled Go binary, and DR-0016 moved execution to a released,
+per-platform, checksummed artefact that consumers pin by version and sha256 —
+explicitly rejecting both <code>go run</code> from the vendored checkout (a toolchain on
+every runner) and vendoring the binary itself (bloat and churn). The Go
+sources entered the export declaration during the DR-0017 transition,
+alongside the Python reference they replaced, and simply stayed after the
+cutover; no DR ever re-justified them.</p>
+<p>The result is a dual distribution channel. The pinned binary is what every
+scaffolded pipeline actually fetches, verifies and runs. The exported source
+(<code>cmd/**</code>, <code>internal/**</code>, <code>assets.go</code>, <code>go.mod</code>, <code>go.sum</code>) is inert in every
+consumer tree: nobody downstream builds it, and engine correctness is enforced
+upstream by the golden vectors and the scenario kit, not by downstream review.
+Meanwhile the inert copy has real costs:</p>
+<ul>
+<li>Every engine-internal refactor churns the manifest and lands a sync PR of
+Go diffs in every downstream tree — review noise with no decision content.</li>
+<li>Any dependency bump touches <code>go.mod</code>/<code>go.sum</code>, so mechanical PRs (Dependabot
+and the like) fail the manifest freshness gate unless someone regenerates
+the manifest by hand on each such branch.</li>
+<li>Consumer trees carry dozens of Go files whose only realistic fate is to be
+ignored.</li>
+</ul>
 <h2 id="decision">Decision</h2>
-<p>The <strong>identity copy is the default and the norm</strong>: verbatim bytes, identical
-path. Deviations exist only as <strong>named adapters declared in the export
-declaration</strong> — v1 ships exactly two (<code>prefix-namespace</code>, <code>glob-localise</code>).
-Adapters must be deterministic pure functions of (file bytes, adapter params,
-consumer profile name); they may never read the consumer tree. The consumer
-manifest hashes the <strong>post-adapter</strong> bytes, so adapted files are drift-gated
-exactly like identity copies, and unknown adapter kinds are a hard error rather
-than a silent skip.</p>
+<p>The machinery slice exports what consumers actually consume in-tree, and
+nothing else:</p>
+<ul>
+<li><code>scaffold/*/*.tmpl</code> — the consumer pipeline scaffolds</li>
+<li><code>conformance/core-rules.yml</code> — the default wiring rules</li>
+<li><code>LICENSE</code></li>
+</ul>
+<p>The engine's Go sources, <code>assets.go</code>, <code>go.mod</code> and <code>go.sum</code> leave the export.
+The engine's sole distribution channel is the DR-0016 release artefact:
+per-platform binaries plus a checksum file, pinned by <code>engine: {version, sha256}</code> in each consumer's slice config and re-asserted by <code>self-verify</code>.</p>
+<p>DR-0001's identity-copy rule continues to hold for all slice <em>content</em>, at
+every hop. This DR re-classes the engine from content to executor: its
+integrity story is the consumer-held checksum pin and tag-anchored release
+provenance (DR-0005), not the vendored-tree manifest.</p>
 <h2 id="alternatives-considered">Alternatives considered</h2>
 <ul>
-<li><strong>Pure identity, no adapters.</strong> Namespacing collisions push consumers to
-rename vendored files by hand — instant drift; dead union config generates
-permanent noise that trains consumers to ignore advisories.</li>
-<li><strong>Arbitrary transform hooks (scripts in the declaration).</strong> Unbounded,
-unreviewable transforms would break INV-2 (purity) and the security model's
-&quot;no inline upstream code&quot; rule.</li>
-<li><strong>Consumer-side patch overlays (quilt-style).</strong> Local patches over vendored
-files are precisely hand-drift with extra steps; they invert the ownership
-model.</li>
+<li><strong>Status quo — keep exporting the source.</strong> Preserves DR-0001's letter, but
+the reviewability it buys is theoretical: downstream publishers neither
+build nor meaningfully review engine internals, and parity is already
+ratcheted upstream (DR-0017). The dual channel makes every internal
+refactor a downstream event and every dependency bump a gate failure.
+Rejected.</li>
+<li><strong>Drop only <code>go.mod</code>/<code>go.sum</code>.</strong> Stops the dependency-bump churn but leaves
+an unbuildable source export — worse than either a complete source slice or
+none. Rejected.</li>
+<li><strong>Vendor the engine binary instead of the source.</strong> Already considered and
+rejected in DR-0016 (tens of MB per platform, churn on every release).</li>
+<li><strong>Keep source as the execution path (<code>go run</code>).</strong> Already rejected in
+DR-0016 (compiler on every runner, larger supply-chain surface than a
+checksummed static binary).</li>
 </ul>
 <h2 id="consequences">Consequences</h2>
 <ul>
-<li>New adapter kinds require a framework MAJOR (consumers' engines must
-understand every kind their manifests were produced with).</li>
-<li>Adapter output stability gets property tests (testing §1); INV-1 must hold
-across adapter configurations.</li>
-<li>Cross-hop identity means a tier-2 publisher re-exports vendored files
-byte-identically — enabling, with INV-7 disjointness, coherent multi-slice
-consumers.</li>
+<li>The manifest shrinks from ~60 entries to a handful; engine-internal changes
+no longer generate downstream sync PRs, and <code>go.mod</code>/<code>go.sum</code> changes no
+longer touch the manifest, so dependency-only PRs pass the freshness gate
+without hand-regeneration.</li>
+<li>Tier chains still hold the engine's integrity at every hop — as the
+checksum pin in each consumer's slice config rather than as source bytes in
+the tree. Downstream publishers re-export scaffolds and rules; the engine
+reaches every hop as the same tag-anchored artefact.</li>
+<li>Air-gapped consumers keep the DR-0016 story (mirror the artefacts, override
+the fetch URL; the pin still decides trust) but lose the in-tree source
+fallback. Building from a tagged framework-repo checkout remains available
+to anyone who needs it.</li>
+<li>DR-0001 is amended, not edited: its engine sentence is historical as of
+this DR (DRs are immutable once accepted).</li>
+<li>Obligations: the export declaration and regenerated manifest change with
+this DR; architecture §4's self-hosting paragraph is updated to match.
+Removing vendored engine sources from existing consumer trees is a normal
+release delta — consumers pick it up as an ordinary sync PR whose diff is
+deletions.</li>
+<li>Bootstrap is unchanged: the release freshness pre-gate needs only the
+working tree.</li>
 </ul>
 
 </article>

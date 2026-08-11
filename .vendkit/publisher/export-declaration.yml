@@ -19,6 +19,7 @@ include:
   - "go.sum"
   - "conformance/core-rules.yml"
   - "scaffold/*/*.tmpl"
+  - "scaffold/vendkitw"
   - "LICENSE"
 
 exclude:

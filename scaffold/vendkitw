@@ -1,0 +1,152 @@
+#!/usr/bin/env bash
+# vendkitw — the VendKit bootstrap launcher (DR-0016, amendment: the bootstrap
+# is part of the released artefact set).
+#
+# Resolves the pinned engine version, downloads the matching release asset,
+# verifies it against the release's own SHA256SUMS.txt BEFORE anything is
+# installed or executed, caches it outside the repository, and execs it with
+# the caller's arguments. Engine-owned: this file is released as a checksummed
+# asset beside the engine binaries and written into consumers by
+# `vendkit init` — byte-identical in both places, so it can always be compared
+# against a release's SHA256SUMS.txt.
+#
+# Version resolution order (loud failure — never a silent fallback to an
+# unpinned or unverified fetch):
+#   1. VENDKIT_BIN      escape hatch: exec this binary directly, no fetch;
+#   2. VENDKIT_VERSION  explicit version override (also the publisher-side
+#                       path, where no consumer slice config exists);
+#   3. engine.version   from .vendkit/consumer/*.yml, found by walking up
+#                       from the current directory; every slice config that
+#                       carries an engine pin must agree.
+#
+# Release-asset base URL:
+#   1. VENDKIT_BASE_URL override — mirror, feed, or blob store for
+#      offline/air-gapped use; the checksum still decides trust;
+#   2. derived from the slice config's `publisher: {scm: github,
+#      repo: owner/name}` as that repo's GitHub release assets. Anything
+#      else (azure-repos, full URLs) requires VENDKIT_BASE_URL.
+#
+# Cache: ${VENDKIT_CACHE_DIR:-${XDG_CACHE_HOME:-$HOME/.cache}/vendkit}/
+# <version>/<os>_<arch>/ — keyed by version and platform, outside the repo.
+# A cached binary was checksum-verified when it was installed;
+# `vendkit self-verify` additionally re-asserts the consumer-held
+# engine.sha256 pin on every scaffolded lane.
+
+set -euo pipefail
+
+die() { echo "vendkitw: $*" >&2; exit 1; }
+
+# Escape hatch: an explicit local binary, no fetch, no verify — the caller
+# has taken over trust (e.g. a from-source build during development).
+if [ -n "${VENDKIT_BIN:-}" ]; then
+  exec "$VENDKIT_BIN" "$@"
+fi
+
+# find_root: nearest ancestor (including .) holding .vendkit/consumer/.
+find_root() {
+  dir="$PWD"
+  while :; do
+    if [ -d "$dir/.vendkit/consumer" ]; then printf '%s\n' "$dir"; return 0; fi
+    [ "$dir" = "/" ] && return 1
+    dir="$(dirname "$dir")"
+  done
+}
+
+# cfg_value <file> <key>: a two-space-indented "  key: value" line — the
+# indent the scaffolder emits for engine.version and the publisher block;
+# nothing else in a slice config carries these keys at that indent.
+cfg_value() {
+  sed -n "s/^  $2: //p" "$1" | head -n 1 | tr -d '\r' | sed 's/^"//;s/"$//'
+}
+
+version="${VENDKIT_VERSION:-}"
+pin_cfg=""
+if [ -z "$version" ]; then
+  root="$(find_root)" || die "no .vendkit/consumer/ found above $PWD — run from a consumer repo, or set VENDKIT_VERSION (or VENDKIT_BIN)"
+  for cfg in "$root"/.vendkit/consumer/*.yml; do
+    [ -e "$cfg" ] || continue
+    v="$(cfg_value "$cfg" version)"
+    [ -n "$v" ] || continue
+    if [ -z "$version" ]; then
+      version="$v"; pin_cfg="$cfg"
+    elif [ "$v" != "$version" ]; then
+      die "slice configs disagree on engine.version ($version vs $v in ${cfg#"$root"/}) — set VENDKIT_VERSION to arbitrate"
+    fi
+  done
+  [ -n "$version" ] || die "no engine.version in $root/.vendkit/consumer/*.yml — fill the engine pin (DR-0016) or set VENDKIT_VERSION"
+fi
+
+base="${VENDKIT_BASE_URL:-}"
+if [ -z "$base" ]; then
+  # VENDKIT_VERSION skips config discovery; a slice config can still supply
+  # the publisher coordinates for the URL.
+  if [ -z "$pin_cfg" ]; then
+    if root="$(find_root)"; then
+      for cfg in "$root"/.vendkit/consumer/*.yml; do
+        [ -e "$cfg" ] || continue
+        if [ -n "$(cfg_value "$cfg" repo)" ]; then pin_cfg="$cfg"; break; fi
+      done
+    fi
+  fi
+  [ -n "$pin_cfg" ] || die "no slice config to derive the release-asset URL from — set VENDKIT_BASE_URL"
+  scm="$(cfg_value "$pin_cfg" scm)"
+  repo="$(cfg_value "$pin_cfg" repo)"
+  [ "$scm" = "github" ] || die "publisher.scm is ${scm:-unset} — release assets can only be derived for github; set VENDKIT_BASE_URL (always required for azure-repos publishers)"
+  case "$repo" in
+    ""|*://*|*@*|*/*/*)
+      die "publisher.repo ${repo:-is unset and} is not an owner/name shorthand — set VENDKIT_BASE_URL" ;;
+    */*) : ;;
+    *)
+      die "publisher.repo $repo is not an owner/name shorthand — set VENDKIT_BASE_URL" ;;
+  esac
+  base="https://github.com/${repo}/releases/download/${version}"
+fi
+
+case "$(uname -s)" in
+  Linux)                os=linux ;;
+  Darwin)               os=darwin ;;
+  MINGW*|MSYS*|CYGWIN*) os=windows ;;
+  *) die "unsupported OS $(uname -s)" ;;
+esac
+arch="$(uname -m)"
+case "$arch" in
+  aarch64|arm64) arch=arm64 ;;
+  x86_64|amd64)  arch=amd64 ;;
+  *) die "unsupported architecture $arch" ;;
+esac
+ext=""; [ "$os" = windows ] && ext=".exe"
+asset="vendkit_${version}_${os}_${arch}${ext}"
+
+cache_root="${VENDKIT_CACHE_DIR:-${XDG_CACHE_HOME:-$HOME/.cache}/vendkit}"
+bin_dir="${cache_root}/${version}/${os}_${arch}"
+bin="${bin_dir}/vendkit${ext}"
+
+if [ ! -x "$bin" ]; then
+  command -v curl >/dev/null 2>&1 || die "curl is required to fetch the engine"
+  tmp="$(mktemp -d)"
+  trap 'rm -rf "$tmp"' EXIT
+  curl -fsSL -o "$tmp/$asset" "$base/$asset" \
+    || die "download failed: $base/$asset"
+  curl -fsSL -o "$tmp/SHA256SUMS.txt" "$base/SHA256SUMS.txt" \
+    || die "download failed: $base/SHA256SUMS.txt — refusing to run an unverified engine"
+  # `|| true`: under set -e/pipefail a no-match grep would kill the script
+  # inside the substitution, silently — the loud die below must own this.
+  want="$(grep " ${asset}\$" "$tmp/SHA256SUMS.txt" | cut -d' ' -f1 || true)"
+  [ -n "$want" ] || die "no checksum for $asset in SHA256SUMS.txt — refusing to run an unverified engine"
+  # Portable sha256: sha256sum (linux, git-bash), shasum -a 256 (macOS).
+  if command -v sha256sum >/dev/null 2>&1; then
+    echo "$want  $tmp/$asset" | sha256sum -c - >/dev/null \
+      || die "checksum mismatch for $asset — refusing to run it"
+  else
+    echo "$want  $tmp/$asset" | shasum -a 256 -c - >/dev/null \
+      || die "checksum mismatch for $asset — refusing to run it"
+  fi
+  mkdir -p "$bin_dir"
+  chmod +x "$tmp/$asset"
+  mv -f "$tmp/$asset" "$bin"
+  # exec never returns, so the EXIT trap would not fire — clean up here.
+  rm -rf "$tmp"
+  trap - EXIT
+fi
+
+exec "$bin" "$@"

@@ -115,6 +115,8 @@ usage error, never a guess. Three phases:
 | Sync pipeline (per slice; schedule + optional push hint) | `.github/workflows/<slice>-sync.yml` | `azure-pipelines/<slice>-sync.yml` | — | always |
 | Watch pipeline (all slices; weekly + PR dry-run self-test) | `.github/workflows/vendkit-watch.yml` | `azure-pipelines/vendkit-watch.yml` | — | primary only |
 | Conformance pipeline (advisory) | `.github/workflows/vendkit-conformance.yml` | `azure-pipelines/vendkit-conformance.yml` | — | primary only |
+| Engine fetch template — reusable steps for the consumer's OWN pipelines | `.github/actions/vendkit-fetch/action.yml` (composite action) | `azure-pipelines/vendkit-fetch.yml` (steps template) | — | primary only |
+| Bootstrap launcher (byte-identical to the `vendkitw` release asset; §5) | `./vendkitw` | same | same | always; skipped if present |
 | Slice config | `.vendkit/consumer/<slice>.yml` | same | same | always |
 | Slice manifest | `.vendkit/consumer/<slice>-manifest.json` | same | same | always |
 | CODEOWNERS stanza covering `.vendkit/` | **opt-in** via `--codeowners` (scm github only) | refused: Azure Repos does not honour CODEOWNERS — required-reviewers policy on the checklist instead | scm-dependent | opt-in |
@@ -148,6 +150,17 @@ conformance `pipeline-wired` rules keep the wiring honest.
   engine binary, verifies it against the release `SHA256SUMS.txt`, caches it,
   and runs `vendkit self-verify` against the `engine.sha256` pin before the
   lane proper — no interpreter, no build step on the runner.
+- **Launcher + fetch template (DR-0016 amendment):** the same
+  resolve → fetch → verify-before-exec order is scaffolded twice over for
+  everything that is *not* a scaffolded lane: `./vendkitw` for humans and
+  `ci: none` repos (resolves `engine.version` from the slice config, caches
+  under XDG outside the repo, and never degrades to an unpinned or
+  unverified fetch), and the reusable fetch template for consumer-authored
+  pipelines. Both are engine-owned: a consumer never hand-rolls the
+  trust-boundary fetch. The launcher and the fetch template are
+  consumer-owned files after scaffolding (like every scaffold output) and
+  are deliberately byte-identical to / derived from the released,
+  checksummed originals, so they can always be compared upstream.
 - **Push hint:** `--push-hint` (off by default) adds the `resources.pipelines`
   trigger (azure-pipelines) or the `repository_dispatch` receiver
   (github-actions) to the sync pipeline — the consumer *receiver* side of the
@@ -179,3 +192,28 @@ conformance `pipeline-wired` rules keep the wiring honest.
 Each maps 1:1 to a conformance rule, so "fully onboarded" is
 `vendkit conformance --strict` passing — the onboarding checklist and the
 conformance spec can never diverge.
+
+## 5. Bootstrap: acquiring the engine before init
+
+Chicken-and-egg: running a pinned, checksum-verified VendKit needs a bootstrap
+step, and that step must itself be a released, checksummable artefact — never
+a recipe each adopter retypes and quietly edits (DR-0016 amendment). The
+one-time acquisition is a literal, verifiable download from a tagged release:
+
+```sh
+V=vX.Y.Z  # the engine release you are bootstrapping from
+BASE=https://github.com/jameswbaxter/vendkit/releases/download/$V
+curl -fsSLO "$BASE/vendkitw" && curl -fsSLO "$BASE/SHA256SUMS.txt"
+grep ' vendkitw$' SHA256SUMS.txt | sha256sum -c -   # macOS: shasum -a 256 -c -
+chmod +x vendkitw
+```
+
+From here the launcher fetches, verifies, and caches the engine itself
+(`VENDKIT_VERSION=$V ./vendkitw …` until a slice config carries the pin), and
+once `vendkit init` has run it owns the in-tree copy — the bootstrap file and
+the scaffolded file are byte-identical, so `SHA256SUMS.txt` vouches for both.
+Equivalently, download the full engine binary the same verified way and run
+`init` from it; the launcher is then purely the convenience for subsequent
+runs. Either way the acquisition step is documented, tagged, and checksummed —
+`go install …@latest` deliberately is not this path: it needs a toolchain and
+pins nothing.

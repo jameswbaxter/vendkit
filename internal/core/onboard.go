@@ -24,15 +24,25 @@ var scaffoldOutputs = map[string][]scaffoldOutput{
 		{"watch.yml.tmpl", ".github/workflows/vendkit-watch.yml", true},
 		{"conformance.yml.tmpl", ".github/workflows/vendkit-conformance.yml", true},
 		{"sync.yml.tmpl", ".github/workflows/__SLICE__-sync.yml", false},
+		// Reusable engine fetch for consumer-AUTHORED pipelines (DR-0016
+		// amendment): carries an engine pin line, so it is a pin file.
+		{"fetch.yml.tmpl", ".github/actions/vendkit-fetch/action.yml", true},
 	},
 	"azure-pipelines": {
 		{"gate.yml.tmpl", "azure-pipelines/vendkit-gate.yml", true},
 		{"watch.yml.tmpl", "azure-pipelines/vendkit-watch.yml", true},
 		{"conformance.yml.tmpl", "azure-pipelines/vendkit-conformance.yml", true},
 		{"sync.yml.tmpl", "azure-pipelines/__SLICE__-sync.yml", false},
+		{"fetch.yml.tmpl", "azure-pipelines/vendkit-fetch.yml", true},
 	},
 	"none": {},
 }
+
+// LauncherName: the bootstrap launcher, written at the consumer root by
+// Onboard and released as a checksummed asset (DR-0016 amendment). The two
+// copies are byte-identical — no placeholders — so either can be compared
+// against a release's SHA256SUMS.txt.
+const LauncherName = "vendkitw"
 
 // HandlerModules: consumer-scm → the `vendkit handler <arg>` reference
 // handler built into the binary (handler-protocol spec §6, DR-0016). Any
@@ -150,14 +160,24 @@ func Onboard(publisherRoot, consumerRoot string, decl *ExportDecl,
 	}
 	var pinFiles []string
 	if p.CI != "none" {
-		pinFile := strings.ReplaceAll(outputs[3].OutRel, "__SLICE__", decl.SliceName)
-		// Every scaffolded workflow this slice pins gets advanced in
-		// lockstep by the sync PR (sync spec §3 step 4). Additive slices
-		// own only their sync pipeline.
-		pinFiles = []string{pinFile}
+		// Every scaffolded file this slice pins gets advanced in lockstep by
+		// the sync PR (sync spec §3 step 4): the slice's own sync pipeline
+		// first (the authoritative read source), then — for the primary
+		// slice, which owns the shared machinery — every shared output
+		// (gate, watch, conformance, and the reusable fetch template, which
+		// carries an engine pin line of its own). Additive slices own only
+		// their sync pipeline.
+		for _, o := range outputs {
+			if !o.PrimaryOnly {
+				pinFiles = append(pinFiles,
+					strings.ReplaceAll(o.OutRel, "__SLICE__", decl.SliceName))
+			}
+		}
 		if p.Mode == "primary" {
-			for _, o := range outputs[:3] {
-				pinFiles = append(pinFiles, o.OutRel)
+			for _, o := range outputs {
+				if o.PrimaryOnly {
+					pinFiles = append(pinFiles, o.OutRel)
+				}
 			}
 		}
 	}
@@ -208,6 +228,22 @@ func Onboard(publisherRoot, consumerRoot string, decl *ExportDecl,
 			return nil, Errf("write %s: %v", outPath, err)
 		}
 		result.Written = append(result.Written, outPath)
+	}
+
+	// 3b. The bootstrap launcher (DR-0016 amendment): written verbatim for
+	// EVERY ci mode — local gate/conformance runs need a pinned, verified
+	// engine as much as CI does, and `ci: none` most of all. Skipped when
+	// present, so re-onboarding (additive mode) never clobbers it.
+	launcherPath := filepath.Join(consumerRoot, LauncherName)
+	if _, err := os.Stat(launcherPath); os.IsNotExist(err) {
+		launcher, err := fs.ReadFile(scaffoldFS, "scaffold/"+LauncherName)
+		if err != nil {
+			return nil, Errf("embedded launcher %s: %v", LauncherName, err)
+		}
+		if err := os.WriteFile(launcherPath, launcher, 0o755); err != nil {
+			return nil, Errf("write %s: %v", launcherPath, err)
+		}
+		result.Written = append(result.Written, launcherPath)
 	}
 
 	// 4. Ownership — opt-in, SCM-axis (DR-0015).

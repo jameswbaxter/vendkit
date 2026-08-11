@@ -115,3 +115,17 @@ jobs:
           "./vendkit${ext}" generate --check | tee out.txt
           grep -qx 'fresh=true' out.txt
           echo "OK: ${asset} downloaded, checksum-verified, and ran clean on $(uname -s)/$(uname -m)"
+
+          echo "=== bootstrap launcher: download, verify, run (DR-0016 amendment) ==="
+          # The documented one-time bootstrap (onboarding spec §5), performed
+          # literally: fetch vendkitw, verify it against SHA256SUMS.txt, then
+          # let it resolve/fetch/verify the engine itself and run a command.
+          curl -fsSL -o vendkitw "${base}/vendkitw"
+          wwant="$(grep ' vendkitw$' SHA256SUMS.txt | cut -d' ' -f1)"
+          if [ -z "$wwant" ]; then echo "no checksum for vendkitw" >&2; exit 1; fi
+          echo "${wwant}  vendkitw" | sha_check
+          chmod +x vendkitw
+          VENDKIT_VERSION="$VERSION" VENDKIT_BASE_URL="$base" \
+            VENDKIT_CACHE_DIR="$(mktemp -d)" ./vendkitw generate --check | tee wout.txt
+          grep -qx 'fresh=true' wout.txt
+          echo "OK: vendkitw downloaded, checksum-verified, and bootstrapped the engine"

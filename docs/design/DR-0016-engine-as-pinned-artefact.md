@@ -59,3 +59,33 @@ reintroduces a build step into the integrity path.
 - Until DR-0017 completes, the Python engine still rides the checkout and
   INV-6 applies in its original form; architecture.md carries a forward
   note.
+
+## Amendment (2026-08): the bootstrap is part of the artefact set
+
+Decision §2 left a gap: the fetch-verify-cache step itself was not shipped,
+so every adopter wrote it — ~150 lines of bash plus a CI counterpart — and
+one publisher ended up re-exporting its hand-rolled launcher in its own
+slice, becoming an unofficial distributor of the engine's entry point. The
+script that decides whether a downloaded engine is authentic sits inside the
+trust boundary, so it must be authored, versioned, and released by the
+project whose checksums it verifies.
+
+Amended decision:
+
+1. **`vendkitw` is engine-owned and released**: authored in-tree
+   (`scaffold/vendkitw`, embedded in the binary), attached to every release
+   beside the platform binaries, and listed in `SHA256SUMS.txt` like any
+   other asset.
+2. **`vendkit init` scaffolds it into consumers** (all `ci` modes,
+   byte-identical to the release asset), together with a per-pack reusable
+   `vendkit-fetch` CI template for consumer-authored pipelines
+   (onboarding spec §2–§3).
+3. **The launcher resolves its own pin** from `.vendkit/consumer/<slice>.yml`
+   `engine.version` (override: `VENDKIT_VERSION`; escape hatch:
+   `VENDKIT_BIN`; mirror: `VENDKIT_BASE_URL`), caches outside the repository
+   keyed by version/os/arch, verifies before exec, and fails loudly — it
+   never degrades to an unpinned or unverified fetch.
+4. **Acquisition is documented and checksummable** (onboarding spec §5): a
+   one-time verified download of `vendkitw` (or of a full binary) from a
+   tagged release — not a package-manager alias that cannot be checksummed
+   in advance, and not a README recipe each adopter retypes.

@@ -69,7 +69,13 @@ Credentials are resolved *by the party that spends them*:
   `VENDKIT_ENGINE_BASE_URL` you set — a mirror, feed, or blob store),
   verifies the checksum, caches it, then runs `vendkit self-verify` against
   the consumer-held `engine.sha256` pin. A swapped or wrong-version binary
-  fails loudly before it materialises anything.
+  fails loudly before it materialises anything. The same
+  resolve → fetch → verify-before-exec order is packaged engine-side for
+  everything that is not a scaffolded lane: the `vendkitw` launcher (local
+  runs, `ci: none`) and the per-pack `vendkit-fetch` template
+  (consumer-authored pipelines) — both scaffolded by `vendkit init`, both
+  released as / rendered from checksummed assets (DR-0016 amendment), so no
+  adopter hand-rolls the trust-boundary fetch.
 - **Handlers** resolve their own API tokens: `VENDKIT_TOKEN_<PURPOSE>`
   overrides, then vendor conventions.
 

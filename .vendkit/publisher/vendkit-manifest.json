@@ -187,7 +187,7 @@
       "exec": false,
       "path": "internal/core/onboard.go",
       "raw": false,
-      "sha256": "973ad15e69c42ca7a88a68baa415fbe7e887021c842807158d19424d343e19d6"
+      "sha256": "51cd22c2eee32d54cb4a5ef5ff8f719c8dd050120e0be9c6f3028f2b8e55e264"
     },
     {
       "consumer_path": "internal/core/release.go",
@@ -295,6 +295,13 @@
       "sha256": "bb3b7eecb47ff6448bc69fa25c592b2582ddea765a419de9d970a09aff4b0331"
     },
     {
+      "consumer_path": "scaffold/azure-pipelines/fetch.yml.tmpl",
+      "exec": false,
+      "path": "scaffold/azure-pipelines/fetch.yml.tmpl",
+      "raw": false,
+      "sha256": "7d7688e5d79f7c3b162178e0e1d24449d24d2305fedfeffb4e42448de1c65773"
+    },
+    {
       "consumer_path": "scaffold/azure-pipelines/gate.yml.tmpl",
       "exec": false,
       "path": "scaffold/azure-pipelines/gate.yml.tmpl",
@@ -323,6 +330,13 @@
       "sha256": "bb93e396c1a95f4d3a1137e00d316ee2b52a7f4ea26d5bb6f43f474bba82cab8"
     },
     {
+      "consumer_path": "scaffold/github-actions/fetch.yml.tmpl",
+      "exec": false,
+      "path": "scaffold/github-actions/fetch.yml.tmpl",
+      "raw": false,
+      "sha256": "2aa9b4d12f8ef84f173f861281200b0a75fc4d82c4abaf6dacd4465713532b65"
+    },
+    {
       "consumer_path": "scaffold/github-actions/gate.yml.tmpl",
       "exec": false,
       "path": "scaffold/github-actions/gate.yml.tmpl",
@@ -342,6 +356,13 @@
       "path": "scaffold/github-actions/watch.yml.tmpl",
       "raw": false,
       "sha256": "647a1f28b2e144f7358959773ba86d57b0a97b0da9015d5abe14e77df31db62d"
+    },
+    {
+      "consumer_path": "scaffold/vendkitw",
+      "exec": true,
+      "path": "scaffold/vendkitw",
+      "raw": false,
+      "sha256": "fce5b71f0e32e81952300c8ac9b908ced741404f8d6eab7540dda302b326a61e"
     }
   ],
   "normalisation": "utf8;lf;strip-trailing-ws;single-final-newline;sha256",

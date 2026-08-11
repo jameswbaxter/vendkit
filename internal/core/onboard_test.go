@@ -151,6 +151,17 @@ func TestOnboardEmitsEngineBaseURL(t *testing.T) {
 	if cfg.EngineBaseURL != "https://mirror.example/vendkit" {
 		t.Errorf("EngineBaseURL = %q, want the scaffolded value", cfg.EngineBaseURL)
 	}
+	// The scaffolded fetch steps default to the same committed root — the
+	// pipeline variable becomes an override, not a per-environment
+	// requirement.
+	action, err := os.ReadFile(filepath.Join(con,
+		".github", "actions", "vendkit-fetch", "action.yml"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(string(action), `root="https://mirror.example/vendkit"`) {
+		t.Errorf("fetch action lacks the committed engine root:\n%s", action)
+	}
 
 	con2 := t.TempDir()
 	if _, err := Onboard(pub, con2, decl, onboardParams("github-actions"),
@@ -163,6 +174,33 @@ func TestOnboardEmitsEngineBaseURL(t *testing.T) {
 	}
 	if !strings.Contains(string(data2), `base_url: ""`) {
 		t.Errorf("blank engine.base_url key not scaffolded:\n%s", data2)
+	}
+	action2, err := os.ReadFile(filepath.Join(con2,
+		".github", "actions", "vendkit-fetch", "action.yml"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(string(action2), `root=""`) {
+		t.Errorf("blank engine root must render empty (falling back to the "+
+			"pipeline variable / derivation):\n%s", action2)
+	}
+
+	// Azure lanes get the same default — the pipeline variable
+	// VENDKIT_ENGINE_BASE_URL is no longer required once the root is
+	// committed.
+	con3 := t.TempDir()
+	p3 := onboardParams("azure-pipelines")
+	p3.SCM = "azure-repos"
+	p3.EngineBaseURL = "https://mirror.example/vendkit"
+	if _, err := Onboard(pub, con3, decl, p3, vendkitassets.FS); err != nil {
+		t.Fatal(err)
+	}
+	fetch, err := os.ReadFile(filepath.Join(con3, "azure-pipelines", "vendkit-fetch.yml"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(string(fetch), `root="https://mirror.example/vendkit"`) {
+		t.Errorf("azure fetch template lacks the committed engine root:\n%s", fetch)
 	}
 }
 

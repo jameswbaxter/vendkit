@@ -149,7 +149,10 @@ conformance `pipeline-wired` rules keep the wiring honest.
 - **Engine (DR-0016):** the scaffolded lanes' first step fetches the pinned
   engine binary, verifies it against the release `SHA256SUMS.txt`, caches it,
   and runs `vendkit self-verify` against the `engine.sha256` pin before the
-  lane proper — no interpreter, no build step on the runner.
+  lane proper — no interpreter, no build step on the runner. The fetch
+  defaults its asset base to the committed `engine.base_url` root (#15);
+  the `VENDKIT_ENGINE_BASE_URL` pipeline variable overrides it, and remains
+  the only path when the root is blank and the publisher is not on GitHub.
 - **Launcher + fetch template (DR-0016 amendment):** the same
   resolve → fetch → verify-before-exec order is scaffolded twice over for
   everything that is *not* a scaffolded lane: `./vendkitw` for humans and

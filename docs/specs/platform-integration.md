@@ -64,9 +64,11 @@ Credentials are resolved *by the party that spends them*:
   use ordinary git credentials — the checkout step's token, a credential
   helper, or the URL. The engine adds nothing.
 - **Engine fetch** (DR-0016): the scaffolded lane downloads the pinned
-  engine binary + `SHA256SUMS.txt` from the publisher's release assets
-  (github-actions: the GitHub release; azure-pipelines: the
-  `VENDKIT_ENGINE_BASE_URL` you set — a mirror, feed, or blob store),
+  engine binary + `SHA256SUMS.txt` from the engine's release assets — the
+  slice config's committed `engine.base_url` root when filled (#15), else
+  github-actions derives the slice publisher's GitHub release and
+  azure-pipelines requires the `VENDKIT_ENGINE_BASE_URL` pipeline variable;
+  the variable overrides either way (a mirror, feed, or blob store),
   verifies the checksum, caches it, then runs `vendkit self-verify` against
   the consumer-held `engine.sha256` pin. A swapped or wrong-version binary
   fails loudly before it materialises anything. The same

@@ -195,6 +195,8 @@ var ledgerAnchors = map[int]struct {
 		"Onboard() rejects --codeowners on non-github SCM (Azure Repos does not honour CODEOWNERS)"},
 	7: {"internal/ci/ci.go", "##vso[task.setvariable",
 		"AzurePipelines.EmitOutput() emits raw values on the ##vso line — no multi-line/JSON transport"},
+	8: {"internal/core/manifest.go", "ExecBitDecidable",
+		"exec-bit comparisons (gate, generate --check, release freshness) are skipped where the filesystem cannot represent the bit"},
 }
 
 // TestLedgerCodeAnchorsPresent enforces the ledger→code direction: every entry

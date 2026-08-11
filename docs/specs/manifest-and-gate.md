@@ -65,7 +65,9 @@ non-ASCII, no HTML escaping of `<`/`>`/`&`, and a single trailing newline.
     adapters), so the consumer manifest is self-consistent with the consumer
     tree.
   - `exec` — POSIX executable bit as vendored. Materialise sets it; the gate
-    verifies it (a chmod is drift).
+    verifies it (a chmod is drift). On filesystems that cannot represent the
+    bit (Windows), exec comparisons are skipped rather than false-alarmed —
+    differences ledger #8 (platform-integration spec §6).
   - `raw` — `true` when the file is not valid UTF-8; the hash is then over raw
     bytes with no normalisation. Text/binary is decided at generate time and
     recorded, never re-guessed at verify time.

@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"runtime"
 	"sort"
 )
 
@@ -28,6 +29,57 @@ func isExec(path string) (bool, error) {
 		return false, Errf("stat %s: %v", path, err)
 	}
 	return fi.Mode()&0o100 != 0, nil
+}
+
+// ExecBitDecidable: whether this platform's filesystem represents the POSIX
+// executable bit. On Windows it does not — Stat never reports 0o100 — so the
+// bit is not tree-decidable there (differences ledger #8): exec facts in
+// manifests are recorded where POSIX generation runs, and comparisons
+// against a Windows working tree skip the bit instead of false-alarming.
+var ExecBitDecidable = runtime.GOOS != "windows"
+
+// stripExec: a copy of the manifest with per-entry exec facts removed — the
+// comparison shape for platforms where the bit is not decidable.
+func stripExec(m map[string]any) map[string]any {
+	out := make(map[string]any, len(m))
+	for k, v := range m {
+		out[k] = v
+	}
+	entries := []any{}
+	for _, e := range getList(m, "entries") {
+		em, ok := e.(map[string]any)
+		if !ok {
+			entries = append(entries, e)
+			continue
+		}
+		ne := make(map[string]any, len(em))
+		for k, v := range em {
+			if k != "exec" {
+				ne[k] = v
+			}
+		}
+		entries = append(entries, ne)
+	}
+	out["entries"] = entries
+	return out
+}
+
+func manifestsEquivalentFor(a, b map[string]any, execDecidable bool) bool {
+	if execDecidable {
+		return ManifestsEqual(a, b)
+	}
+	return ManifestsEqual(stripExec(a), stripExec(b))
+}
+
+// ManifestsEquivalent is the staleness comparison for `generate --check` and
+// the release freshness pre-gate: ManifestsEqual, except that where the
+// filesystem cannot represent the exec bit (ledger #8) the per-entry exec
+// facts are excluded — a Windows checkout must not read as stale purely
+// because Stat cannot see a bit the tree does carry. A manifest WRITTEN on
+// such a platform still records what Stat saw, so it turns loudly stale on
+// POSIX CI rather than silently dropping the bit for everyone.
+func ManifestsEquivalent(a, b map[string]any) bool {
+	return manifestsEquivalentFor(a, b, ExecBitDecidable)
 }
 
 // BuildPublisherManifest: publisher-side manifest of the working tree.
@@ -207,6 +259,9 @@ func GateCheck(consumerRoot string, manifestPaths []string) (*GateReport, error)
 				report.Findings = append(report.Findings,
 					Finding{mpath, sliceName, cpath, "changed", "content differs"})
 				continue
+			}
+			if !ExecBitDecidable {
+				continue // ledger #8: the bit is invisible here, not drifted
 			}
 			exec, err := isExec(fpath)
 			if err != nil {

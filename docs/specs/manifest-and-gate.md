@@ -92,7 +92,12 @@ drift, while any substantive edit changes the hash (DR-0004).
 - `vendkit generate` — build the manifest from the declaration + working tree.
 - `vendkit generate --check` — fail (exit 1) if the committed manifest differs
   from a fresh build. Wired into publisher PR CI and as the **release freshness
-  pre-gate**: a release cannot be cut from a stale manifest.
+  pre-gate**: a release cannot be cut from a stale manifest. Also emits the
+  advisory glob-localise declaration-validity findings
+  (export-declaration spec §3.1) — informational, never the exit code.
+- `vendkit verify-localisation` — the glob-localise expectation oracle
+  (export-declaration spec §3.2): publisher CI diffs actual localised output
+  against a publisher-authored expectation file; findings exit 1.
 
 ## 4. Gate lane (consumer)
 

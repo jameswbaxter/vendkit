@@ -39,9 +39,6 @@ func localise(data []byte, fmField string, catalogue map[string][]string, profil
 	if profile == "" {
 		return data
 	}
-	if !utf8.Valid(data) {
-		return data
-	}
 	owners := map[string]map[string]bool{}
 	for pname, globs := range catalogue {
 		for _, g := range globs {
@@ -55,38 +52,62 @@ func localise(data []byte, fmField string, catalogue map[string][]string, profil
 		own, owned := owners[g]
 		return !owned || own[profile]
 	}
+	out, _ := scanField(data, fmField, keep, nil)
+	return out
+}
 
+// FieldGlobs returns the glob items the glob-localise adapter reads from the
+// document's fmField, and whether the field occurs in the front matter at
+// all. It is the SAME walk localise() prunes through, so validity checks
+// built on it cannot disagree with the adapter (issue #10).
+func FieldGlobs(data []byte, fmField string) ([]string, bool) {
+	var items []string
+	_, found := scanField(data, fmField,
+		func(string) bool { return true },
+		func(g string) { items = append(items, g) })
+	return items, found
+}
+
+// scanField locates the first fmField occurrence in the leading front-matter
+// block and rewrites its value, keeping each glob item iff keep(item); every
+// item parsed is also reported through saw (pre-prune; nil to skip). found
+// reports whether the field was seen.
+func scanField(data []byte, fmField string, keep func(string) bool, saw func(string)) (out []byte, found bool) {
+	if !utf8.Valid(data) {
+		return data, false
+	}
 	lines := strings.Split(string(data), "\n")
 	fmEnd := frontMatterEnd(lines)
 	if fmEnd < 0 {
-		return data // no front matter -> nothing to localise
+		return data, false // no front matter -> nothing to localise
 	}
 
 	keyRe := regexp.MustCompile(`^(\s*)` + regexp.QuoteMeta(fmField) + `:(.*)$`)
 	itemRe := regexp.MustCompile(`^(\s+)-\s+(.*?)\s*$`)
 
-	out := make([]string, 0, len(lines))
+	kept := make([]string, 0, len(lines))
 	done := false
 	for i := 0; i < len(lines); i++ {
 		if done || i > fmEnd {
-			out = append(out, lines[i])
+			kept = append(kept, lines[i])
 			continue
 		}
 		m := keyRe.FindStringSubmatch(lines[i])
 		if m == nil {
-			out = append(out, lines[i])
+			kept = append(kept, lines[i])
 			continue
 		}
+		found = true
 		indent, rest := m[1], strings.TrimSpace(m[2])
 		if rest != "" && !strings.HasPrefix(rest, "#") {
 			// Inline form.
-			out = append(out, indent+fmField+": "+pruneInline(rest, keep))
+			kept = append(kept, indent+fmField+": "+pruneInline(rest, keep, saw))
 			done = true
 			continue
 		}
 		// Block-list form: emit the key line, then filter the more-indented
 		// `- item` lines that follow.
-		out = append(out, lines[i])
+		kept = append(kept, lines[i])
 		j := i + 1
 		for j <= fmEnd {
 			im := itemRe.FindStringSubmatch(lines[j])
@@ -94,15 +115,18 @@ func localise(data []byte, fmField string, catalogue map[string][]string, profil
 				break
 			}
 			item := strings.Trim(strings.TrimSpace(im[2]), `"'`)
+			if item != "" && saw != nil {
+				saw(item)
+			}
 			if item == "" || keep(item) {
-				out = append(out, lines[j])
+				kept = append(kept, lines[j])
 			}
 			j++
 		}
 		i = j - 1
 		done = true
 	}
-	return []byte(strings.Join(out, "\n"))
+	return []byte(strings.Join(kept, "\n")), found
 }
 
 // frontMatterEnd returns the index of the closing `---` of the leading YAML
@@ -121,8 +145,9 @@ func frontMatterEnd(lines []string) int {
 
 // pruneInline prunes a single-line glob value — a quoted/unquoted comma string
 // or a `[g1, g2]` flow list — keeping items for which keep() is true and
-// preserving the original quoting/flow wrapper.
-func pruneInline(rest string, keep func(string) bool) string {
+// preserving the original quoting/flow wrapper. Each parsed item is reported
+// through saw (nil to skip) before the keep decision.
+func pruneInline(rest string, keep func(string) bool, saw func(string)) string {
 	quote := ""
 	if len(rest) >= 2 && (rest[0] == '"' || rest[0] == '\'') && rest[len(rest)-1] == rest[0] {
 		quote = string(rest[0])
@@ -139,7 +164,11 @@ func pruneInline(rest string, keep func(string) bool) string {
 		if g == "" {
 			continue
 		}
-		if keep(strings.Trim(g, `"'`)) {
+		item := strings.Trim(g, `"'`)
+		if saw != nil {
+			saw(item)
+		}
+		if keep(item) {
 			kept = append(kept, g)
 		}
 	}

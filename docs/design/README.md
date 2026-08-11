@@ -28,3 +28,4 @@ sequentially, never reused.
 | [DR-0017](DR-0017-single-implementation-go.md) | Single engine implementation in Go; scenario kit as parity ratchet | accepted |
 | [DR-0018](DR-0018-versioned-docs-generator.md) | Versioned docs site from a pure-Go static generator | accepted |
 | [DR-0019](DR-0019-vendkit-dir-two-halves.md) | `.vendkit/` splits into `consumer/` and `publisher/`; publisher paths become defaults | accepted |
+| [DR-0020](DR-0020-slim-machinery-slice.md) | Slim the machinery slice: the engine ships as artefact only | accepted |

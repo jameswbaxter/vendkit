@@ -146,11 +146,16 @@ func Onboard(publisherRoot, consumerRoot string, decl *ExportDecl,
 	result := &OnboardResult{}
 
 	subs := map[string]string{
-		"SLICE":           decl.SliceName,
-		"SLICE_TITLE":     decl.SliceTitle,
-		"PUBLISHER_REPO":  decl.PublisherRepo,
-		"PUBLISHER_SCM":   decl.PublisherSCM,
-		"VERSION":         p.Version,
+		"SLICE":          decl.SliceName,
+		"SLICE_TITLE":    decl.SliceTitle,
+		"PUBLISHER_REPO": decl.PublisherRepo,
+		"PUBLISHER_SCM":  decl.PublisherSCM,
+		"VERSION":        p.Version,
+		// The committed version-independent release root the scaffolded
+		// fetch steps default their engine base URL to (issue #15). Blank
+		// renders `root=""` and the steps fall back to the pipeline
+		// variable (azure) or the GitHub derivation (gha), as before.
+		"ENGINE_BASE_URL": p.EngineBaseURL,
 		"BASE_BRANCH":     p.BaseBranch,
 		"PR_TOKEN_SECRET": p.PRTokenSecret,
 		// Push-hint receiver — flag-gated (platform-integration spec §4). When

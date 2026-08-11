@@ -1,8 +1,9 @@
 # VendKit conformance — advisory adoption check (conformance spec).
 # Flip --strict once trust is established ("fully onboarded" == strict passes).
 #
-# Set the pipeline variable VENDKIT_ENGINE_BASE_URL to the publisher's
-# release-asset base (DR-0016).
+# The engine release-asset base defaults from the slice config's committed
+# engine.base_url (issue #15); the pipeline variable
+# VENDKIT_ENGINE_BASE_URL overrides it (DR-0016).
 trigger: none
 pr: none
 
@@ -27,16 +28,21 @@ steps:
   - bash: |
       set -euo pipefail
       version="${ENGINE_REF#refs/tags/}"
-      if [ -z "${ENGINE_BASE_URL:-}" ]; then
-        echo "set pipeline variable VENDKIT_ENGINE_BASE_URL to the publisher's release-asset base URL (DR-0016)" >&2
+      # The committed engine.base_url (a version-independent release root,
+      # issue #15) is the default; the pipeline variable overrides it.
+      base="${ENGINE_BASE_URL:-}"
+      root="__ENGINE_BASE_URL__"
+      if [ -z "$base" ] && [ -n "$root" ]; then base="${root%/}/${version}"; fi
+      if [ -z "$base" ]; then
+        echo "fill engine.base_url in the slice config or set pipeline variable VENDKIT_ENGINE_BASE_URL (the release-asset base URL, DR-0016)" >&2
         exit 1
       fi
       os=linux; arch=amd64
       case "$(uname -m)" in aarch64|arm64) arch=arm64 ;; esac
       asset="vendkit_${version}_${os}_${arch}"
       dir="$(Agent.TempDirectory)/vendkit-bin"; mkdir -p "$dir"
-      curl -fsSL -o "$dir/vendkit" "${ENGINE_BASE_URL}/${asset}"
-      curl -fsSL -o "$dir/SHA256SUMS.txt" "${ENGINE_BASE_URL}/SHA256SUMS.txt"
+      curl -fsSL -o "$dir/vendkit" "${base}/${asset}"
+      curl -fsSL -o "$dir/SHA256SUMS.txt" "${base}/SHA256SUMS.txt"
       want="$(grep " ${asset}\$" "$dir/SHA256SUMS.txt" | cut -d' ' -f1)"
       echo "${want}  ${dir}/vendkit" | sha256sum -c -
       chmod +x "$dir/vendkit"

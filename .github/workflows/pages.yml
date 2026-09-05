@@ -80,13 +80,14 @@ jobs:
           fi
 
       # Landing page always wins at the root (single self-contained file plus
-      # its image and the Jekyll opt-out). This runs on every trigger so the
-      # marketing page stays current.
+      # its image, sitemap, and the Jekyll opt-out). This runs on every
+      # trigger so the marketing page stays current.
       - name: overlay landing page at site root
         run: |
           set -euo pipefail
           cp site/index.html public/index.html
           cp site/og-image.png public/og-image.png
+          cp site/sitemap.xml public/sitemap.xml
           cp site/.nojekyll public/.nojekyll
 
       # Resolve the version to render: the pushed tag, or the manual input.

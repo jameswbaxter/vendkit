@@ -1,8 +1,30 @@
+---
+id: VK-FS-security-model
+title: "The trust boundary and what guards it"
+status: current
+status_since: "2026-07-08"
+last_verified: "2026-07-08"
+spec_layer: functional_spec
+summary: "Write access to a publisher plus release capability is code execution in every consumer, and the framework makes that boundary explicit, narrow and tamper-evident rather than pretending otherwise."
+---
+
 # Spec: Security model
 
-Status: stable (frozen at v1.0.0) · Owner: cross-cutting
+## Scope
 
-## 1. Trust boundary — stated plainly
+This document states the security guarantees a consumer may rely on, the
+threats they answer, and the risks that remain accepted. It is cross-cutting:
+it constrains every other specification here rather than describing one
+component, and it is frozen public API at v1.0.0.
+
+Threats considered: upstream tag substitution, hand-edits to vendored files
+whether malicious or accidental, credential theft and rot, a compromised
+publisher account, and abuse of the PR machinery through auto-merge or silent
+scope growth.
+
+## Behavior
+
+### 1. Trust boundary — stated plainly
 
 **Write access to a publisher repository plus the ability to cut its releases
 is code execution in every consumer's CI.** Consumers vendor executable tools
@@ -23,7 +45,7 @@ Threats considered: upstream tag substitution, hand-edits to vendored files
 (malicious or accidental), credential theft/rot, a compromised publisher
 account, PR-machinery abuse (auto-merge, silent scope growth).
 
-## 2. Tag integrity — prevention
+### 2. Tag integrity — prevention
 
 Tags are immutable by contract (INV-5) but not by Git. Per platform:
 
@@ -37,7 +59,7 @@ Both are non-tree-decidable → publisher-side conformance `attest` rules with
 API upgrade (conformance spec §4). The release pipeline itself is
 manual-trigger only.
 
-## 3. Tag integrity — detection
+### 3. Tag integrity — detection
 
 Prevention can be misconfigured; detection is therefore layered in
 (releases spec §6): the consumer manifest records `source.commit` at sync;
@@ -47,7 +69,7 @@ work item and refusing further syncs of that slice until resolved. Retraction
 (not deletion) is the sanctioned way to withdraw a bad release, precisely so
 deletion remains unambiguous evidence of trouble.
 
-## 4. Credential model
+### 4. Credential model
 
 Four purposes (platform-integration spec §3): read-upstream and push-branch
 are ordinary **git credentials** spent by git itself; open-PR and work-items
@@ -72,7 +94,7 @@ Principles:
   it**: exemptions (ADO policy allowances) apply only to *creating* the PR,
   never to merging it.
 
-## 5. Machinery abuse resistance
+### 5. Machinery abuse resistance
 
 - **No auto-merge anywhere** (INV-10). The framework never carries a merge
   capability, so it cannot be confused into using one.
@@ -87,7 +109,7 @@ Principles:
 - **Disjointness (INV-7)** prevents a second slice from overwriting another
   slice's files as a smuggling path.
 
-## 6. Supply-chain posture of the framework itself
+### 6. Supply-chain posture of the framework itself
 
 The framework repo is its own publisher (self-hosted): its releases are cut by
 its own release command behind the same tag protections, its tree is
@@ -98,7 +120,7 @@ dependency sprawl — the machinery that guards supply chains must itself be a
 minimal one. Handlers are consumer-configured executables and sit inside the
 consumer's trust boundary like any pipeline step (handler-protocol spec §7).
 
-## 7. Residual risks (accepted, documented)
+### 7. Residual risks (accepted, documented)
 
 - A consumer that rubber-stamps sync PRs gets upstream code with one click.
   Mitigation is social (review culture) plus the small, readable diffs that
@@ -111,3 +133,26 @@ consumer's trust boundary like any pipeline step (handler-protocol spec §7).
 - Platform APIs (required-check status, policy configuration) can be
   misconfigured out-of-band; conformance attestation + API verification
   narrows but cannot eliminate this.
+
+## Acceptance
+
+Every control below is either decidable from the consumer tree or attested
+and API-verifiable. That split is what keeps the model checkable rather than
+aspirational.
+
+- **Tree-decidable controls are conformance rules.** Gate wiring, manifest
+  tracking, pin immutability and `.vendkit/**` ownership under CODEOWNERS are
+  read from the tree by `vendkit conformance`.
+- **Platform controls are attested, then verified.** Branch protection, build
+  validation policies and required reviewers are invisible in-tree on both
+  platforms, so they are asserted in the slice config and upgraded to facts
+  by the fact-verify handler.
+- **Tag immutability is checked from both ends.** Prevention is ref
+  permissions (§2); detection is the recorded `source.commit` compared on
+  every watch and sync (§3). Prevention can be misconfigured, which is why
+  detection is not optional.
+- **Credential liveness is exercised on a cadence.** The scaffolded probe
+  spends each purpose read-only on the watch schedule, so expiry surfaces
+  then rather than at the next release.
+- **The residual risks in §7 are accepted, not mitigated.** They are listed
+  so that a reader can tell a known limit from an oversight.

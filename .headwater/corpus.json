@@ -4,7 +4,7 @@
   "emitter_set": 1,
   "corpora": [
     {
-      "root": "docs/design",
+      "root": "docs",
       "excluded": [
         {
           "path": "docs/design/README.md",
@@ -13,18 +13,35 @@
         {
           "path": "docs/design/TEMPLATE.md",
           "reason": "the blank DR form, carrying placeholder headings and no decision"
+        },
+        {
+          "path": "docs/specs/README.md",
+          "reason": "the generated shelf index, a projection of the shelf and not a member of it"
+        },
+        {
+          "path": "docs/architecture.md",
+          "reason": "a layering overview that no shelf reaches; it describes the whole system rather than one component, and no kind of this taxonomy fits it yet"
+        },
+        {
+          "path": "docs/testing.md",
+          "reason": "a testing strategy that no shelf reaches; its conformance-kit obligations are cited by the specs rather than stated as one component's behaviour"
         }
       ],
       "taxonomy": {
         "package": "headwater/standard",
         "version": "4.2.0",
-        "lock": "sha256:bea207d7fb30dd2fd78ce38ed62a84eb70431308a2cb9b308021cf7bba688f65"
+        "lock": "sha256:a58e10d0f5d827efcb6a57910e74f9fe3bb514c43346120ba8809512d3fddd2b"
       },
       "entry_points": [
         {
           "shelf": "decisions",
           "path": "docs/design/DR-0001-vendored-identity-copies.md",
           "id": "DR-0001"
+        },
+        {
+          "shelf": "specs",
+          "path": "docs/specs/cli.md",
+          "id": "VK-FS-cli"
         }
       ],
       "exports": []

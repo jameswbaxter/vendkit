@@ -1,8 +1,29 @@
+---
+id: VK-TS-onboarding
+title: "Consumer configuration and the scaffolder"
+status: current
+status_since: "2026-07-08"
+last_verified: "2026-07-08"
+spec_layer: technical_spec
+summary: "One config file per slice holds every consumer-local value, and the scaffolder vendors the slice, renders the CI-keyed pipelines, and reports the manual steps it refuses to perform itself."
+relations:
+  realizes:
+    - VK-FS-conformance
+---
+
 # Spec: Onboarding and consumer configuration
 
-Status: stable (frozen at v1.0.0) · Owner: Layer 3
+## Scope
 
-## 1. Consumer configuration file
+This document states how a consumer is configured and how `vendkit init`
+brings one into existence: the single config surface per slice, what the
+scaffolder writes for each CI dialect, the steps it reports rather than
+performs, and how the engine is acquired before any of it can run. It is
+owned by Layer 3 and is frozen public API at v1.0.0.
+
+## Design
+
+### 1. Consumer configuration file
 
 One file per vendored slice: `.vendkit/consumer/<slice>.yml`. Consumer-owned (scaffolded
 once, then hand-maintained; **not** manifest-tracked — it holds consumer-local
@@ -85,7 +106,7 @@ Field notes:
   kind is independently optional. `VENDKIT_HANDLER_<KIND>` env vars override
   per run (handler-protocol spec §4).
 
-## 2. The scaffolder
+### 2. The scaffolder
 
 `vendkit init --ci github-actions|azure-pipelines|none [--scm github|azure-repos]
 --version vX.Y.Z [--profile <p>] [--mode primary|additive] [--base-branch main]
@@ -107,7 +128,7 @@ usage error, never a guess. Three phases:
    remain. The scaffolder never performs trust-bootstrap acts itself and never
    re-implements conformance judgment — it *defers* to `vendkit conformance`.
 
-### Scaffolded outputs
+#### Scaffolded outputs
 
 | Output | github-actions | azure-pipelines | none | Mode |
 |---|---|---|---|---|
@@ -132,7 +153,7 @@ consumer-local values: schedules, secret names, base branch) and are therefore
 **not** drift-gated. The framework components they call are pinned by tag; the
 conformance `pipeline-wired` rules keep the wiring honest.
 
-## 3. Platform notes baked into the scaffolds
+### 3. Platform notes baked into the scaffolds
 
 - **github-actions sync:** the PR handler takes its token from
   `secrets.<pr-token-secret>` via `VENDKIT_TOKEN_OPEN_PR`; the reference
@@ -173,7 +194,7 @@ conformance `pipeline-wired` rules keep the wiring honest.
   subscribers file (platform-integration spec §4). The schedule is always the
   reconciler, so the receiver is a pure latency optimisation (DR-0006).
 
-## 4. Irreducible manual steps (reported, never performed)
+### 4. Irreducible manual steps (reported, never performed)
 
 1. Grant the CI identity read on the publisher repo (content checkout +
    engine artefact fetch).
@@ -198,7 +219,7 @@ Each maps 1:1 to a conformance rule, so "fully onboarded" is
 `vendkit conformance --strict` passing — the onboarding checklist and the
 conformance spec can never diverge.
 
-## 5. Bootstrap: acquiring the engine before init
+### 5. Bootstrap: acquiring the engine before init
 
 Chicken-and-egg: running a pinned, checksum-verified VendKit needs a bootstrap
 step, and that step must itself be a released, checksummable artefact — never
@@ -235,3 +256,26 @@ Equivalently, download the full engine binary the same verified way and run
 runs. Either way the acquisition step is documented, tagged, and checksummed —
 `go install …@latest` deliberately is not this path: it needs a toolchain and
 pins nothing.
+
+## Conformance
+
+Onboarding has one acceptance criterion and it is not this document:
+**`vendkit conformance --strict` passing is what "fully onboarded" means.**
+
+Each irreducible manual step in §4 maps one-to-one onto a conformance rule,
+which is what stops the checklist and the rule set from diverging. A step
+that is skipped leaves its rule red, so the report is executable rather than
+advisory prose.
+
+Two further properties are checked rather than asserted.
+
+- **Additive onboarding is idempotent.** Re-running `init` for a further
+  slice detects the existing one and repairs rather than duplicates, so a
+  repeated run is safe.
+- **Scaffolding fails loudly.** Placeholder substitution that leaves any
+  variable unresolved is an error, never a rendered file carrying a literal
+  placeholder.
+
+The scaffolder never performs a trust-bootstrap act and never re-implements
+conformance judgment; it defers to `vendkit conformance` so that there is one
+verdict rather than two that can disagree.

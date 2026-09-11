@@ -1,6 +1,19 @@
+---
+id: VK-FS-export-declaration
+title: "The export declaration that defines a slice"
+status: current
+status_since: "2026-07-08"
+last_verified: "2026-07-08"
+spec_layer: functional_spec
+summary: "One publisher-side YAML file carries every piece of slice identity, the exported and seeded surfaces, the adapters, and the consumer profiles, so the tools carry none of their own."
+relations:
+  realized_by:
+    - VK-TS-manifest-and-gate
+---
+
 # Spec: Export declaration
 
-Status: stable (frozen at v1.0.0) · Schema version: 1 · Owner: Layer 0
+## Scope
 
 The export declaration is the publisher-side YAML file that fully defines a
 slice. **All slice identity lives here; the tools carry none** (DR-0002). One
@@ -13,7 +26,9 @@ a relative path is resolved against the publisher root (`--publisher-root`, or
 `--root` for `generate`), so a relocated declaration resolves identically whatever
 the working directory.
 
-## 1. Schema
+## Behavior
+
+### 1. Schema
 
 ```yaml
 schema_version: 1
@@ -90,7 +105,7 @@ manifest_name: docs-manifest.json   # Optional. Default: "<slice.name>-manifest.
                                     # with `publisher.manifest_dir`.
 ```
 
-## 2. Semantics
+### 2. Semantics
 
 - **Include/exclude.** `include` uses pathlib-style globbing anchored at the
   repo root; `exclude` uses fnmatch against the resulting repo-relative paths.
@@ -130,7 +145,7 @@ manifest_name: docs-manifest.json   # Optional. Default: "<slice.name>-manifest.
   collisions, a `retracted` entry that is not release-shaped, or a `slice.name`
   that fails the slug rule.
 
-## 3. Glob-localise catalogue rules
+### 3. Glob-localise catalogue rules
 
 A glob listed under a profile in a `glob-localise` catalogue is *owned* by that
 profile. When materialising for a consumer bound to profile P, the adapter keeps
@@ -144,7 +159,7 @@ rule that matches nothing, under-pruning ships globs for shelves the consumer
 does not have. The two subsections below are the engine-level verification of
 that transformation (issue #10).
 
-### 3.1 Declaration-validity findings (`generate --check`)
+#### 3.1 Declaration-validity findings (`generate --check`)
 
 `vendkit generate --check` evaluates consistency rules over each
 `glob-localise` adapter against the matched tree — exported and seeded files
@@ -164,7 +179,7 @@ declaration does not turn red. The checks parse the field exactly as the
 adapter does, and `localisation-empty` applies the actual transform, so they
 cannot disagree with materialisation.
 
-### 3.2 The expectation oracle — `vendkit verify-localisation`
+#### 3.2 The expectation oracle — `vendkit verify-localisation`
 
 ```
 vendkit verify-localisation --expected <file> [--profile P] [--consumer-root DIR] [--write]
@@ -208,14 +223,14 @@ Two constraints are load-bearing:
   adapter agrees with the adapter's bugs by construction. VendKit owns the
   harness and the diff; the oracle values are input.
 
-## 4. What the declaration must never contain
+### 4. What the declaration must never contain
 
 - Consumer identities or any downstream registry (the publisher does not know
   its consumers; see DR-0006 for the one optional exception, push hints).
 - Credentials, tokens, org-internal URLs.
 - Platform pipeline logic (that is Layer 2's job).
 
-## 5. Open questions
+### 5. Open questions
 
 - OQ-1: should `include` support an explicit single-file form with a required
   flag (fail if missing) to catch typos? Leaning yes: `- path: docs/x.md`
@@ -223,3 +238,27 @@ Two constraints are load-bearing:
 - OQ-2: adapter for line-ending forcing on materialise (consumers with
   `.gitattributes` quirks) or is normalisation-at-hash enough? Leaning: hash
   normalisation is enough; do not mutate bytes.
+
+## Acceptance
+
+A declaration is accepted when the engine can read it, and rejected loudly
+when it cannot. Three mechanisms carry that.
+
+- **Schema validation at generate time** (§2). `vendkit generate --check` and
+  publisher CI fail on unknown keys, unknown adapter kinds, an empty export
+  set, adapter match collisions, a malformed `retracted` entry, or a
+  `slice.name` that breaks the slug rule. An unknown adapter kind is a hard
+  error rather than a skip, so a consumer engine can trust that any manifest
+  it reads came from adapters it understands.
+- **Declaration-validity findings** (§3.1) for the one adapter that
+  transforms content. They are advisory and counted on
+  `localisation-findings=<n>`, never folded into the exit code, so a
+  currently-green declaration does not turn red.
+- **The expectation oracle** (§3.2). `vendkit verify-localisation` diffs
+  actual localised output against a publisher-authored expectation file, and
+  its findings exit 1. The expectation is input and never engine-derived at
+  check time, because an engine compared against itself always passes.
+
+Determinism is the property underneath all three: the exported set and every
+adapter output depend only on the declaration and the tree (INV-2), so
+generate on the same tree is byte-stable and any difference is a real one.

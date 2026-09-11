@@ -1,6 +1,13 @@
-# DR-0018: Versioned docs site from a pure-Go static generator
+---
+id: DR-0018
+title: "Versioned docs site from a pure-Go static generator"
+status: current
+status_since: "2026-07-14"
+last_verified: "2026-07-14"
+summary: "The versioned docs site is rendered by a small pure-Go generator that the shipped CLI never imports."
+---
 
-Status: accepted
+# DR-0018: Versioned docs site from a pure-Go static generator
 
 ## Context
 

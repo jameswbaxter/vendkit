@@ -1,6 +1,13 @@
-# DR-0015: Split the platform vocabulary into SCM and CI axes; formats not services
+---
+id: DR-0015
+title: "Split the platform vocabulary into SCM and CI axes; formats not services"
+status: current
+status_since: "2026-07-09"
+last_verified: "2026-07-09"
+summary: "The platform vocabulary splits into independent SCM and CI axes that name formats rather than services."
+---
 
-Status: accepted
+# DR-0015: Split the platform vocabulary into SCM and CI axes; formats not services
 
 ## Context
 

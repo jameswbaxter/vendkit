@@ -1,0 +1,908 @@
+# SPDX-License-Identifier: Apache-2.0
+#
+# The base package of headwater/standard, as a file.
+#
+# It was derived rather than chosen: the first-run walkthrough
+# (docs/evaluations/default-taxonomy-first-run.md) reads the immutable core and
+# writes out the smallest taxonomy that satisfies it, then measures what five
+# adopters add and delete over it. That walkthrough held the only committed copy
+# of this content, as a fenced block inside its prose, and every tool that
+# wanted the base parsed Markdown to reach it. This file ends that.
+#
+# The block in the walkthrough stays where it is, because it is the record of a
+# derivation and not a source. This file is the source.
+#
+# One key differs from the block. It opened `package: headwater/standard`, which
+# is the manifest key of spec 7 standing in front of eleven taxonomy
+# declarations. `package` is a reserved reference root, so a taxonomy source may
+# not declare it. The manifest is `package.yml` beside this file, and a taxonomy
+# source names itself with `taxonomy:`.
+#
+# So this name appears twice, here and as `package:` in `package.yml` beside it,
+# under two different keys for the one thing. The manifest is the file that
+# decides. Every consumer-facing reader takes the name from there: the lookup
+# under `packages/`, the release record, the directory `taxonomy vendor` writes
+# into, and the corpus descriptor a served host publishes. The copy here reached
+# the lock and the published artifact and decided nothing, so until #267 the two
+# could name different things through a resolve, through a publish and into the
+# lock, with every gate green. Now `resolve::package::agrees` refuses a package
+# whose two names differ, before it compares the two versions, and the refusal
+# names both files, both keys and both names.
+
+taxonomy: headwater/standard
+# 4.0.0 adds `facets.title`, in the `name` role, and this file declares it on no
+# kind. The facet-role registry of spec 2 is closed at five members and four of
+# them had a facet here; this is the fifth. The decision-record entry declared
+# `title` until now, and its doctrine recorded that an entry cannot reach the
+# kinds of another entry, so the numbered specification series stayed unnamed.
+# That entry now requires the facet and declares it no longer.
+#
+# It is a major, and this file is not where the reason is. A package is the
+# taxonomy and the bundles it ships under one version and one digest, and five
+# kinds of the design-spec entry and one of evidence-and-obligation now name
+# `title` in their own `facets.require`. A consumer that selects either entry
+# and moves from 3.5.0 therefore holds documents that stop validating.
+# `headwater taxonomy diff` measured it against the corpus of this repository
+# before the bump: `instance_validity` BROKEN, 41 failed, `consequence` BROKEN,
+# 41 of them, and the run printed "a dimension is broken, so this change
+# requires a major version". Spec 2 (Versioning by measured compatibility) is
+# what that sentence reads, and the number here obeys the measurement rather
+# than the shape of the edit. Read the two paragraphs together: a facet that
+# reaches no kind is additive, and a package that ships a bundle requiring it is
+# not, and only the second is what a consumer fetches.
+#
+# The artifact ships no migration payload, and `taxonomy diff` says so on every
+# run of this transition. Spec 7 (The migration payload) gives a step three
+# subjects, `facet_value`, `kind` and `overlay_address`, and a facet that became
+# required is none of the three: there is no old value for a `facet_value` step
+# to move. So the payload vocabulary cannot state this move at all, which is a
+# finding against spec 7 rather than an omission of this release.
+#
+# 3.4.0 adds `OB-MIG-1` and `CT-MIG-1`, which are the obligation and the
+# control behind `adoption.task.expired`. Nothing is removed and nothing
+# already declared changes meaning, so it is a minor. What a consumer meets is
+# a rule that reads a member the adoption block has carried since Q12's
+# migration payload shipped: a task's own `until`, compared against the
+# injected clock. Spec 7 already said a migration state past its expiry is a
+# finding against the owner, and until now nothing raised it.
+#
+# 3.3.0 adds `OB-REL-6` and `CT-REL-6`, which are the obligation and the
+# control behind `relation.target.suspect`. Nothing is removed and nothing
+# already declared changes meaning, so it is a minor. What a consumer meets is a
+# rule that reads an instance attribute this package has never declared and that
+# an adopter declares on a relation of its own: an importer writes
+# `verified_revision` onto every edge it makes, and until now nothing compared
+# it against the revision the snapshot pins today. A consumer that declares no
+# relation with `created_by: import` meets no instance of it at all.
+#
+# 3.3.0 is also the first publish since the `standards-spec` and `brd-prd`
+# library entries were authored, so the artifact carries both of them for the
+# first time. Neither is bound by this repository's own pin and neither removes
+# or redefines anything, so the two are additive on the same terms as the rule
+# above. A consumer that binds one of them meets a whole tradition where the
+# 3.2.0 artifact held nothing.
+#
+# 3.2.0 adds `OB-LIFE-4` and `CT-LIFE-4`, which are the obligation and the
+# control behind `lifecycle.deletion.not_permitted`. Nothing is removed and
+# nothing already declared changes meaning, so it is a minor. What a consumer
+# meets is a rule that reads a member both regimes of this package have written
+# since 1.0.0: `retain_terminal: true` said that a document at the end of a
+# regime is kept, and until now no component read it, so the promise was one
+# the taxonomy made and could not keep.
+#
+# 3.1.0 adds `OB-LIFE-3` and `CT-LIFE-3`, which are the obligation and the
+# control behind `lifecycle.dependency.on_terminal`. Nothing is removed and
+# nothing already declared changes meaning, so it is a minor. What a consumer
+# meets is a rule that reads a declaration this package has carried since 1.0.0:
+# `core.requires` names the `succession` family `lifecycle_sensitive`, and until
+# now nothing held a document against it.
+#
+# 3.0.0 takes one edge out of `standard`. `current` no longer joins
+# `discharged`, and `discharged` moves to a second regime, `obligation`, which
+# no kind of this package binds and which the decision-record bundle binds on
+# `obligation_record`. A consumer whose own kind stands at `discharged` under
+# `standard` is reported by `lifecycle.state.not_admitted` until it binds a
+# regime that names the state, so this is a removal and it is a major.
+#
+# 2.1.0 said that "a consumer that never writes the value never meets it", and
+# that was the wrong reassurance. The value was reachable by every kind that
+# bound the one regime, and so were `superseded` and `deprecated` before it.
+# [#219](https://github.com/headwater-ai/headwater/issues/219) measured the
+# class and this version closes it.
+#
+# 2.1.0 added `discharged`, one edge into it, `OB-LIFE-1` and `CT-LIFE-1`.
+#
+# 2.0.0 was a major, and both halves of that change earned it. `decision_id` no
+# longer declares a namespace, so a consumer that declared none resolves to a
+# refusal until it does, and the pattern renders the namespace first, so an
+# identifier already minted under 1.0.0 no longer matches.
+#
+# This number stands in two files. `package.yml` beside this one declares it as
+# well, and that file is the one every consumer-facing reader takes it from.
+# The two are required to agree: `resolve::package::agrees` refuses the package
+# on load where they differ, and it names both files and both numbers. A bump
+# moves both or neither. `package.yml` states why the value is declared twice.
+version: 4.2.0
+
+purposes:
+  rationale:
+    intent: explain why a choice was made and what it forecloses
+    answers: ["why is it this way", "what was rejected", "what does this constrain"]
+  behavior:
+    intent: state what the system does, as it is now
+    answers: ["what does this component do", "what may I rely on"]
+
+# `discharged` is the third terminal state, and it is here because the first two
+# say the wrong thing about a document whose subject was settled. `superseded`
+# names a successor and `deprecated` says nothing replaced it. A record of
+# something a corpus owed, which the corpus then paid, is neither: the work was
+# done and the record is the receipt.
+#
+# The vocabulary is one list and a kind takes the part of it that its own
+# lifecycle regime names. `standard` names four of these five and `obligation`
+# names the fifth, so `discharged` is out of reach of a kind whose documents are
+# never owed anything. That is the whole of the per-kind restriction: no member
+# on `kind` says it, and the two declarations that do say it were already in the
+# language. `lifecycle.state.not_admitted` reads a document against it, and
+# `lifecycle soundness` asks for reachability across the family rather than
+# inside each regime, which is what makes a second regime declarable at all.
+
+vocabularies:
+  lifecycle_state:
+    - {value: draft,      role: initial}
+    - {value: current,    role: live}
+    - {value: superseded, role: terminal-retained}
+    - {value: deprecated, role: terminal-retained}
+    - {value: discharged, role: terminal-retained}
+
+# Every facet declares `volatility`, and every enum value carries guidance. Both
+# are facet acceptance tests of spec 2 (Facet acceptance tests), and `taxonomy
+# validate` fails a facet that omits either. Four of the five facets here are
+# `mutable`, which is what keeps a value of any of them out of an identifier, a
+# path and a shelf pattern. `title` is the fifth and it is `stable`.
+#
+# The facet-role registry of spec 2 is closed at five members, and this block
+# now declares one facet for each of them. `title` is the last of the five to
+# arrive here. The decision-record entry declared it first, because a log that
+# reads `HW-DR-0007` is not a log anybody reads, and its doctrine recorded that
+# an entry cannot reach the kinds of another entry: an `add` writes no address a
+# second entry already owns, and a bundle holds no `override`. So the shelf
+# where the defect was measured, the numbered specification series, stayed
+# unnamed. That doctrine named this file as the resolution, because the base is
+# the one source where vocabulary that several traditions need composes. This is
+# that move, and the entry that first declared `title` now requires it and
+# declares it no longer.
+#
+# `required: false` says only that this file requires it of nothing. A kind
+# takes the facet by naming it in its own `facets.require`, no kind here does,
+# and six kinds of the two bundles this package ships do. So an adopter who
+# selects no bundle reads the same requirements over the same documents, and an
+# adopter who selects `design-spec` or `evidence-and-obligation` reads one more
+# on six kinds. The version comment above states why the second reading is the
+# one that decided the number.
+
+facets:
+  status:
+    role: state
+    values: $vocabularies.lifecycle_state
+    required: true
+    volatility: mutable
+    guidance:
+      draft: the document is being written or argued over, and nothing may rely on it
+      current: the document states what holds now, and a reader may rely on it
+      superseded: a later document replaced this one, and the succession edge names it
+      deprecated: the document is no longer to be relied on, and nothing replaced it
+      discharged: the document recorded something the corpus owed, the corpus paid it, and the record is kept as the receipt
+  status_since:
+    role: state_entered
+    type: date
+    required: true
+    volatility: mutable
+  last_verified:
+    role: freshness
+    type: date
+    stale_after_days: 180
+    volatility: mutable
+  summary:
+    role: scent
+    type: string
+    required: true
+    volatility: mutable
+  # The name a reader sees where a list of documents is rendered: a generated
+  # shelf index, a site navigation, a register. `summary` carries the scent role
+  # and it is a sentence; a reader who scans a list wants a name.
+  #
+  # `stable` and not `mutable`. The claim is the one the decision-record entry
+  # made when it declared this facet: a document is renamed by succession rather
+  # than by edit, so the value moves when the document is replaced and not while
+  # it stands. That reading also leaves the value legal in an identifier pattern
+  # and in a shelf layout, which a `mutable` facet may not enter.
+  title:
+    role: name
+    type: string
+    required: false
+    volatility: stable
+
+# Two lifecycle regimes over one vocabulary, and the pair is the answer to "may
+# a kind narrow a value set". It may, where the facet is the one in the `state`
+# role, and the narrowing is the regime rather than a second list of values.
+#
+# `standard` is for a document that states something. It is written, it holds,
+# and it is either replaced or retired. `obligation` is for a document that
+# records something the corpus owes, which has one more ending: the corpus paid
+# it, and the record is the receipt. No kind of this package binds `obligation`,
+# and the decision-record bundle binds it on `obligation_record`, which is the
+# only kind in the library whose documents are owed.
+regimes:
+  lifecycle:
+    standard:
+      initial: draft
+      transitions: {draft: [current, deprecated], current: [superseded, deprecated]}
+      retain_terminal: true
+    obligation:
+      initial: draft
+      transitions: {draft: [current, deprecated], current: [superseded, deprecated, discharged]}
+      retain_terminal: true
+  voice:
+    declarative: {forbid: [future_intent, change_narration, phased_rollout]}
+  language:
+    default: {tag: en-US, controlled: none}
+
+anchors:
+  code_path: {resolver: source-tree}
+
+kinds:
+  governed_document:
+    abstract: true
+    facets: {require: [status, status_since, last_verified, summary]}
+  decision:
+    is_a: governed_document
+    purpose: rationale
+    identifier: {scheme: decision_id}
+    voice: declarative
+    lifecycle: standard
+    sections: {require: [Context, Decision, Consequences]}
+  specification:
+    is_a: governed_document
+    purpose: behavior
+    voice: declarative
+    lifecycle: standard
+    sections: {require: [Scope, Behavior]}
+
+relations:
+  supersedes:
+    family: succession
+    from: [governed_document]
+    to:   [governed_document]
+    inverse: superseded_by
+    reciprocal: required
+    nuclearity: multinuclear
+    on_target: {set_state: superseded}
+    created_by: scaffold
+  governs:
+    family: governance
+    from: [governed_document]
+    to:   [code_path]
+    cardinality: many
+    created_by: hook
+  constrains:
+    family: governance
+    from: [decision]
+    to:   [decision]
+    created_by: agent
+  conflicts_with:
+    family: association
+    from: [decision]
+    to:   [decision]
+    reciprocal: symmetric
+    nuclearity: multinuclear
+    invalid_when: {both: {status: current}}
+    created_by: agent
+  traces_to:
+    family: evidence
+    from: [governed_document]
+    to:   [governed_document, code_path]
+    created_by: hook
+
+# `layout` names the file that `headwater new` writes on the shelf. The decision
+# shelf carries one because the tradition numbers its files, and `{seq}` is the
+# sequence of the identifier the run mints rather than a second copy of that
+# number in a facet. The specification shelf carries none, because a
+# specification is addressed by its subject and nothing numbers the shelf.
+#
+# `title` is the name a reader sees wherever an emitter prints the shelf: a
+# navigation group, the heading of the shelf's own index, the `<title>` of that
+# page and the entry a search returns for it. The key beside it is written for
+# a machine, and a key a reader meets is the defect
+# [#538](https://github.com/headwater-ai/headwater/issues/538) records. It is
+# optional, and a shelf that declares none is printed under its key.
+shelves:
+  decisions:      {path: docs/decisions/**,      homogeneous: true, kind: decision, layout: "{seq:04d}-{slug}.md", title: Decision records}
+  specifications: {path: docs/specifications/**, homogeneous: true, kind: specification, title: Specifications}
+
+# The namespace goes first and this package declares none.
+#
+# A published package cannot name the namespace. Its own would be inherited by
+# every corpus that adopts it, and a stand-in such as `repo` is a word every
+# adopter also writes, so two adopters would both mint `HW-DR-0001` and the
+# one thing a namespace is for would be gone. The consumer's overlay declares
+# it, and `taxonomy validate` refuses a resolved scheme that carries none.
+#
+# `{namespace}` opens the pattern because every system with a real namespace
+# renders it outermost, and because `^<namespace>-` is then an anchored match
+# for everything one corpus owns. [Q25](../../docs/decisions/0025-q25-where-the-namespace-goes-in-an-identifier-and-who-declares-it.md)
+# is the ruling.
+identifier_schemes:
+  decision_id: {pattern: "{namespace}-DR-{seq:04d}", allocation: reconcile-first}
+
+core:
+  requires:
+    - facet_role: state
+    - facet_role: freshness
+    - facet_role: scent
+    - purpose: rationale
+    - purpose: behavior
+    - relation_family: succession
+      lifecycle_sensitive: true
+
+projections:
+  - {kind: shelf_index, for: [decisions, specifications], output: "{shelf}/README.md"}
+
+# Spec 4 (Obligations are data) rules that every finding names the obligation it
+# serves, and spec 12 makes that a required method on a check. An obligation is
+# data, so it is declared here or it is nowhere. The set below is derived the
+# way the rest of this file is: one obligation for each check that these
+# declarations generate, and the three coverage obligations that spec 4 states
+# for every corpus.
+#
+# The key is the identifier. `prevents` names a class of the documentation
+# defect taxonomy that spec 4 walks, and no declaration in the language holds
+# that taxonomy yet.
+
+obligations:
+
+  OB-COV-1:
+    statement: Every file under the corpus root is classified, or reported as unclassifiable
+    rationale: The most broken document is the one that classification is most likely to miss, and a run that never saw it reports nothing about it
+    class: cohesion
+    prevents: process.maintenance
+    severity: high
+
+  OB-COV-2:
+    statement: Every classified document is routed to at least one check
+    rationale: A document that matched no check is indistinguishable from a document that passed every check
+    class: cohesion
+    prevents: process.maintenance
+    severity: high
+
+  OB-COV-3:
+    statement: Every run reports what it saw, classified, checked and skipped, with a reason for each skip
+    rationale: No findings across 380 of 412 documents is a different result from no findings across 412, and a report that cannot tell the two apart earns no trust
+    class: cohesion
+    prevents: process.traceability
+    severity: medium
+
+  OB-REL-1:
+    statement: A relation that requires reciprocity is declared at both of its ends
+    rationale: One half of a pair is a claim that the document at the other end never made
+    class: cohesion
+    prevents: content.inconsistent
+    severity: medium
+
+  OB-PLACE-1:
+    statement: A document does not restate in metadata what its placement already states
+    rationale: A restatement is a second truth that eventually disagrees with the first
+    class: cohesion
+    prevents: content.inconsistent
+    severity: medium
+
+  OB-FACET-1:
+    statement: Every facet a kind requires is declared by every document of that kind
+    rationale: A facet nobody declared is a question the corpus cannot answer about itself, and the reader who asks it gets silence rather than a gap
+    class: cohesion
+    prevents: content.incomplete
+    severity: high
+
+  OB-FACET-2:
+    statement: A facet with a declared value set carries one of the values in that set
+    rationale: A value outside the set is a state that no reader, no query and no projection can act on, and it reads as a state rather than as an error
+    class: cohesion
+    prevents: content.inconsistent
+    severity: medium
+
+  OB-ID-1:
+    statement: An identifier is a string that the scheme its kind names admits
+    rationale: An identifier is minted to travel, so it appears in commit messages, tickets and agent prompts. A corpus can rewrite its own documents at any time and it can never rewrite somebody else's ticket, which is why an identifier outside its own namespace is unrecoverable rather than untidy
+    class: cohesion
+    prevents: content.inconsistent
+    severity: high
+
+  OB-REL-4:
+    statement: Every target a relation instance names resolves to a document or to an external anchor
+    rationale: An edge that resolves to nothing is a claim about a thing the corpus does not hold, and every query, projection and export over that relation inherits the claim while the report of it stops at the graph build
+    class: cohesion
+    prevents: content.inconsistent
+    severity: high
+
+  OB-REL-5:
+    statement: Every entry a relations block declares becomes an edge of the graph
+    rationale: A block the build could not read declares nothing, so the corpus is missing exactly the relations its author wrote down, and the author is the only person who ever sees the claim
+    class: cohesion
+    prevents: content.inconsistent
+    severity: high
+
+  OB-REL-6:
+    statement: An edge an import wrote names its upstream item at the revision the edge was verified against
+    rationale: An upstream item moves under an edge that nobody touched, so the corpus keeps asserting a claim that was checked against a state the far end has left. The pin says the snapshot advanced and says nothing about which document now carries a stale claim, and the author who could re-verify the edge is the one person the advance never reaches
+    class: cohesion
+    prevents: content.inconsistent
+    severity: medium
+
+  OB-ID-2:
+    statement: A document that a relation may name declares one identifier that names it
+    rationale: A document with no identifier is neither end of any edge, so every relation it declares and every relation that names it is lost while the document itself is reported as classified and checked
+    class: cohesion
+    prevents: content.incomplete
+    severity: high
+
+  OB-ID-3:
+    statement: No two documents of a corpus claim one identifier
+    rationale: An identifier that names two documents names neither, so a target that reaches for it binds to whichever the index saw first while the other becomes unreachable, and both authors wrote a well-formed identifier that their scheme admits
+    class: cohesion
+    prevents: content.inconsistent
+    severity: high
+
+  OB-ID-4:
+    statement: Every identifier a reconcile-first scheme has minted is recorded in the identifier claim store
+    rationale: An allocator that reads only the tree reads a lower bound twice over, on every value ever allocated and on every value another branch has already taken, so two branches cut from one state both mint the same number, each one passes every check on its own, the file names differ and the merge is silent. The pair first exists after the second merge, when no gate is looking at either change
+    class: cohesion
+    prevents: content.incomplete
+    severity: high
+
+  OB-ID-5:
+    statement: A claim of the identifier store names the document that holds the identifier it records
+    rationale: A claim that names the wrong document, or names none at all, records a mint that did not happen, and the store is the one artifact a later allocator trusts about what is already spent. A claim with no claimant is worse than an absent one, because two branches adding the same empty claim merge clean and the store stops answering the question it exists for
+    class: cohesion
+    prevents: content.inconsistent
+    severity: medium
+
+  OB-REL-2:
+    statement: Both ends of a relation instance are kinds that the relation permits
+    rationale: An edge between kinds a relation forbids is an assertion that the taxonomy never sanctioned, and every query over that relation inherits it
+    class: cohesion
+    prevents: content.inconsistent
+    severity: medium
+
+  OB-VOICE-1:
+    statement: Prose of a kind under a voice regime does not use the constructions that regime forbids
+    rationale: A specification that narrates change cannot be read for what holds now, and a reader who cannot tell today from last quarter reads every sentence twice
+    class: cohesion
+    prevents: content.inconsistent
+    severity: low
+
+  OB-LANG-1:
+    statement: Prose of a kind under a language regime obeys the controlled language and the variant it names
+    rationale: A rule that lives in a contributing guide is a rule that no check reads and that every new author learns by being corrected
+    class: cohesion
+    prevents: content.unclear
+    severity: low
+
+  OB-LANG-2:
+    statement: The source of a document under a language regime that fixes a source form is written in that form
+    rationale: A source form is invisible to a reader and loud in a diff, so a paragraph that one commit reflows hides the one word another commit changed
+    class: cohesion
+    prevents: content.unclear
+    severity: low
+
+  OB-LANG-3:
+    statement: Prose of a kind under a language regime does not write a term that regime retired
+    rationale: A retirement that lives in a commit message is inherited by nobody, so a branch written from an earlier commit reintroduces the term and the merge is clean
+    class: cohesion
+    prevents: content.inconsistent
+    severity: low
+
+  OB-SECT-1:
+    statement: Every section a kind requires is a heading of every document of that kind
+    rationale: A document that omits a section leaves unanswered the question its kind promised to answer, and a reader cannot tell that from an answer of none
+    class: cohesion
+    prevents: content.incomplete
+    severity: high
+
+  OB-LINK-1:
+    statement: A fragment of a prose link names a heading of the document that the link points at
+    rationale: A link that lands nowhere costs the reader the paragraph it was written to reach, and an anchor rots silently when the heading beside it is edited. The target is another document as often as it is the citing one, and a rename in the target touches no byte of the document that cited it
+    class: cohesion
+    prevents: content.inconsistent
+    severity: medium
+
+  OB-LINK-2:
+    statement: A prose link of a document resolves to a file of the repository
+    rationale: A document that moves takes every citation of it with it, and the author who moved it reads nothing about the nine documents that now point at a path with no file. The break is silent in a way an author cannot notice, because each dead citation sits in a document that was not edited
+    class: cohesion
+    prevents: content.inconsistent
+    severity: medium
+
+  OB-REL-3:
+    statement: A participation expectation is met inside the window the taxonomy declares
+    rationale: A document that nothing links to inside its window is work that reached nobody, and the corpus cannot tell that from work nobody needed
+    class: cohesion
+    prevents: process.maintenance
+    severity: low
+
+  OB-WARRANT-1:
+    statement: A warrant that moves from `asserted` to `accepted` is counted in the change that moved it
+    rationale: A script that stamps forty documents writes bytes identical to forty real acceptances, and the standing `asserted` population cannot separate them because a bulk stamp lowers it by exactly what forty reviews would. A count per change is the only reading that can, and a promotion nobody counted is a review nobody can find
+    class: cohesion
+    prevents: process.traceability
+    severity: medium
+
+  OB-LIFE-1:
+    statement: A document moves between states only along an edge the lifecycle regime of its kind declares
+    rationale: One state value cannot say how it was reached, so a corpus run sees a document that skipped every state between where it was and where it is as one that walked there. A machine that admits every movement is a vocabulary with an arrow drawn on it, and the states that a taxonomy went to the trouble of ordering then order nothing
+    class: cohesion
+    prevents: process.traceability
+    severity: medium
+
+  OB-LIFE-2:
+    statement: A document stands only at a state that the lifecycle regime of its kind names
+    rationale: A state vocabulary is one list for a whole taxonomy, so a value that means something for one kind is spelled the same on every other. A document set to a state its kind has no use for reads to a person as a claim about that document and to every rule as nothing at all, and a movement rule cannot see it because a document authored at the wrong state made no movement
+    class: cohesion
+    prevents: content.inconsistent
+    severity: medium
+
+  OB-LIFE-3:
+    statement: A live document does not depend on a terminal one through a relation whose family this taxonomy declares lifecycle-sensitive
+    rationale: A retired document is kept so that the record of what it said survives, not so that new work can rest on it. A live document that leans on one states a claim the corpus has withdrawn, and the reader who follows the link has no way to tell a citation of the record from a reliance on it. The relation whose declaration writes a state onto its target is exempt, because that edge is what put the target where it stands
+    class: cohesion
+    prevents: content.inconsistent
+    severity: medium
+
+  OB-LIFE-4:
+    statement: A document standing at a terminal state of a regime that declares `retain_terminal` is not deleted from the corpus
+    rationale: A terminal state is where a document is kept rather than where it stops mattering, and `retain_terminal` is the member that says so. A corpus that deletes the record loses the only account of what it once said, and every citation of it then resolves to nothing. No standing reading of the corpus can report the loss, because a document that left leaves no row to report about, so the change that removes it is the one moment the claim is checkable
+    class: cohesion
+    prevents: content.inconsistent
+    severity: medium
+
+  OB-REG-1:
+    statement: Every obligation this taxonomy declares carries exactly one disposition
+    rationale: An obligation that no control discharges and that states neither a gap nor an acceptance reads from outside like one that is met, and that silence is how an assurance model decays into a list of good intentions
+    class: cohesion
+    prevents: process.traceability
+    severity: high
+
+  OB-REG-2:
+    statement: Every control names a mechanism that the engine implements
+    rationale: A register that claims coverage it does not have is worse than no register, and a mistyped rule id claims exactly that
+    class: cohesion
+    prevents: process.traceability
+    severity: high
+
+  OB-MIG-1:
+    statement: A migration task past its expiry raises a finding that names it and its owner
+    rationale: The expiry is the anti-parking device, on the same terms as a waiver's, and a lapse that raises nothing lets a corpus years past its deadline read exactly like one that declared no debt at all
+    class: cohesion
+    prevents: process.traceability
+    severity: high
+
+# A control names the mechanism that discharges an obligation. The engine reads
+# two mechanism prefixes. `check:` names the id of a rule, and that is the
+# binding a finding travels along: a rule reaches its obligation through the
+# control that names it. `phase:` names a phase of the engine itself, from the
+# closed set that `headwater_check::register` publishes.
+#
+# The second prefix is what OB-COV-1 and OB-COV-3 needed, and an earlier reading
+# of this file had both of them down as gaps. Neither is a gap. The census
+# classifies every file under the corpus root and writes an exception line for
+# each one it cannot, and every run prints what it saw, classified, checked and
+# skipped before it prints a finding. Both mechanisms run on every invocation.
+# What was missing was a way to name a mechanism that discharges an obligation
+# by doing the thing rather than by reporting a finding about it, and the gap
+# was in the mechanism vocabulary rather than in the disposition vocabulary.
+#
+# A phase carries no severity and produces no finding, so nothing binds to it in
+# the way a rule binds. What the register can state, and does, is that the
+# obligation is discharged and that this engine ran the phase.
+
+controls:
+
+  CT-COV-1:
+    mechanism: phase:census.classification
+    discharges: [OB-COV-1]
+    trigger: pull_request
+    posture: advisory
+    acts: detective
+    promotion:
+      produces_facts:
+        reasoning: The census produces the classification that every check rests on, and a wrong row makes every check over it return a correct verdict about a wrong corpus. Spec 12 holds it as a correctness root and its instrument is a fixture set
+
+  CT-COV-2:
+    mechanism: check:coverage.document_unchecked
+    discharges: [OB-COV-2]
+    trigger: pull_request
+    posture: advisory
+    acts: detective
+
+  CT-COV-3:
+    mechanism: phase:runner.coverage_report
+    discharges: [OB-COV-3]
+    trigger: pull_request
+    posture: advisory
+    acts: detective
+    promotion:
+      produces_facts:
+        reasoning: The coverage account is the denominator every other number in the report is read against, and a denominator has no false-positive rate. It is right or it is wrong, and the fixture tree is what says which
+
+  CT-REG-1:
+    mechanism: check:obligation.disposition.not_one
+    discharges: [OB-REG-1]
+    trigger: pull_request
+    posture: advisory
+    acts: detective
+
+  CT-REG-2:
+    mechanism: check:control.mechanism.unimplemented
+    discharges: [OB-REG-2]
+    trigger: pull_request
+    posture: advisory
+    acts: detective
+
+  CT-REL-1:
+    mechanism: check:relation.reciprocity.missing
+    discharges: [OB-REL-1]
+    trigger: pull_request
+    posture: advisory
+    acts: detective
+
+  CT-PLACE-1:
+    mechanism: check:shelf.placement_is_primary
+    discharges: [OB-PLACE-1]
+    trigger: pull_request
+    posture: advisory
+    acts: detective
+
+  CT-FACET-1:
+    mechanism: check:facet.required.missing
+    discharges: [OB-FACET-1]
+    trigger: pull_request
+    posture: advisory
+    acts: detective
+
+  CT-FACET-2:
+    mechanism: check:facet.value.not_permitted
+    discharges: [OB-FACET-2]
+    trigger: pull_request
+    posture: advisory
+    acts: detective
+
+  CT-ID-1:
+    mechanism: check:identifier.pattern.not_met
+    discharges: [OB-ID-1]
+    trigger: pull_request
+    posture: advisory
+    acts: detective
+
+  CT-REL-4:
+    mechanism: check:relation.target.unresolved
+    discharges: [OB-REL-4]
+    trigger: pull_request
+    posture: advisory
+    acts: detective
+    promotion:
+      criteria:
+        window: one release of the taxonomy over an adopting corpus
+        threshold: no false positive, because the rule reports what the graph build already resolved rather than deriving a second answer of its own
+        sample: every finding of one run over the adopting corpus, adjudicated once
+
+  CT-REL-5:
+    mechanism: check:relation.declaration.unusable
+    discharges: [OB-REL-5]
+    trigger: pull_request
+    posture: advisory
+    acts: detective
+    promotion:
+      criteria:
+        window: one release of the taxonomy over an adopting corpus
+        threshold: no false positive, because the rule reports what the graph build already threw away rather than reading the block a second time
+        sample: every finding of one run over the adopting corpus, adjudicated once
+
+  CT-REL-6:
+    mechanism: check:relation.target.suspect
+    discharges: [OB-REL-6]
+    trigger: pull_request
+    posture: advisory
+    acts: detective
+    promotion:
+      criteria:
+        window: one release of the taxonomy over an adopting corpus
+        threshold: no false positive, because the rule compares two values the corpus already holds and reports nothing where either one is absent
+        sample: every finding of one run over the adopting corpus, adjudicated once
+
+  CT-ID-2:
+    mechanism: check:identifier.unusable
+    discharges: [OB-ID-2]
+    trigger: pull_request
+    posture: advisory
+    acts: detective
+    promotion:
+      criteria:
+        window: one release of the taxonomy over an adopting corpus
+        threshold: no false positive, because the rule reports what the identifier index already refused rather than deriving a second answer
+        sample: every finding of one run over the adopting corpus, adjudicated once
+
+  CT-ID-3:
+    mechanism: check:identifier.claimed_twice
+    discharges: [OB-ID-3]
+    trigger: pull_request
+    posture: advisory
+    acts: detective
+    promotion:
+      criteria:
+        window: one release of the taxonomy over an adopting corpus
+        threshold: no false positive, because the rule reports the collision the identifier index already found rather than comparing identifiers a second time
+        sample: every finding of one run over the adopting corpus, adjudicated once
+
+  CT-ID-4:
+    mechanism: check:identifier.claim.missing
+    discharges: [OB-ID-4]
+    trigger: pull_request
+    posture: advisory
+    acts: detective
+    promotion:
+      criteria:
+        window: one release of the taxonomy over an adopting corpus
+        threshold: no false positive, because the rule compares the identifiers the corpus declares against the files of the store and reports neither where the two agree
+        sample: every finding of one run over the adopting corpus, adjudicated once
+
+  CT-ID-5:
+    mechanism: check:identifier.claim.stale
+    discharges: [OB-ID-5]
+    trigger: pull_request
+    posture: advisory
+    acts: detective
+    promotion:
+      criteria:
+        window: one release of the taxonomy over an adopting corpus
+        threshold: no false positive, because the rule reads the claimant a claim names and reports nothing for a claimant the corpus no longer holds
+        sample: every finding of one run over the adopting corpus, adjudicated once
+
+  CT-REL-2:
+    mechanism: check:relation.endpoint.not_permitted
+    discharges: [OB-REL-2]
+    trigger: pull_request
+    posture: advisory
+    acts: detective
+
+  CT-REL-3:
+    mechanism: check:relation.participation.overdue
+    discharges: [OB-REL-3]
+    trigger: pull_request
+    posture: advisory
+    acts: detective
+
+  CT-VOICE-1:
+    mechanism: check:voice.forbidden_construction
+    discharges: [OB-VOICE-1]
+    trigger: pull_request
+    posture: advisory
+    acts: detective
+    promotion:
+      permanently_advisory:
+        reasoning: Spec 3 rules that posture per voice category comes from fixability and never from precision, and that a category whose remediation is a rewrite stays advisory whatever its false-positive rate. To block on it makes a judgment about meaning into a gate, and the author who meets it at a red build reaches for the escape hatch
+
+  CT-WARRANT-1:
+    mechanism: check:warrant.promoted
+    discharges: [OB-WARRANT-1]
+    trigger: pull_request
+    posture: advisory
+    acts: detective
+    promotion:
+      permanently_advisory:
+        reasoning: Spec 3 rules the posture directly. "Forty in one change is a finding about the review rather than about the documents. The posture is advisory permanently, for the reason that the shift ratio is advisory permanently. A threshold teaches people to promote in smaller batches, and nothing declares one." A promotion is a legitimate act, so the rule reports a count and never a defect, and there is nothing for a gate to block on until a taxonomy states how many is too many
+
+  CT-LIFE-1:
+    mechanism: check:lifecycle.transition.not_permitted
+    discharges: [OB-LIFE-1]
+    trigger: pull_request
+    posture: blocking
+    acts: detective
+    promotion:
+      final_posture:
+        reasoning: The promotion path collects evidence about a rule that can be wrong about the text it reads, and this one reads two declared values and one declared edge. A movement it refuses is refused by the taxonomy that the corpus itself resolved, so an advisory period would measure a false-positive rate that the construction fixes at zero, and it would collect that reading while illegal movements landed. Spec 3 states the posture in one sentence, which is that the engine rejects a transition that is not in the declared machine when it lands
+
+  CT-LIFE-2:
+    mechanism: check:lifecycle.state.not_admitted
+    discharges: [OB-LIFE-2]
+    trigger: pull_request
+    posture: blocking
+    acts: detective
+    promotion:
+      final_posture:
+        reasoning: The same reading CT-LIFE-1 takes, and the input is narrower still. This rule reads one declared value against one declared state set, both of which the corpus itself resolved, so an advisory period would measure a false-positive rate that the construction fixes at zero. What it cannot decide is which admitted state the document belongs in, and that is why the finding carries no patch rather than why it should not block
+
+  CT-LIFE-3:
+    mechanism: check:lifecycle.dependency.on_terminal
+    discharges: [OB-LIFE-3]
+    trigger: pull_request
+    posture: advisory
+    acts: detective
+    promotion:
+      permanently_advisory:
+        reasoning: The two rules above it read declared values and refuse what the declaration refuses, and this one reads the same values and cannot say what to do about them. A live document resting on a retired one is repaired by pointing at the successor, by retiring the citing document, or by a judgment that the citation stands as a citation of the record. There is no fourth answer and the engine cannot pick among the three, so a posture that stopped a merge would stop it on a question only an author can settle
+
+  CT-LIFE-4:
+    mechanism: check:lifecycle.deletion.not_permitted
+    discharges: [OB-LIFE-4]
+    trigger: pull_request
+    posture: blocking
+    acts: detective
+    promotion:
+      final_posture:
+        reasoning: The reading CT-LIFE-1 takes, and the remedy is narrower still. The rule reads one declared member, one declared state and one declared machine, all of which the corpus itself resolved, so an advisory period would measure a false-positive rate that the construction fixes at zero. What it refuses is repaired by putting the file back, which is mechanical and total, so there is no judgment for an author to make and nothing for a posture to soften. A corpus that means to delete the record declares that member false on that regime, which is the escape this rule reads rather than one it overrides
+
+  CT-LANG-1:
+    mechanism: check:language.controlled.not_met
+    discharges: [OB-LANG-1]
+    trigger: pull_request
+    posture: advisory
+    acts: detective
+    promotion:
+      permanently_advisory:
+        reasoning: The same rule spec 4 states in general. A sentence past the word limit is shortened by deciding which clause carries the meaning, and no mechanical rewrite makes that decision
+
+  CT-LANG-2:
+    mechanism: check:language.source_form.not_met
+    discharges: [OB-LANG-2]
+    trigger: pull_request
+    posture: advisory
+    acts: detective
+    promotion:
+      criteria:
+        window: one release of the taxonomy over an adopting corpus
+        threshold: no false positive, because the parser reports the break rather than a rule inferring it from a line count
+        sample: every finding of one run over the adopting corpus, adjudicated once
+
+  CT-LANG-3:
+    mechanism: check:language.retired_term.used
+    discharges: [OB-LANG-3]
+    trigger: pull_request
+    posture: advisory
+    acts: detective
+    promotion:
+      criteria:
+        window: one release of the taxonomy over an adopting corpus
+        threshold: no false positive on an entry that names a replacement, which is the half that is a substitution
+        sample: every finding of one run over the adopting corpus, adjudicated once
+
+  CT-SECT-1:
+    mechanism: check:section.required.missing
+    discharges: [OB-SECT-1]
+    trigger: pull_request
+    posture: advisory
+    acts: detective
+
+  CT-LINK-1:
+    mechanism: check:link.fragment.unresolved
+    discharges: [OB-LINK-1]
+    trigger: pull_request
+    posture: advisory
+    acts: detective
+
+  CT-LINK-2:
+    mechanism: check:link.path.unresolved
+    discharges: [OB-LINK-2]
+    trigger: pull_request
+    posture: advisory
+    acts: detective
+
+  CT-MIG-1:
+    mechanism: check:adoption.task.expired
+    discharges: [OB-MIG-1]
+    trigger: pull_request
+    posture: advisory
+    acts: detective
+    promotion:
+      criteria:
+        window: one release of the taxonomy over an adopting corpus
+        threshold: no false positive, because the rule reports a date comparison between a task's own declared `until` and the injected clock, deriving nothing else
+        sample: every finding of one run over the adopting corpus, adjudicated once

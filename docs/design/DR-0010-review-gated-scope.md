@@ -1,7 +1,13 @@
-# DR-0010 — Scope changes are reviewed PR events, never automatic
+---
+id: DR-0010
+title: "Scope changes are reviewed PR events, never automatic"
+status: current
+status_since: "2026-07-08"
+last_verified: "2026-07-08"
+summary: "The tracked slice is the unit of consent: scope grows only inside a reviewed PR, and nothing in the framework deletes a consumer file."
+---
 
-- **Status:** accepted
-- **Date:** 2026-07-08
+# DR-0010 — Scope changes are reviewed PR events, never automatic
 
 ## Context
 

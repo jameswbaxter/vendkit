@@ -1,6 +1,13 @@
-# DR-0016: The engine becomes a pinned, checksummed artefact (INV-6 revision)
+---
+id: DR-0016
+title: "The engine becomes a pinned, checksummed artefact (INV-6 revision)"
+status: current
+status_since: "2026-07-10"
+last_verified: "2026-07-10"
+summary: "The engine ships as a per-platform released binary that consumers pin by version and checksum instead of vendoring as source."
+---
 
-Status: accepted (takes effect when the compiled engine ships — DR-0017)
+# DR-0016: The engine becomes a pinned, checksummed artefact (INV-6 revision)
 
 ## Context
 

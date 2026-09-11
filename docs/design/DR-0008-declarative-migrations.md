@@ -1,7 +1,13 @@
-# DR-0008 — Declarative migrations with deterministic verification
+---
+id: DR-0008
+title: "Declarative migrations with deterministic verification"
+status: current
+status_since: "2026-07-08"
+last_verified: "2026-07-08"
+summary: "Releases ship declarative migration payloads carrying machine-checkable verification obligations and no executable code."
+---
 
-- **Status:** accepted
-- **Date:** 2026-07-08
+# DR-0008 — Declarative migrations with deterministic verification
 
 ## Context
 

@@ -1,7 +1,13 @@
-# DR-0002 — Slice identity lives in the declaration, not the tools
+---
+id: DR-0002
+title: "Slice identity lives in the declaration, not the tools"
+status: current
+status_since: "2026-07-08"
+last_verified: "2026-07-08"
+summary: "Every piece of slice identity lives in the export declaration, so a second publisher is a second declaration driving byte-identical tools."
+---
 
-- **Status:** accepted
-- **Date:** 2026-07-08
+# DR-0002 — Slice identity lives in the declaration, not the tools
 
 ## Context
 

@@ -1,7 +1,13 @@
-# DR-0013 — Seeded files: a scaffold-once lifecycle class
+---
+id: DR-0013
+title: "Seeded files: a scaffold-once lifecycle class"
+status: current
+status_since: "2026-07-09"
+last_verified: "2026-07-09"
+summary: "Seeded files are scaffolded once and then free to diverge, with the manifest entry itself serving as the lifecycle record."
+---
 
-- **Status:** accepted
-- **Date:** 2026-07-09
+# DR-0013 — Seeded files: a scaffold-once lifecycle class
 
 ## Context
 

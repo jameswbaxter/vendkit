@@ -1,7 +1,13 @@
-# DR-0007 — ADO and GitHub Actions as peer backends behind a port interface
+---
+id: DR-0007
+title: "ADO and GitHub Actions as peer backends behind a port interface"
+status: current
+status_since: "2026-07-08"
+last_verified: "2026-07-08"
+summary: "Platforms appear only behind a port interface with both bindings shipping together, and differences are recorded in a ledger rather than abstracted away."
+---
 
-- **Status:** accepted — the peer-backend stance stands; the port's *service* operations (PR, work items, fact verification, upstream reads) are superseded by [DR-0014](DR-0014-handler-protocol.md) and [DR-0015](DR-0015-scm-ci-axes.md); the CI output surface remains.
-- **Date:** 2026-07-08
+# DR-0007 — ADO and GitHub Actions as peer backends behind a port interface
 
 ## Context
 

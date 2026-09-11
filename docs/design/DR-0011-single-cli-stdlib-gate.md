@@ -1,7 +1,13 @@
-# DR-0011 — One CLI; dependency-free consumer gate path
+---
+id: DR-0011
+title: "One CLI; dependency-free consumer gate path"
+status: current
+status_since: "2026-07-08"
+last_verified: "2026-07-08"
+summary: "One CLI entrypoint, whose PR-blocking consumer path is standard-library only, so the gate needs no installs and no network."
+---
 
-- **Status:** accepted
-- **Date:** 2026-07-08
+# DR-0011 — One CLI; dependency-free consumer gate path
 
 ## Context
 

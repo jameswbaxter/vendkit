@@ -123,7 +123,7 @@ func discover(docsDir string) ([]doc, error) {
 		docs = append(docs, doc{
 			rel:     htmlRel,
 			srcPath: p,
-			title:   deriveTitle(string(src), rel),
+			title:   deriveTitle(string(stripFrontMatter(src)), rel),
 			section: section,
 		})
 		return nil
@@ -163,6 +163,47 @@ func sortDocs(docs []doc) {
 	})
 }
 
+// stripFrontMatter removes a leading YAML front-matter block, the governed
+// metadata Headwater reads (DR-0021), so it never reaches the Markdown
+// renderer. goldmark has no front-matter extension and would otherwise render
+// the block as a thematic break followed by a paragraph of key/value text.
+//
+// A block counts only when the file opens with a `---` fence and a closing
+// `---` or `...` fence follows on its own line; anything else is returned
+// unchanged, so a document opening with a thematic break is left alone.
+func stripFrontMatter(src []byte) []byte {
+	rest, ok := cutFence(src)
+	if !ok {
+		return src
+	}
+	for len(rest) > 0 {
+		line, tail := splitLine(rest)
+		if t := strings.TrimRight(string(line), " \t"); t == "---" || t == "..." {
+			return tail
+		}
+		rest = tail
+	}
+	return src
+}
+
+// cutFence returns what follows an opening `---` line, and whether one was there.
+func cutFence(src []byte) ([]byte, bool) {
+	line, tail := splitLine(src)
+	if strings.TrimRight(string(line), " \t") != "---" {
+		return nil, false
+	}
+	return tail, true
+}
+
+// splitLine returns the first line of b without its terminator, and the rest.
+func splitLine(b []byte) (line, rest []byte) {
+	i := bytes.IndexByte(b, '\n')
+	if i < 0 {
+		return bytes.TrimSuffix(b, []byte("\r")), nil
+	}
+	return bytes.TrimSuffix(b[:i], []byte("\r")), b[i+1:]
+}
+
 var h1Re = regexp.MustCompile(`(?m)^#\s+(.+?)\s*$`)
 
 // deriveTitle returns the first ATX H1, else a title-cased filename.
@@ -191,7 +232,7 @@ func renderVersion(opts Options, docs []doc, m manifest, versionDir string) erro
 			return err
 		}
 		var body bytes.Buffer
-		if err := md.Convert(src, &body); err != nil {
+		if err := md.Convert(stripFrontMatter(src), &body); err != nil {
 			return fmt.Errorf("render %s: %w", d.srcPath, err)
 		}
 		page := renderPage(pageData{

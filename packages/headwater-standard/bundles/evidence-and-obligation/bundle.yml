@@ -1,0 +1,101 @@
+# SPDX-License-Identifier: Apache-2.0
+#
+# The evidence-and-obligation taxonomy: what closed a question, filed by
+# itself rather than as part of a numbered-specification series. design-spec
+# declared `evaluation` until HW-DR-0044 found that decision-record needed
+# only this one kind and its two purposes, and never the specification series,
+# the decision register or the review pair beside them.
+#
+# An add-only overlay over the base package. Every operation below is an `add`
+# at a key that headwater/standard does not declare. doctrine.md carries the
+# argument for what stayed in design-spec and why, because most of what this
+# entry might have carried turned out to stay there instead.
+#
+# It declares `requires: []`. This entry resolves from the base alone.
+# design-spec is the one with a dependency edge onto this entry, for the one
+# kind and the two purposes that left it; the edge could not run the other way
+# without a cycle, and doctrine.md carries the three places that finding came
+# from.
+
+bundle: evidence-and-obligation
+extends: headwater/standard@3.2.0
+requires: []
+
+add:
+
+  # --- purposes -------------------------------------------------------------
+  # Unchanged from the design-spec declaration this entry succeeds.
+  # `obligation` is declared here and not beside the kind that most visibly
+  # serves it: `obligation_register` stayed in design-spec, because it also
+  # requires `doc_type` and `sequence`, both of which stayed there too. A
+  # purpose is a reader intent rather than a kind, so it travels with the
+  # kind that needed to leave rather than with the kind that could not.
+  # design-spec's `obligation_register` and decision-record's
+  # `obligation_record` both reuse this declaration, and both now name this
+  # entry in their own `requires`.
+
+  purposes.evidence:
+    intent: state what was measured or found, and under which instrument
+    answers:
+      - "what closed this question"
+      - "what did the review find"
+      - "what evidence stands behind this claim"
+
+  purposes.obligation:
+    intent: state what the corpus still owes, and who owes it
+    answers:
+      - "what is missing"
+      - "which claim is unmeasured"
+      - "what waits on whom"
+
+  # --- regimes --------------------------------------------------------------
+  # Evidence documents are time-bound by nature, so they are exempt from the
+  # declarative regime that the base declares (spec 3, Voice). design-spec's
+  # `review_record` binds this same regime and reaches it through `requires`,
+  # for the reason `purposes.obligation` above gives.
+
+  regimes.voice.narrative: {}
+
+  # --- kinds ----------------------------------------------------------------
+  # One kind. It declares no `doc_type`: its shelf is homogeneous, so
+  # placement states the kind, the same reading design-spec gave it.
+  #
+  # It also declares no `evidence-cited` participation expectation, and design-
+  # spec's own doctrine already names the reason this omission is not a fresh
+  # defect. The expectation this kind carried named `decision_register` as its
+  # `to_kind`, a kind that stayed in design-spec. Declaring the expectation
+  # here would need this entry to require design-spec back, which cycles
+  # against the edge design-spec already carries onto this entry, and no
+  # second bundle may add a second entry to the `relations.expect` list a
+  # first bundle declared, which is [HW-OBL-0031](https://github.com/headwater-ai/headwater/blob/main/docs/obligations/0031-list-extension-in-an-add-only-overlay.md)
+  # on the same kind that finding named. doctrine.md carries the argument in
+  # full, and it is the same narrowness design-spec's own finding 4 already
+  # recorded: the expectation could only ever be satisfied by a
+  # `decision_register`, and an evaluation cited by an `obligation_register`
+  # already reported as absent under the declaration this entry succeeds.
+  # decision-record's own fixture measured exactly that gap as unfixable for
+  # an adopter who keeps no register. This split does not close finding 4; it
+  # removes the one declaration finding 4 already said was too narrow.
+
+  # It requires `title`, which headwater/standard declares in the `name` role
+  # from 4.0.0. An evaluation is the one kind here that a reader reaches from a
+  # list rather than from the document that cites it: a shelf index and a site
+  # navigation both render the whole shelf, and both read the `name` role. Until
+  # 4.0.0 the facet stood in the decision-record entry, which this entry does
+  # not require and could not require without a cycle, so every evaluation
+  # rendered as `HW-EVAL-adjacent-work` (#123, #427).
+  kinds.evaluation:
+    is_a: governed_document
+    purpose: evidence
+    voice: narrative
+    lifecycle: standard
+    facets:
+      require: [title]
+
+  # --- shelves --------------------------------------------------------------
+
+  shelves.evaluations:
+    title: Evaluations
+    path: docs/evaluations/**
+    homogeneous: true
+    kind: evaluation

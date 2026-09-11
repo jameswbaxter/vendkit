@@ -1,6 +1,13 @@
-# DR-0017: Single engine implementation in Go, with the scenario kit as the parity ratchet
+---
+id: DR-0017
+title: "Single engine implementation in Go, with the scenario kit as the parity ratchet"
+status: current
+status_since: "2026-07-10"
+last_verified: "2026-07-10"
+summary: "Go is the single engine implementation, and the scenario kit drives the CLI as a subprocess to ratchet parity before the Python engine retires."
+---
 
-Status: accepted
+# DR-0017: Single engine implementation in Go, with the scenario kit as the parity ratchet
 
 ## Context
 

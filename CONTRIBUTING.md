@@ -10,6 +10,14 @@ exists.
   `docs/design/` (DRs). A PR that changes behaviour updates the spec in the
   same PR; a PR that changes a *decision* adds a superseding DR — accepted DRs
   are immutable.
+- **Design records are governed** (DR-0021). IDs are `DR-NNNN`, allocated
+  sequentially and never reused. Copy
+  [docs/design/TEMPLATE.md](docs/design/TEMPLATE.md) — its front matter is what
+  the checks read — then run `tools/headwater-fetch.sh` and
+  `.headwater/bin/headwater check --fix` to claim the ID, and
+  `headwater generate` to rewrite the shelf index. Never edit
+  `docs/design/README.md` by hand; it is generated, and CI fails when it is
+  stale.
 - **Terminology:** [GLOSSARY.md](GLOSSARY.md) wins. Fix specs that diverge.
 - **Invariants (architecture §3) are load-bearing.** A change that weakens an
   INV-n needs a DR, not just a diff.

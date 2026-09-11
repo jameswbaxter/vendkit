@@ -1,7 +1,13 @@
-# DR-0005 — The tag is the release: immutable, SHA-anchored, retractable
+---
+id: DR-0005
+title: "The tag is the release: immutable, SHA-anchored, retractable"
+status: current
+status_since: "2026-07-08"
+last_verified: "2026-07-08"
+summary: "An annotated SemVer tag is the whole release, never moved or reused, and a bad one is retracted by declaration rather than deleted."
+---
 
-- **Status:** accepted
-- **Date:** 2026-07-08
+# DR-0005 — The tag is the release: immutable, SHA-anchored, retractable
 
 ## Context
 

@@ -1,0 +1,168 @@
+# SPDX-License-Identifier: Apache-2.0
+#
+# The conformance rule set of this package, and the levels over it.
+#
+# Spec 7 (Conformance) gives this file its job. `headwater conformance` reads it
+# through `contents.conformance` in the manifest, evaluates each rule against
+# the repository, and reports the level that the passing rules reach.
+#
+# THE SPLIT THIS FILE SITS ON. A rule is two halves in two places. This file
+# holds the name, the text a person reads, and the remediation. The engine holds
+# the code that decides the rule against a tree. A name here that the consumer's
+# engine holds no reading for ends the run, on the precedent `requires_engine`
+# already sets: an unreadable declaration is a claim the publisher made and the
+# consumer must not drop. So a rule added here that needs a new reading raises
+# `requires_engine` in `package.yml` at the same time.
+#
+# WHY THIS IS NOT A TAXONOMY SOURCE. A conformance rule says nothing about what
+# a document is, so it is not a kind, a facet, a shelf or a check. It never
+# reaches the lock and `headwater taxonomy resolve` never reads this file. What
+# makes it reproducible is the pin rather than the lock: this file is a member
+# of the published artifact, so its bytes are inside the digest a consumer pins
+# and `headwater taxonomy vendor` refuses an artifact whose bytes moved.
+#
+# WHAT A LEVEL IS. A level is a named subset of the rules below, and nothing
+# more. It states what an adopter wired up. It is not a measurement of a corpus,
+# it never decides whether a check blocks, and no adopter declares one — the
+# report derives it. `docs/doctrine/maturity-model.md` is the argument for the
+# ordering, and this file is the ordering itself.
+
+conformance:
+  format: 1
+
+  # Every rule the package declares. `decided_by: tree` names a reading the
+  # engine performs over the repository. `decided_by: attestation` names a rule
+  # that no tree decides, so the report says what would decide it and counts it
+  # as neither met nor missing.
+  rules:
+
+    - name: pin.current
+      title: The pin names the package that is installed
+      decided_by: tree
+      statement: >-
+        `.headwater/taxonomy.yml` pins a version and a digest, and both name the
+        published artifact that sits under `packages/`. The pin is two numbers
+        because a published artifact is a digest over every file in it. A
+        version alone would pass a repository whose pinned digest names an
+        artifact that nobody publishes any more.
+      remediation: >-
+        Five steps reach this rule, and a consumer cannot take the first one
+        from inside this tool. Step 1 is a published artifact. `headwater
+        taxonomy publish --out <dir>` writes one and prints its digest. A
+        consumer needs the artifact that the publisher of the package wrote,
+        and no verb of this engine fetches one. The publisher records that gap
+        as HW-OBL-0085. Step 2 writes the printed digest into
+        `taxonomy.digest` in `.headwater/taxonomy.yml`. Step 3 moves the
+        existing `packages/<name>` directory aside. Step 4 runs `headwater
+        taxonomy vendor <dir>`, which checks the artifact against the pin and
+        installs it under `packages/`. That install goes to the same path step
+        3 cleared, and it refuses to overwrite a directory that carries no
+        release record. Step 5 runs `headwater taxonomy resolve`, because a
+        vendored artifact replaces the taxonomy sources and moves the lock. A
+        publisher that consumes the package it maintains does not have to lose
+        the source to close this gap, but it does have to move it: keep the
+        authored files outside `packages/<name>` and publish from there with
+        `--from <dir>` on step 1, because `packages/<name>` is where step 4
+        writes and a directory both authored and vendored is the one case
+        `taxonomy vendor` cannot tell apart from a package somebody still
+        maintains. Where the source stays inside `packages/<name>`, a dated
+        waiver is the honest answer instead.
+
+    - name: lock.current
+      title: The lock is what the sources resolve to
+      decided_by: tree
+      statement: >-
+        `.headwater/taxonomy.lock` is what the package, the selected bundles and
+        the adopter overlay resolve to. Every check reads the lock and never the
+        sources, so a stale lock is a corpus evaluated against a taxonomy that
+        nobody committed. This rule is also how conformance reaches the
+        invariant core. `taxonomy resolve` writes a lock only when the taxonomy
+        validates, and core satisfaction is one of the things `taxonomy
+        validate` decides, so a current lock is a satisfied core.
+      remediation: >-
+        Run `headwater taxonomy resolve` and commit the lock beside the source
+        that moved it.
+
+    - name: corpus.classified
+      title: Every file under the corpus root is classified or accounted for
+      decided_by: tree
+      statement: >-
+        The census holds no file that a shelf claims and no kind types, and none
+        that it could not read. A document with no kind carries no check
+        instance, so a coverage number over a corpus with untyped files is a
+        fraction of the wrong denominator.
+      remediation: >-
+        Give each untyped file a kind, or declare an exclusion for it with a
+        reason. `headwater check` names every such file in its census block.
+
+    - name: projections.current
+      title: Every declared projection is regenerated
+      decided_by: tree
+      statement: >-
+        Each projection the taxonomy declares is what this corpus and this lock
+        produce. A derived file that a person can edit unseen will drift, and a
+        reader then trusts a file that is wrong.
+      remediation: >-
+        Run `headwater generate` and commit the result. Run
+        `headwater generate --check` in continuous integration to hold it there.
+
+    # The three below are undecidable from a tree, so each one names an
+    # attestation. Spec 7: "These rules degrade to a recorded attestation with an
+    # owner and a date. They are not silently dropped." No attestation record
+    # exists yet, so no level names one of these rules and the report says why.
+
+    - name: checks.wired
+      title: The checks run on every change
+      decided_by: attestation
+      statement: >-
+        `headwater check` runs over every change before it lands. Which file
+        carries that is a property of the forge rather than of this repository,
+        so no reading of the tree decides it.
+      remediation: >-
+        Wire `headwater check` into the job that runs on every change, and
+        record an attestation with an owner and a date.
+
+    - name: gates.required
+      title: The gate is required on the default branch
+      decided_by: attestation
+      statement: >-
+        A run of `headwater check --strict` is required before a change reaches
+        the default branch. Branch protection lives in the administration
+        surface of the forge, which no file in the repository states.
+      remediation: >-
+        Require the check run on the default branch, and record an attestation
+        with an owner and a date.
+
+    - name: hooks.installed
+      title: The write-time hooks are installed
+      decided_by: attestation
+      statement: >-
+        Each clone runs the write-time hooks, so an edge is created where its
+        cost is lowest. Git does not install a repository hook by itself and
+        `core.hooksPath` is per-clone configuration, so the tree that carries
+        the hooks does not say whether anybody runs them.
+      remediation: >-
+        Run `git config core.hooksPath .githooks` in each clone, and record an
+        attestation with an owner and a date.
+
+  # The ladder. Each level names its own rules, and a level includes every level
+  # below it in this order. A level that names no rule is refused at read time,
+  # because a rung nothing earns is a rung every repository already stands on.
+  #
+  # Three rungs ship. `docs/doctrine/maturity-model.md` describes seven, and the
+  # four above these wait on rules that do not exist: an attestation record, a
+  # participation reading, a published local package, and a probe cadence. A
+  # rung arrives with the rules that earn it or it does not arrive.
+  levels:
+
+    - name: L0
+      title: Pointed at
+      rules: [pin.current, lock.current]
+
+    - name: L1
+      title: Classified
+      rules: [corpus.classified]
+
+    - name: L2
+      title: Regenerated
+      rules: [projections.current]

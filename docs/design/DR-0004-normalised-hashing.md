@@ -1,7 +1,13 @@
-# DR-0004 — Normalised content hashing
+---
+id: DR-0004
+title: "Normalised content hashing"
+status: current
+status_since: "2026-07-08"
+last_verified: "2026-07-08"
+summary: "Hashes are taken over a canonicalised UTF-8 stream with normalised line endings, so a checksum survives platform line-ending churn."
+---
 
-- **Status:** accepted
-- **Date:** 2026-07-08
+# DR-0004 — Normalised content hashing
 
 ## Context
 

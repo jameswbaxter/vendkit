@@ -71,3 +71,34 @@ jobs:
         run: |
           go install golang.org/x/vuln/cmd/govulncheck@latest
           govulncheck ./...
+
+  docs-governance:
+    name: docs governance (headwater)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      # A pinned, checksum-verified binary, the DR-0016 shape. Headwater is
+      # docs tooling only: it never enters cmd/vendkit and never runs on the
+      # consumer gate path, so a failure here is a docs finding, not a broken
+      # build or a broken site.
+      - name: fetch the pinned headwater engine
+        run: tools/headwater-fetch.sh
+
+      # The vendored taxonomy package must still be the bytes the pin names.
+      - name: taxonomy integrity and validity
+        run: |
+          .headwater/bin/headwater taxonomy validate
+          .headwater/bin/headwater taxonomy resolve
+          git diff --exit-code .headwater/taxonomy.lock
+
+      # Types every design record against the decision-record taxonomy:
+      # required facets, the DR identifier scheme, the required sections, and
+      # the identifier claim register.
+      - name: check the design-record shelf
+        run: .headwater/bin/headwater check --strict
+
+      # The generated shelf index must match the corpus. This is what replaced
+      # the hand-maintained DR status table, which nothing previously held.
+      - name: the generated index is not stale
+        run: .headwater/bin/headwater generate --check

@@ -1,0 +1,162 @@
+# SPDX-License-Identifier: Apache-2.0
+#
+# The design-spec taxonomy: the numbered specification series that IETF RFCs,
+# academic papers and software design documents converge on.
+#
+# An add-only overlay over the base package. Every operation below is an `add`
+# at a key that headwater/standard does not declare. doctrine.md states what the
+# tradition is, why each declaration is here, and what this draft assumed where
+# the specification is silent.
+#
+# HW-DR-0044 moved `evaluation`, and the `evidence`/`obligation` purposes it
+# shares with what stayed here, into a new `evidence-and-obligation` entry.
+# `obligation_register`, `review_prompt` and `review_record` stayed: each
+# needs `doc_type` or `sequence`, both of which stay here too, and moving them
+# would have needed a `requires` edge back onto the entry that now requires
+# this one. doctrine.md carries the finding.
+
+bundle: design-spec
+extends: headwater/standard@1.0.0
+requires: [evidence-and-obligation]
+
+add:
+
+  # --- facets ---------------------------------------------------------------
+  # Both facets are required by the kinds that need them rather than globally,
+  # because a homogeneous shelf forbids the discriminator (spec 2, Placement is
+  # primary).
+
+  facets.doc_type:
+    values: [design_spec, decision_register, obligation_register, review_prompt, review_record]
+    required: false
+    volatility: stable
+    guidance:
+      design_spec: a numbered document in the series, which states what the system is
+      decision_register: the one document that records settled decisions and the argument that settled each
+      obligation_register: the one document that records what the corpus still owes
+      review_prompt: the instrument that commissions a review, committed before the review runs
+      review_record: the findings that one application of one instrument produced
+
+  facets.sequence:
+    type: integer
+    required: false
+    volatility: stable
+
+  # --- kinds ----------------------------------------------------------------
+  # Every kind inherits the five core-bearing facets and the base relations
+  # from governed_document, which is what keeps this bundle add-only.
+  #
+  # Every kind here requires `title`, which headwater/standard declares in the
+  # `name` role from 4.0.0. A numbered series is the tradition that most needs
+  # it: the number is what orders the series and it is no name, so a rendered
+  # list of parts that reads the identifier reads `HW-SPEC-vision-and-scope`
+  # where "Vision and scope" belongs (#123, #427). The facet stood in the
+  # decision-record entry until 4.0.0 and could not reach here, and that entry's
+  # doctrine carried the reason as its finding 4.
+  #
+  # `title` is not the first heading of the body, and the two are allowed to
+  # differ. On this shelf they do: a part opens `# 0 — Vision and scope`,
+  # because a reader of the file wants the number, and its title is "Vision and
+  # scope", because `sequence` already carries the number and spec 2 refuses a
+  # second copy of a value the front matter holds.
+
+  kinds.design_spec:
+    is_a: governed_document
+    purpose: behavior
+    voice: declarative
+    lifecycle: standard
+    facets:
+      require: [doc_type, sequence, title]
+
+  kinds.decision_register:
+    is_a: governed_document
+    purpose: rationale
+    voice: declarative
+    lifecycle: standard
+    facets:
+      require: [doc_type, sequence, title]
+
+  kinds.obligation_register:
+    is_a: governed_document
+    purpose: obligation
+    voice: declarative
+    lifecycle: standard
+    facets:
+      require: [doc_type, sequence, title]
+
+  # `evaluation` moved to evidence-and-obligation with HW-DR-0044.
+  # `cites_evidence` below still names it, and this bundle now requires the
+  # entry that owns it.
+
+  kinds.review_prompt:
+    is_a: governed_document
+    purpose: evidence
+    voice: declarative
+    lifecycle: standard
+    facets:
+      require: [doc_type, title]
+    relations:
+      expect:
+        - id: instrument-applied
+          relation: applied_in
+          to_kind: review_record
+          when: {status: current}
+          within: 90d
+          since: state_entered
+          severity: warn
+          rationale: an instrument that nobody applied is a plan rather than a review
+
+  kinds.review_record:
+    is_a: governed_document
+    purpose: evidence
+    voice: narrative
+    lifecycle: standard
+    facets:
+      require: [doc_type, title]
+
+  # --- relations ------------------------------------------------------------
+  # No relation here is created_by author. Each one has a mechanical proposer,
+  # and doctrine.md names it.
+
+  relations.cites_evidence:
+    family: evidence
+    from: [design_spec, decision_register, obligation_register]
+    to:   [evaluation]
+    inverse: cited_by
+    reciprocal: required
+    cardinality: many
+    created_by: hook
+
+  relations.applied_in:
+    family: evidence
+    from: [review_prompt]
+    to:   [review_record]
+    inverse: applies
+    reciprocal: required
+    created_by: scaffold
+
+  relations.assesses:
+    family: evidence
+    from: [review_record]
+    to:   [governed_document]
+    cardinality: many
+    created_by: scaffold
+
+  # --- shelves --------------------------------------------------------------
+
+  shelves.spec_series:
+    title: The specification series
+    path: docs/spec/**
+    homogeneous: false
+    discriminator: doc_type
+    kinds: [design_spec, decision_register, obligation_register]
+    layout: "{sequence:02d}-{slug}.md"
+
+  # `shelves.evaluations` moved to evidence-and-obligation with `evaluation`.
+
+  shelves.reviews:
+    title: Review records
+    path: docs/reviews/**
+    homogeneous: false
+    discriminator: doc_type
+    kinds: [review_prompt, review_record]

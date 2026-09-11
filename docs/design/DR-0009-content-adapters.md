@@ -1,7 +1,13 @@
-# DR-0009 — Content adapters: identity copy by default, named transforms by declaration
+---
+id: DR-0009
+title: "Content adapters: identity copy by default, named transforms by declaration"
+status: current
+status_since: "2026-07-08"
+last_verified: "2026-07-08"
+summary: "A verbatim copy is the default, and any deviation exists only as a named, deterministic adapter declared in the export declaration."
+---
 
-- **Status:** accepted
-- **Date:** 2026-07-08
+# DR-0009 — Content adapters: identity copy by default, named transforms by declaration
 
 ## Context
 

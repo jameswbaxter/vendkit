@@ -1,0 +1,33 @@
+{
+  "headwater:generated": "corpus_descriptor. `headwater generate` writes this file, and `headwater generate --check` holds it. Edit the corpus, not this file.",
+  "descriptor_version": "1.1",
+  "emitter_set": 1,
+  "corpora": [
+    {
+      "root": "docs/design",
+      "excluded": [
+        {
+          "path": "docs/design/README.md",
+          "reason": "the generated shelf index, a projection of the shelf and not a member of it"
+        },
+        {
+          "path": "docs/design/TEMPLATE.md",
+          "reason": "the blank DR form, carrying placeholder headings and no decision"
+        }
+      ],
+      "taxonomy": {
+        "package": "headwater/standard",
+        "version": "4.2.0",
+        "lock": "sha256:bea207d7fb30dd2fd78ce38ed62a84eb70431308a2cb9b308021cf7bba688f65"
+      },
+      "entry_points": [
+        {
+          "shelf": "decisions",
+          "path": "docs/design/DR-0001-vendored-identity-copies.md",
+          "id": "DR-0001"
+        }
+      ],
+      "exports": []
+    }
+  ]
+}

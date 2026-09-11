@@ -1,7 +1,13 @@
-# DR-0006 — Pull reconciliation with optional push hints
+---
+id: DR-0006
+title: "Pull reconciliation with optional push hints"
+status: current
+status_since: "2026-07-08"
+last_verified: "2026-07-08"
+summary: "Consumers reconcile by scheduled pull, and a publisher's push hint changes only when that sync runs, never what it does."
+---
 
-- **Status:** accepted
-- **Date:** 2026-07-08
+# DR-0006 — Pull reconciliation with optional push hints
 
 ## Context
 

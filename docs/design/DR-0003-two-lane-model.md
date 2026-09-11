@@ -1,7 +1,13 @@
-# DR-0003 — Two-lane distribution: sync PRs + PR-time gate
+---
+id: DR-0003
+title: "Two-lane distribution: sync PRs + PR-time gate"
+status: current
+status_since: "2026-07-08"
+last_verified: "2026-07-08"
+summary: "Freshness and integrity run as two independent lanes, a credentialed sync PR and an offline PR-time gate, bound so that sync output always passes the gate."
+---
 
-- **Status:** accepted
-- **Date:** 2026-07-08
+# DR-0003 — Two-lane distribution: sync PRs + PR-time gate
 
 ## Context
 

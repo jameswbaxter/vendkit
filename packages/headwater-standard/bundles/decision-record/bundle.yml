@@ -1,0 +1,197 @@
+# SPDX-License-Identifier: Apache-2.0
+#
+# The decision-record taxonomy: the architecture-decision-record tradition, in
+# which one decision is one document and an accepted document is amended by
+# succession rather than by edit.
+#
+# An add-only overlay over the base package. doctrine.md states what the
+# tradition is, why each declaration is here, and what this draft assumed where
+# the specification is silent.
+#
+# Two things about this bundle are unusual, and both are deliberate.
+#
+# It adds no decision kind. The base already carries `kinds.decision` with
+# Nygard's three sections, so a second one beside it would be two live paths for
+# one tradition. What is here instead reaches into that kind at keys the base
+# leaves absent, which is what an `add` is for.
+#
+# It declares `requires: [evidence-and-obligation]` for two addresses.
+# `kinds.obligation_record` serves the `obligation` purpose, and
+# `relations.discharges` names `evaluation` as its `from` kind; both now come
+# from that entry rather than from design-spec. Criterion 6 of the library
+# index refuses a second declaration of the same address, which is why this
+# entry reuses rather than redeclares. Until HW-DR-0044 this dependency named
+# design-spec whole, for the same two addresses and nothing else this entry
+# ever used; doctrine.md carries the finding that produced the split.
+
+bundle: decision-record
+extends: headwater/standard@1.0.0
+requires: [evidence-and-obligation]
+
+add:
+
+  # --- facets ---------------------------------------------------------------
+  # `facets.title` stood here until headwater/standard 4.0.0, and the base now
+  # declares it. This entry was the first to need it, because a generated index
+  # over this shelf labeled each record with its identifier and a log of
+  # decisions that reads `HW-DR-0007` is not a log anybody reads (#123). It was
+  # also the wrong home for it: an `add` writes no address a second entry
+  # already owns and a bundle holds no `override`, so a facet declared here
+  # reached this entry's kinds and the base `decision` and nothing else, and the
+  # shelf where #123 measured the defect stayed unnamed. doctrine.md carried
+  # that as finding 1 and finding 4, and both named the base as the resolution.
+  # The move is that resolution. This entry now requires the facet below and
+  # declares it nowhere.
+
+  # What an obligation record is waiting on right now, which is the one thing
+  # the shelf never carried. `status` says whether a reader may rely on the
+  # document, and a record that waits on a ruling is fully `current`. The
+  # blocker belongs to the subject of the record rather than to its authority,
+  # so it is a second facet and not a sixth lifecycle state.
+  #
+  # A present-tense state and not a property fixed at filing. HW-DR-0030
+  # measures the reason: 38 of the 39 open records that wait on a ruling are
+  # followed by a build, so a property that named one of the two would be wrong
+  # about 38 records. The value changes on the day the act it names happens,
+  # and the person who writes the ruling down is the person who edits it.
+  #
+  # Four values and no residual. Two of them hold populations that a binary has
+  # no cell for: 22 records wait on an outside corpus and 8 wait on a run of an
+  # instrument that already ships. No value here means `none of the others`, so
+  # no value changes on a record that nobody edited. A record that fits none of
+  # the four has a Discharge section that does not say what happens next, which
+  # is a defect in the record rather than a missing value.
+  #
+  # `volatility: mutable` is the claim that the value moves, so it may not
+  # appear in an identifier pattern, a shelf path or a shelf layout. The
+  # `obligations` layout `{seq:04d}-{slug}.md` reads neither.
+  #
+  # On a record at `status: discharged` the value reads as what discharged it.
+  # A record leaves the queue by `status` and never by this facet, so there is
+  # no fifth value. That a facet applies to one value of another facet is
+  # HW-OBL-0123, and this is a third instance of it rather than a reason to
+  # invent a value.
+  facets.waiting_on:
+    type: string
+    values: [ruling, build, measurement, adopter]
+    required: false
+    volatility: mutable
+    guidance:
+      ruling: a person has to choose, and no build and no measurement settles it
+      build: the answer is known and somebody has to write the code or the prose
+      measurement: an instrument exists and no run of it has been made
+      adopter: an outside corpus has to exist before anything can move
+
+  # --- kinds ----------------------------------------------------------------
+  # The base `decision` kind is this tradition's kind. `is_a: governed_document`,
+  # `purpose: rationale`, `voice: declarative`, `lifecycle: standard`,
+  # `identifier: {scheme: decision_id}` and Nygard's three sections are all
+  # already there. Two keys are absent from it, and this entry writes both.
+
+  kinds.decision.facets:
+    require: [title]
+
+  # `obligation` and not `standard`, and it is the one kind in this library that
+  # takes the wider regime. A record here is a debt the corpus wrote down, so it
+  # has an ending the other kinds do not: the corpus paid it and the record is
+  # kept as the receipt. `standard` names no `discharged`, and a kind that bound
+  # it could not stand there.
+  kinds.obligation_record:
+    is_a: governed_document
+    purpose: obligation
+    identifier: {scheme: obligation_record_id}
+    voice: declarative
+    lifecycle: obligation
+    facets:
+      require: [title, waiting_on]
+    sections: {require: [Context, Obligation, Discharge]}
+
+  # --- relations ------------------------------------------------------------
+  # One relation, and it is the one this corpus cannot state today. A decision
+  # reaches its evidence through the base's `traces_to`, and an obligation
+  # record reaches the decision that produced it the same way. Neither needs a
+  # declaration here. What has no form is the event that closes an obligation:
+  # an instrument ran, and the debt is paid.
+
+  relations.discharges:
+    family: evidence
+    from: [evaluation]
+    to:   [obligation_record]
+    inverse: discharged_by
+    reciprocal: required
+    cardinality: many
+    created_by: hook
+
+  # --- shelves --------------------------------------------------------------
+  # Decisions sit on the base shelf, which is homogeneous and already declares
+  # the kind. Obligation records need a shelf of their own.
+  #
+  # `layout` is what names the file. `{seq}` is the sequence of the identifier
+  # the run mints, so the number on the file and the number in `HW-OBL-0106`
+  # are one value written twice rather than two values that may disagree. No
+  # facet holds it, which is why the layout reads the identifier instead.
+  # Without this line the verb names a record after its title alone, and a shelf
+  # whose siblings all sort by number gains one that sorts by its first letter.
+
+  shelves.obligations:
+    title: Obligation records
+    path: docs/obligations/**
+    homogeneous: true
+    kind: obligation_record
+    layout: "{seq:04d}-{slug}.md"
+
+  # --- identifier schemes ---------------------------------------------------
+  # `reconcile-first` over the corpus is the right denominator here, because an
+  # obligation record is a document and the corpus is what numbers it. Spec 13
+  # draws that line between this remedy and the contract-sidecar one, where a
+  # criterion numbers within its requirement instead.
+
+  # No namespace here, for the reason the base package declares none: a bundle
+  # ships to adopters, and any constant it wrote would be minted by all of them
+  # at once. The consumer's overlay declares it and `taxonomy validate` refuses
+  # a resolved scheme without one.
+  identifier_schemes.obligation_record_id:
+    pattern: "{namespace}-OBL-{seq:04d}"
+    allocation: reconcile-first
+
+  # --- obligations ----------------------------------------------------------
+  # The two invariants this tradition exists to hold, and neither one has a
+  # check. Both are `gap` dispositions rather than silence, which is what spec 4
+  # asks of an obligation that no control discharges.
+  #
+  # Both are about content and state over time. A participation expectation
+  # reports a missing edge, and neither of these is a missing edge. That is the
+  # check class doctrine.md names as the one this entry adds and the engine
+  # does not have.
+
+  obligations.OB-DR-1:
+    statement: An accepted decision record is amended by succession and never by edit
+    rationale: A record that changed after the decision was taken cannot be cited, because the reader of the citation and the writer of it read two different texts. Every later document that names the decision inherits the drift silently
+    class: cohesion
+    prevents: content.inconsistent
+    severity: high
+    disposition:
+      gap:
+        owner: the decision-record entry
+        target: a change-scoped rule that reads the prior version, which spec 12 already supplies as `needs_prior`
+
+  obligations.OB-DR-2:
+    statement: A proposed decision record reaches acceptance or rejection
+    rationale: A log that fills with proposals is the failure this tradition is most often reported to have, and a proposal nobody ruled on is indistinguishable from a decision nobody wrote
+    class: cohesion
+    prevents: process.maintenance
+    severity: medium
+    disposition:
+      gap:
+        owner: the decision-record entry
+        target: a rule over state dwell time, which `taxonomy audit` already measures and no check reads
+
+  obligations.OB-DR-3:
+    statement: A decision record records one decision
+    rationale: Two decisions in one record cannot be superseded apart, so the first of them to fall takes the second with it or keeps it alive under a heading nobody reads
+    class: coherence
+    prevents: content.unclear
+    severity: medium
+    disposition:
+      unverifiable:
+        reasoning: To count the decisions in a document is to reason about what the prose asserts, which spec 1 forswears. The shelf is homogeneous and the section contract requires one `Decision` heading, and a second decision under that heading is invisible to both

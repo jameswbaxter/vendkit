@@ -1,6 +1,15 @@
+---
+id: DR-0014
+title: "Detection and delivery split by an exec handler protocol"
+status: current
+status_since: "2026-07-09"
+last_verified: "2026-07-09"
+summary: "Detection is split from delivery, and delivery sits behind an exec handler protocol that receives a JSON intent on stdin."
+---
+
 # DR-0014: Detection and delivery split by an exec handler protocol
 
-Status: accepted · Supersedes: the port-interface service methods of DR-0007
+Supersedes: the port-interface service methods of DR-0007
 
 ## Context
 

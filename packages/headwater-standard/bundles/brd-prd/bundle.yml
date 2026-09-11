@@ -1,0 +1,299 @@
+# SPDX-License-Identifier: Apache-2.0
+#
+# The brd-prd taxonomy: the requirements handoff that IIBA's BABOK Guide, the
+# Pragmatic Marketing Framework and the product-requirements-document convention
+# converge on. A business requirements document states the need and the measure
+# of success. A product requirements document states what must be built and what
+# done means.
+#
+# An add-only overlay over the base package. Every operation below is an `add`
+# at a key that headwater/standard does not declare. doctrine.md states what the
+# tradition is, why each declaration is here, and what this draft assumed where
+# the specification is silent.
+#
+# Three things about this bundle are worth naming before the operations.
+#
+# It declares `requires: []`, and it is the fourth entry with an empty closure.
+# Only decision-record requires anything, and it requires design-spec for one
+# address.
+# The issue that asked for it offered a dependency on the standards-spec entry,
+# and this entry declines it. The only edge that dependency would buy runs from
+# a product requirements document to a functional specification, and the natural
+# spelling of that edge reaches into another entry's endpoint list, which is not
+# an `add`. doctrine.md carries the argument and the finding.
+#
+# It serves neither purpose the invariant core requires. The base's `decision`
+# serves `rationale` and the base's `specification` serves `behavior`. This entry
+# declares a third reader intent and no kind of it serves either of the two.
+# Criterion 5 of the library index has no reading for that, and doctrine.md takes
+# one.
+#
+# It declares a voice regime of its own, which is a deliberate departure. The
+# base's only voice regime forbids future intent, and a requirements document
+# states what a product must do before it exists. The regime below keeps the two
+# other categories and drops that one.
+
+bundle: brd-prd
+extends: headwater/standard@3.2.0
+requires: []
+
+add:
+
+  # --- purposes -------------------------------------------------------------
+  # The base declares rationale and behavior. This tradition serves one more
+  # reader intent, and both kinds below serve it.
+  #
+  # Neither base purpose fits. `rationale` explains why a choice was made and
+  # what it forecloses, which is retrospective and about a decision already
+  # taken. A business requirement is a prospective need. `behavior` states what
+  # the system does as it is now, and a product requirement states what a product
+  # must do and does not yet do. `constraint` belongs to the standards-spec entry
+  # and would be wrong here anyway: a standard is standing and corpus-wide, and a
+  # requirement is scoped to one initiative and retires when it is met.
+
+  purposes.requirement:
+    intent: state what a proposed change must achieve and what it must deliver, before it is built
+    answers:
+      - "what are we building and why"
+      - "what does done mean for this change"
+      - "which business need does this work answer"
+
+  # --- regimes --------------------------------------------------------------
+  # The one departure of this entry, and doctrine.md argues it at length.
+  #
+  # The base declares one voice regime, `declarative`, which forbids
+  # `future_intent`, `change_narration` and `phased_rollout`. A requirements
+  # document is prospective by construction: a success measure and a release
+  # criterion are both statements about a product that does not exist. Binding
+  # `declarative` on these two kinds reports the tradition itself.
+  #
+  # The precedent is in this library. The design-spec entry declares
+  # `regimes.voice.narrative` as an empty regime, which forbids nothing, and it
+  # binds that on evidence documents because they are time-bound by nature. This
+  # regime stops short of that. `change_narration` and `phased_rollout` still
+  # bite, because a requirements document that narrates last quarter's rename, or
+  # that sequences its own delivery into phases, is wrong in this tradition too.
+  #
+  # The fixture corpus measures what `declarative` would have reported over the
+  # same prose, and fixtures/README.md records the number.
+
+  regimes.voice.prospective:
+    forbid: [change_narration, phased_rollout]
+
+  # --- facets ---------------------------------------------------------------
+  # One facet, two values and no residual. It is the discriminator of the
+  # requirements shelf, which is what a heterogeneous shelf needs to type a
+  # document that placement alone cannot type. The tradition files both rungs of
+  # one initiative side by side, so placement types neither.
+  #
+  # The two values are the two kind names, and that is a requirement rather than
+  # a style. Kind resolution matches a discriminator value against the shelf's
+  # `kinds` list by identity (`census::resolve`, step 3), so a value of `business`
+  # against a kind named `brd` leaves the document untyped and every rule silent.
+  #
+  # No `role`. The role registry is closed at six, none of them is this, and the
+  # diataxis entry took the same reading for `reader_mode`. The relevance canon
+  # is satisfied twice over, because two kinds require the facet and a shelf
+  # discriminates on it.
+  #
+  # The address is `requirement_tier` and not `tier`, because a consumer overlay
+  # in the repository that hosts this library already holds `facets.tier`.
+  #
+  # `volatility: stable` is a claim about the tradition rather than about this
+  # engine: a document does not move from the business tier to the product tier,
+  # and a document that reads as though it did has been rewritten into a second
+  # document. doctrine.md records it as an assumption, because the design-spec
+  # entry recorded the same one for `doc_type` and nothing has ruled on it.
+
+  facets.requirement_tier:
+    type: string
+    values: [brd, prd]
+    required: false
+    volatility: stable
+    guidance:
+      brd: the document states the business need, the requirements that follow from it and the measures by which success is judged, which is the tier a sponsor signs
+      prd: the document states the problem for one product, the requirements a solution must meet and the criteria for release, which is the tier engineering builds against
+
+  # --- kinds ----------------------------------------------------------------
+  # Two kinds. Each one inherits the four core-bearing facets and the base
+  # relations from `governed_document`, which is what keeps this bundle add-only.
+  #
+  # The names are acronyms, which no other kind in this library is. That is
+  # deliberate. The tradition's own term is the acronym: practitioners say "the
+  # PRD", and nobody in any of the three cited sources writes "product
+  # requirements document" twice in a row. `business_requirements_document` would
+  # be this entry renaming the tradition to suit a naming habit.
+  #
+  # The Pragmatic Marketing Framework's Market Requirements Document occupies the
+  # same slot as the BRD, and this entry declares no third kind for it. Nothing
+  # runs between a BRD and an MRD, so the two are one slot under two names rather
+  # than two kinds. doctrine.md carries the paragraph.
+
+  # `requirement` and not `rationale`. A BRD's "why" is a prospective business
+  # need, and the base's `rationale` is about a choice already taken. Over a
+  # corpus holding both, "why is it like this" must reach the decision and "why
+  # are we building this" must reach the business requirement.
+  kinds.brd:
+    is_a: governed_document
+    purpose: requirement
+    identifier: {scheme: brd_id}
+    voice: prospective
+    lifecycle: standard
+    facets:
+      require: [requirement_tier]
+    sections: {require: [Business need, Business requirements, Success measures]}
+    relations:
+      expect:
+        - id: business-need-elaborated
+          relation: elaborated_by
+          to_kind: prd
+          when: {status: current}
+          within: 90d
+          since: state_entered
+          severity: warn
+          rationale: a business requirement that no product requirement answers is a need nobody scoped
+
+  # `requirement` and not `behavior`. A product requirements document states what
+  # a product must do and does not yet do, so nothing in it may be relied on. The
+  # standards-spec entry's `functional_spec` is the document that serves
+  # `behavior` in this territory, and the difference between the two kinds is the
+  # difference between the two purposes.
+  #
+  # No expectation here, and the absence is the nuclearity of `elaborates` read
+  # from the satellite end. A PRD with no BRD is reported by the reciprocity rule
+  # when it declares the edge, and it is common practice rather than a defect
+  # when it declares none. A BRD with no PRD is a real omission, and the
+  # expectation above is where it is reported.
+  kinds.prd:
+    is_a: governed_document
+    purpose: requirement
+    identifier: {scheme: prd_id}
+    voice: prospective
+    lifecycle: standard
+    facets:
+      require: [requirement_tier]
+    sections: {require: [Problem, Solution requirements, Release criteria]}
+
+  # --- relations ------------------------------------------------------------
+  # One relation, from the product requirements document to the business one, in
+  # the derivation family, with the business document as the nucleus.
+  #
+  # The nuclearity is what this entry is for. A PRD whose BRD is superseded is
+  # structurally stale with no separate check. Context pruning keeps the BRD and
+  # drops the PRD, which is the right way round for a reader asking why the work
+  # exists. Reciprocity reports an unlinked PRD as a generation defect at the end
+  # that wrote the edge.
+  #
+  # The name is the tradition's own verb. BABOK writes of progressive elaboration
+  # and of elaborating requirements, though its classification schema spells the
+  # movement between tiers as a bridge. The Pragmatic lineage says the product
+  # document translates the why into the how. Both describe one movement, and
+  # doctrine.md carries the exact wording of each source.
+  # `derives_from` was refused: spec 2 uses that string as a generic example
+  # spelling for the whole derivation family, and an entry that claims the most
+  # general name in a family closes it to every later entry.
+  #
+  # `composition` was refused. A PRD is not part of a BRD. It is a second
+  # document about one initiative at a second level.
+  #
+  # The base's `traces_to` was refused, and doctrine.md carries the subsection.
+  # Its family is `evidence`, which is not lifecycle-sensitive, so the staleness
+  # this relation exists to buy would not arrive. It declares no inverse, no
+  # reciprocity and no nuclearity, and its `created_by` is `hook`.
+  #
+  # `created_by: scaffold`, on the argument design-spec used for `applied_in`:
+  # the run that opens a PRD from a BRD writes both ends.
+  relations.elaborates:
+    family: derivation
+    from: [prd]
+    to:   [brd]
+    nuclearity: nucleus-satellite
+    nucleus: to
+    inverse: elaborated_by
+    reciprocal: required
+    created_by: scaffold
+
+  # --- shelves --------------------------------------------------------------
+  # One shelf, heterogeneous, discriminated by `requirement_tier`. The tradition
+  # files the two documents of one initiative together, under the name of the
+  # initiative, so placement cannot type either of them.
+  #
+  # The path is the tradition's own word, and it is free. The standards-spec
+  # entry's third finding records that the base's `shelves.specifications` closed
+  # `docs/specifications/**` to the entry that models the specification
+  # tradition. Nothing closes `docs/requirements/**` to this one. The cost that
+  # finding records is about which words a minimal base spent, and not about
+  # entries in general.
+  #
+  # No `layout`. The tradition names its files `<initiative>/brd.md`, and a
+  # layout has no form for a per-initiative subdirectory. doctrine.md records the
+  # omission as an assumption.
+
+  shelves.requirements:
+    title: Requirements
+    path: docs/requirements/**
+    homogeneous: false
+    discriminator: requirement_tier
+    kinds: [brd, prd]
+
+  # --- identifier schemes ---------------------------------------------------
+  # Two schemes, one per kind, because a kind that a relation may name needs an
+  # identifier and this entry's relation names both kinds.
+  #
+  # No namespace on either of them, for the reason the base declares none: a
+  # bundle ships to adopters, and a constant written here would be minted by all
+  # of them at once. The consumer's overlay declares it, and `taxonomy validate`
+  # refuses a resolved scheme that carries none.
+  #
+  # `minted-once` and not `reconcile-first`. A BRD and a PRD are cited from
+  # outside the corpus, in a roadmap, a ticket and a board paper, so an
+  # identifier that a later reconciliation could move breaks a citation nobody
+  # here can rewrite. The `{slug}` is what makes that possible: the name comes
+  # from the initiative rather than from a counter.
+
+  identifier_schemes.brd_id:
+    pattern: "{namespace}-BRD-{slug}"
+    allocation: minted-once
+
+  identifier_schemes.prd_id:
+    pattern: "{namespace}-PRD-{slug}"
+    allocation: minted-once
+
+  # --- obligations ----------------------------------------------------------
+  # The three invariants this tradition exists to hold, and no control discharges
+  # any of them. Each one carries a disposition rather than silence, which is
+  # what spec 4 asks of an obligation that nothing discharges.
+  #
+  # Two of the three are held back by one thing: a requirement has no identity.
+  # Both cited traditions define traceability at the level of one requirement,
+  # and identity in this language is per document.
+
+  obligations.OB-BP-1:
+    statement: Every business requirement is answered by at least one product requirement
+    rationale: A business requirement that no product requirement answers is a need nobody scoped, and it reads from the sponsor's side as work in progress. The document-level expectation reports a BRD that no PRD elaborates, and it says nothing about a requirement inside one that nothing answers
+    class: cohesion
+    prevents: content.incomplete
+    severity: high
+    disposition:
+      gap:
+        owner: the brd-prd entry
+        target: sub-document identity, which no declaration in this language holds. Identity is per document, and a requirement is a numbered line under a heading
+  obligations.OB-BP-2:
+    statement: Every product requirement traces to a business requirement, or records why it does not
+    rationale: A product requirement that answers no business need is scope somebody added, and a corpus that cannot tell it from a requirement whose need is recorded elsewhere reads both as traced. The exception is the half that matters, because a product requirement with no business parent is normal and unrecorded
+    class: cohesion
+    prevents: content.incomplete
+    severity: high
+    disposition:
+      gap:
+        owner: the brd-prd entry
+        target: sub-document identity, as above, and a form for a stated exception. Nothing in this language holds a recorded reason for an absent edge
+  obligations.OB-BP-3:
+    statement: Every business requirement states a measure by which it is met
+    rationale: A requirement with no measure is met whenever somebody says it is. The section contract reports a BRD with no `Success measures` heading, and no rule reads what is written under it
+    class: coherence
+    prevents: content.unclear
+    severity: high
+    disposition:
+      unverifiable:
+        reasoning: To decide that a sentence states a measure is to reason about what prose asserts, which spec 1 forswears. The heading is structural and the measure is prose

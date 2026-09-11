@@ -1,9 +1,15 @@
+---
+id: DR-0019
+title: "`.vendkit/` has two halves: `consumer/` and `publisher/`"
+status: current
+status_since: "2026-07-30"
+last_verified: "2026-07-30"
+summary: "The consumer config directory splits into consumer and publisher halves that no glob reaches across, and the publisher paths become defaults."
+---
+
 # DR-0019 — `.vendkit/` has two halves: `consumer/` and `publisher/`
 
-- **Status:** accepted
-- **Date:** 2026-07-30
-- **Supersedes:** refines [DR-0012](DR-0012-consumer-config-consolidation.md) (the
-  per-slice two-file rule holds; the directory gains a `consumer/` level)
+Supersedes: refines [DR-0012](DR-0012-consumer-config-consolidation.md) (the per-slice two-file rule holds; the directory gains a `consumer/` level)
 
 ## Context
 

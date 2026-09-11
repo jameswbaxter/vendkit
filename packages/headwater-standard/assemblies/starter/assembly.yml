@@ -1,0 +1,50 @@
+# SPDX-License-Identifier: Apache-2.0
+#
+# The doctrine starter kit, as a publisher recipe over `headwater/standard`.
+# Spec 0 deliverable 6 promises an opinionated default taxonomy, and spec 7
+# rules that the promise is kept by an assembly rather than by a second base
+# package. This file is that assembly.
+#
+# `headwater taxonomy publish --from taxonomy-source/headwater-standard
+# --assembly starter --out <dir>` resolves it. The result is `headwater/starter`
+# in its flattened form: one complete taxonomy source, no bundle directory, and
+# a consumer that selects no bundles. A composer who wants the parts instead
+# pins `headwater/standard` and copies the `from.bundles` list below into its
+# own `.headwater/taxonomy.yml`.
+#
+# Four things this file may not do, each of them a refusal in
+# `engine/crates/resolve/src/assembly.rs`:
+#
+#   - The directory name must equal the `assembly` value.
+#   - The root keys are exactly `assembly`, `package`, `version`, `from`, and
+#     optionally `overlay`. Anything else is refused by name.
+#   - `from` admits `package` and `bundles` and nothing else. There is no
+#     `from.version` key: the version rides in the `@` suffix of `from.package`.
+#   - `from.package` must pin the `package` and `version` that
+#     `../../package.yml` declares. A bump of that version moves this line.
+
+assembly: starter
+package: headwater/starter
+# The starter's own number, and not the number of the package it is derived
+# from. 0.1.0 matches the first installable release of this engine.
+version: 0.1.0
+from:
+  package: headwater/standard@4.2.0
+  # This is the selection `.headwater/taxonomy.yml` of this repository already
+  # runs on its own corpus. HW-OBL-0018 records that the bundle set is a guess
+  # that no adopter has revised, and `doctrine/starter.md` says so to the
+  # adopter who reads it.
+  #
+  # The three do not decompose: `design-spec` and `decision-record` both name
+  # purposes, kinds and a voice regime that `evidence-and-obligation` declares,
+  # so a selection of the first two without the third leaves seven dangling
+  # names and referential integrity refuses it. `requires:` at a bundle root
+  # does not cause that refusal; HW-DR-0040 rules that key a label and
+  # `package::selected` reads no such list.
+  bundles: [design-spec, evidence-and-obligation, decision-record]
+
+# No `overlay` key. An assembly overlay adds a relation whose `from` and `to`
+# kinds come from at least two selected bundles, and `assembly::validate_glue`
+# refuses an empty one outright. These three bundles need no such connection
+# added, so the correct shape is to declare no key at all rather than an empty
+# one.

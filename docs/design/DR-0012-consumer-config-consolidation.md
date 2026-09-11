@@ -1,7 +1,13 @@
-# DR-0012 — One consumer config file per slice under `.vendkit/`
+---
+id: DR-0012
+title: "One consumer config file per slice under `.vendkit/`"
+status: current
+status_since: "2026-07-08"
+last_verified: "2026-07-08"
+summary: "Each slice has exactly two files under the consumer config directory, found by fixed globs, so adding a slice cannot forget a wiring."
+---
 
-- **Status:** accepted
-- **Date:** 2026-07-08
+# DR-0012 — One consumer config file per slice under `.vendkit/`
 
 ## Context
 

@@ -1,0 +1,42 @@
+# The vendkit adopter overlay for the Headwater docs pilot (DR-0021).
+#
+# An overlay is add-only over the package: nothing here weakens a base rule.
+# What it states is the three things no tree answers — what a task routes to,
+# what a DR identifier looks like here, and where this corpus keeps its shelf.
+
+override:
+  # --- INTERVIEW 1: what does each purpose answer? ---------------------------
+  # The package's three phrases, kept verbatim, plus the two a contributor here
+  # would actually type. `answers` is a whole value and the package states one,
+  # so this is an override that extends rather than an add.
+  purposes.rationale.answers:
+    - why is it this way
+    - what was rejected
+    - what does this constrain
+    - which DR covers this
+    - why not that alternative
+
+  # --- INTERVIEW 2: what identifies a document? ------------------------------
+  # vendkit mints bare `DR-NNNN` and has done since DR-0001; the identifier
+  # travels in commit messages, issues and the manifest, so the corpus takes
+  # the pattern the corpus already wrote rather than renaming 20 records to
+  # suit a namespaced default. The base pattern leads with `{namespace}` and
+  # this corpus has none, so the pattern is overridden rather than the
+  # namespace filled in.
+  identifier_schemes.decision_id:
+    pattern: "DR-{seq:04d}"
+    namespace: VK
+    allocation: reconcile-first
+
+  # --- INTERVIEW 3: where is the shelf? --------------------------------------
+  # This repository has kept design records at `docs/design/` since DR-0001,
+  # and the file name carries the `DR-` prefix. The pilot moves no files.
+  shelves.decisions:
+    path: docs/design/**
+    homogeneous: true
+    kind: decision
+    layout: "DR-{seq:04d}-{slug}.md"
+    title: Design records
+
+add:
+  identifier_schemes.obligation_record_id.namespace: VK

@@ -1,0 +1,132 @@
+# SPDX-License-Identifier: Apache-2.0
+#
+# The Diátaxis taxonomy: the four documentation modes of Procida's method —
+# tutorial, how-to, reference and explanation — as one facet over the kinds a
+# corpus already has.
+#
+# An add-only overlay over the base package. doctrine.md states what the
+# tradition is, why the four modes are a facet here rather than a shelf, and
+# what an author does with a document that mixes modes or with a kind that no
+# mode fits.
+#
+# This is a **partial entry**. It declares no kind, no shelf, no purpose and no
+# relation, so it satisfies none of the invariant core by itself and it stands
+# on a base that already does. The library index calls that a partial entry and
+# asks it to say so, and doctrine.md says so under `The core, declared`.
+#
+# Two things about this bundle are unusual, and both are deliberate.
+#
+# It writes three operations and no more. A facet-only entry has one declaration
+# to make, one place to attach it, and one invariant of its tradition to state,
+# and everything else here is the prose beside those three.
+#
+# It reaches `kinds.governed_document`, which is the base's abstract kind, and
+# not a kind of any other entry. That is what keeps it add-only and disjoint:
+# the address set of this bundle meets no address that the design-spec entry or
+# the decision-record entry writes, so an adopter may select any subset of the
+# three. Reaching a concrete kind of another entry to *require* the facet is the
+# operation that has no add-only form, and HW-OBL-0040 holds that question.
+
+bundle: diataxis
+extends: headwater/standard@3.2.0
+requires: []
+
+add:
+
+  # --- facets ---------------------------------------------------------------
+  # One facet, four values and no residual.
+  #
+  # The name is `reader_mode` and not `mode` or `diataxis_mode`. `mode` is a
+  # word that a second entry would want, and criterion 6 of the library index
+  # gives the address to whichever entry claims it first, so a general word in
+  # a partial entry is an address taken from everybody. `diataxis_mode` names
+  # the method rather than the property, and a facet names what a document is.
+  # `reader_mode` is the term [HW-EVAL-theoretical-foundations](https://github.com/headwater-ai/headwater/blob/main/docs/evaluations/theoretical-foundations.md)
+  # already uses for this idea in this repository's own vocabulary.
+  #
+  # `values` is closed at four, which is the method's own claim rather than this
+  # entry's. Procida's argument is that the four are exhaustive over end-user
+  # documentation and that a page outside them is a page that has not been
+  # separated yet. A fifth value here would be this entry disagreeing with the
+  # tradition it models, which criterion 1 refuses.
+  #
+  # `required: false`, and it is the load this facet is designed to carry. Every
+  # guidance entry below states when an author picks that value, and doctrine.md
+  # states when an author picks none: a document that mixes two modes and has
+  # not been split, and a kind whose documents no reader reaches in a reader
+  # mode. A required facet would force a value onto both, and the wrong value in
+  # a closed set is worse than no value, because a filter over the set then
+  # returns the document as though somebody had judged it.
+  #
+  # `volatility: stable` is a claim, and it is the tradition's. A page has one
+  # mode; a page that changes mode has been rewritten into a different page. So
+  # the value does not drift under a document that stays itself, and an adopter
+  # may put it in a shelf path or a projection output without every reference to
+  # that path dying at an edit. `mutable` would forbid the mode-partitioned site
+  # that is the most common reason to adopt the method at all.
+  #
+  # No `role`. The role registry is closed at six, none of them is this, and a
+  # role is the only thing about a facet that an emitter may read by name.
+  #
+  # An adopter who wants the corpus laid out by mode writes this facet into
+  # `shelves.<s>.group_by`, which is a **shelf** member and not a projection
+  # member: the meta-schema puts `group_by` inside the shelf block and the
+  # projection block has no such key. So to partition by mode is a placement
+  # decision, it belongs to whoever owns the placement axis, and that is the
+  # adopter and never this entry. `volatility: stable` above is what permits it.
+  facets.reader_mode:
+    type: string
+    values: [tutorial, how-to, reference, explanation]
+    required: false
+    volatility: stable
+    guidance:
+      tutorial: a lesson that takes a beginner through one worked exercise, where the reader learns by doing and the author guarantees the outcome
+      how-to: a recipe that takes a competent reader to one result, where the reader already has a goal and the author states the steps to it
+      reference: a description of the machinery, where the reader arrives knowing what to look up and the author states what is there and nothing else
+      explanation: a discussion that gives the reader the reasoning, where the reader is away from the keyboard and the author argues rather than instructs
+
+  # --- kinds ----------------------------------------------------------------
+  # The one line that attaches the facet, and the one that makes the entry
+  # admissible at all.
+  #
+  # `governed_document` is the base's abstract kind, and every concrete kind of
+  # every entry inherits from it. So one `optional` line offers the facet to a
+  # whole corpus without this entry naming one kind of any other entry.
+  #
+  # `optional` rather than `require`, for the reason the facet declares
+  # `required: false` above, and for a second reason: an entry that required the
+  # facet on a kind would need `kinds.<k>.facets.require` on a kind whose
+  # `facets` block another entry already wrote, and an `add` cannot reach into a
+  # list that exists. HW-OBL-0040 carries that.
+  #
+  # **What this line does in the engine, exactly.** It satisfies the relevance
+  # canon of [spec 2](https://github.com/headwater-ai/headwater/blob/main/docs/spec/02-taxonomy-model.md#facet-acceptance-tests),
+  # which `headwater taxonomy validate` refuses a facet without: a facet that no
+  # kind requires *or lists as optional*, that no shelf discriminates on, that
+  # no expectation reads and that carries no role, is refused as unread. It does
+  # not decide which documents are value-checked. `facet.value.not_permitted`
+  # instantiates over every kind that does not `forbid` an enumerated facet, so
+  # a value outside the four is refused on any kind in the corpus whether or not
+  # that kind lists the facet. Remove this line and the taxonomy stops
+  # resolving; it does not stop checking.
+  kinds.governed_document.facets.optional: [reader_mode]
+
+  # --- obligations ----------------------------------------------------------
+  # The one invariant of the tradition, and no control discharges it.
+  #
+  # `unverifiable` rather than `gap`, and the difference is the whole content of
+  # the declaration. A `gap` says a control is owed and names what would supply
+  # it. `unverifiable` says no control of this engine can ever supply it, and
+  # states why. The closed value set catches a document that names a fifth mode.
+  # It cannot catch a document that names one mode truthfully and then serves
+  # two, because to find that is to reason about what the prose asserts, and
+  # spec 1 draws the boundary that puts that outside the engine.
+  obligations.OB-DX-1:
+    statement: A document is in one reader mode
+    rationale: A page that serves two modes serves neither, and the reader who came for one of them reads past the other. That is the method's central claim, and a corpus that adopts the four modes and keeps mixed pages has taken the labels without the separation that makes them worth anything
+    class: coherence
+    prevents: content.unclear
+    severity: medium
+    disposition:
+      unverifiable:
+        reasoning: To decide that a page holds two modes is to reason about what the prose asserts, which spec 1 forswears. The value set catches a fifth name and no rule catches a truthful name over prose that serves two readers

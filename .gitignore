@@ -3,3 +3,6 @@
 /vendkit-go
 /dist/
 *.test
+
+# Fetched docs-governance engine (pinned by tools/headwater-fetch.sh)
+/.headwater/bin/

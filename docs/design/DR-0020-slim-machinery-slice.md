@@ -1,10 +1,15 @@
+---
+id: DR-0020
+title: "Slim the machinery slice: the engine ships as artefact only"
+status: current
+status_since: "2026-08-11"
+last_verified: "2026-08-11"
+summary: "The machinery slice exports only what consumers consume in-tree, leaving the pinned release artefact as the engine's sole distribution channel."
+---
+
 # DR-0020 — Slim the machinery slice: the engine ships as artefact only
 
-- **Status:** accepted
-- **Date:** 2026-08-11
-- **Supersedes:** amends [DR-0001](DR-0001-vendored-identity-copies.md)'s
-  engine clause; completes the direction set by
-  [DR-0016](DR-0016-engine-as-pinned-artefact.md)
+Supersedes: amends [DR-0001](DR-0001-vendored-identity-copies.md)'s engine clause; completes the direction set by [DR-0016](DR-0016-engine-as-pinned-artefact.md)
 
 ## Context
 

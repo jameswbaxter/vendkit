@@ -1,0 +1,297 @@
+# SPDX-License-Identifier: Apache-2.0
+#
+# The standards-spec taxonomy: the internal-standard ladder that MIL-STD-498,
+# the ISO/IEC/IEEE 29148 family and the functional/technical spec convention
+# converge on. A standard binds many components. A functional specification
+# states what one component does. A technical specification states how that
+# component is realized.
+#
+# An add-only overlay over the base package. Every operation below is an `add`
+# at a key that headwater/standard does not declare. doctrine.md states what the
+# tradition is, why each declaration is here, and what this draft assumed where
+# the specification is silent.
+#
+# Two things about this bundle are worth naming before the operations.
+#
+# It declares `requires: []`, and it is the second entry with an empty closure.
+# Criterion 6 of the library index cost the decision-record entry a dependency
+# on the whole of design-spec for one address. This entry meets no address that
+# design-spec, decision-record or diataxis writes, so an adopter may select any
+# subset of the four.
+#
+# It spells its governance edge from the standard and never toward it. Spec 2
+# derives reading precedence for the governance family as "the source governs",
+# so an edge spelled specification -> standard would make the specification
+# govern the reading of the standard that binds it. doctrine.md carries the
+# argument and the finding that follows from it.
+
+bundle: standards-spec
+extends: headwater/standard@3.2.0
+requires: []
+
+add:
+
+  # --- purposes -------------------------------------------------------------
+  # The base declares rationale and behavior. This tradition serves one more
+  # reader intent, and `kinds.standard` below is the kind that serves it.
+  #
+  # `constraint` is the word spec 2's own worked example uses for this purpose
+  # in its product-suite column, and no entry and no package declares it. The
+  # base's core does not require it, and the issue framing that said it did was
+  # wrong: `core.requires` names `rationale` and `behavior` and no third purpose.
+
+  purposes.constraint:
+    intent: state what must hold across the documents and code it governs, and what it rules out
+    answers:
+      - "what am I required to do"
+      - "what does this rule out"
+      - "which rule does this document answer to"
+
+  # --- facets ---------------------------------------------------------------
+  # One facet, two values and no residual. It is the discriminator of the
+  # component-specs shelf, which is what a heterogeneous shelf needs to type a
+  # document that placement alone cannot type.
+  #
+  # The two values are the two kind names, and that is a requirement rather than
+  # a style. Kind resolution matches a discriminator value against the shelf's
+  # `kinds` list by identity (`census::resolve`, step 3), so a value of
+  # `functional` against a kind named `functional_spec` leaves the document
+  # untyped. The design-spec entry's `doc_type` takes the same form for the same
+  # reason.
+  #
+  # No `role`. The role registry is closed at six, none of them is this, and the
+  # diataxis entry took the same reading for `reader_mode`. The relevance canon
+  # is satisfied twice over here, because two kinds require the facet and a
+  # shelf discriminates on it.
+  #
+  # `volatility: stable` is a claim about the tradition rather than about this
+  # engine: a document does not move from the functional level to the technical
+  # level, and a document that reads as though it did has been rewritten into a
+  # second document. The claim is what lets the value stand in a shelf path or a
+  # projection output. It is also an assumption, and doctrine.md records it as
+  # one, because the design-spec entry recorded the same assumption for
+  # `doc_type` and nothing has ruled on it since.
+
+  facets.spec_layer:
+    type: string
+    values: [functional_spec, technical_spec]
+    required: false
+    volatility: stable
+    guidance:
+      functional_spec: the document states what the component does and what a caller may rely on, which is the level a standard binds and the level a reader cites
+      technical_spec: the document states how the component is realized, which is the level that changes when the implementation changes and the behavior does not
+
+  # --- kinds ----------------------------------------------------------------
+  # Three kinds. Each one inherits the four core-bearing facets and the base
+  # relations from `governed_document`, which is what keeps this bundle
+  # add-only.
+  #
+  # The names are the plain words the tradition uses. `standard` is unreserved,
+  # and spec 2's rigidity rule refuses a kind named with a bare phase adjective
+  # and says nothing against a plain noun, so `governing_standard` would be this
+  # entry hedging against the tradition it models. `functional_spec` and
+  # `technical_spec` are Spolsky's terms and the two halves of spec 2's own
+  # contract-sidecar layout. `srs` or `sdd` would name one standards body rather
+  # than the convergence of several.
+
+  # `constraint` is the purpose, and `spec_layer` is forbidden here rather than
+  # absent. A standard sits above the ladder and belongs to neither rung, and
+  # its shelf is homogeneous, so a value of the discriminator on this kind would
+  # be metadata restating a placement that already types the document.
+  kinds.standard:
+    is_a: governed_document
+    purpose: constraint
+    identifier: {scheme: standard_id}
+    voice: declarative
+    lifecycle: standard
+    facets:
+      forbid: [spec_layer]
+    sections: {require: [Scope, Requirements, Conformance]}
+    relations:
+      expect:
+        - id: standard-applied
+          relation: regulates
+          to_kind: functional_spec
+          when: {status: current}
+          within: 180d
+          since: state_entered
+          severity: warn
+          rationale: a standard that governs no document governs nothing, and a corpus keeps it because somebody wrote it
+
+  # `behavior` and not a purpose of its own. The reader intent is the base's:
+  # what does this component do, and what may I rely on. Two kinds serving one
+  # purpose is legal, and spec 2 refuses only a kind that serves two unrelated
+  # purposes. The design-spec entry set the precedent when it gave `review_prompt`
+  # and `review_record` the one `evidence` purpose and split them because a
+  # relation runs between them. `realizes` runs between these two.
+  kinds.functional_spec:
+    is_a: governed_document
+    purpose: behavior
+    identifier: {scheme: functional_spec_id}
+    voice: declarative
+    lifecycle: standard
+    facets:
+      require: [spec_layer]
+    sections: {require: [Scope, Behavior, Acceptance]}
+    relations:
+      expect:
+        - id: functional-realized
+          relation: realized_by
+          to_kind: technical_spec
+          when: {status: current}
+          within: 90d
+          since: state_entered
+          severity: warn
+          rationale: a functional spec that nothing realizes is a requirement nobody built
+
+  # No expectation here, and the absence is the nuclearity of `realizes` read
+  # from the other end. A technical spec with no functional spec is a generation
+  # defect that the reciprocity rule already reports. A functional spec with no
+  # technical spec is a real omission, and the expectation above is where it is
+  # reported.
+  kinds.technical_spec:
+    is_a: governed_document
+    purpose: behavior
+    identifier: {scheme: technical_spec_id}
+    voice: declarative
+    lifecycle: standard
+    facets:
+      require: [spec_layer]
+    sections: {require: [Scope, Design, Conformance]}
+
+  # --- relations ------------------------------------------------------------
+  # Two relations, and neither is `created_by: author`. doctrine.md names the
+  # proposer of each edge.
+
+  # Standard -> specification, and the direction is forced rather than chosen.
+  # Spec 2 derives reading precedence for the governance family as "the source
+  # governs". An edge spelled the other way would derive the precedence
+  # backwards. The name avoids the base's `governs`, whose target is a
+  # `code_path`, and the base's `constrains`, whose endpoints are decisions.
+  #
+  # `created_by: agent`, matching the base's `constrains`. Nothing mechanical
+  # knows which standard binds which specification. The coherence sweep is an
+  # agent, and the library index's one-sentence duty applies to `author` edges,
+  # so this costs no extra declaration.
+  relations.regulates:
+    family: governance
+    from: [standard]
+    to:   [functional_spec, technical_spec]
+    inverse: regulated_by
+    reciprocal: required
+    cardinality: many
+    created_by: agent
+
+  # Technical spec -> functional spec, in the derivation family, with the
+  # functional spec as the nucleus. The nuclearity is what this entry is for.
+  # A technical spec whose functional spec is superseded is structurally stale
+  # with no separate check. Context pruning drops the technical spec and keeps
+  # the functional one. An unlinked technical spec is a generation defect and an
+  # unlinked functional spec is a real orphan.
+  #
+  # `composition` would say the technical spec is part of the functional spec,
+  # which is wrong. It is a second document about one subject at a second level.
+  #
+  # `created_by: scaffold`, on the argument design-spec used for `applied_in`:
+  # the run that opens a technical spec from a functional spec writes both ends.
+  relations.realizes:
+    family: derivation
+    from: [technical_spec]
+    to:   [functional_spec]
+    nuclearity: nucleus-satellite
+    nucleus: to
+    inverse: realized_by
+    reciprocal: required
+    created_by: scaffold
+
+  # --- shelves --------------------------------------------------------------
+  # Two shelves. The standards shelf is homogeneous, because one kind lives
+  # there and placement types it. The component-specs shelf is heterogeneous and
+  # `spec_layer` discriminates it, because the tradition files the two rungs of
+  # one component side by side.
+  #
+  # The path is `docs/component-specs/**` and the tradition's own word is
+  # `specifications`. The base holds `shelves.specifications` at
+  # `docs/specifications/**`, and shelf determinism refuses a second pattern
+  # over it, so the entry that models the tradition cannot use the tradition's
+  # directory. doctrine.md carries that as a finding.
+  #
+  # No `layout` on either shelf. The tradition names its files
+  # `<component>/functional.md`, and a layout has no form for a per-component
+  # subdirectory. doctrine.md records the omission as an assumption.
+
+  shelves.standards:
+    title: Standards
+    path: docs/standards/**
+    homogeneous: true
+    kind: standard
+
+  shelves.component_specs:
+    title: Component specifications
+    path: docs/component-specs/**
+    homogeneous: false
+    discriminator: spec_layer
+    kinds: [functional_spec, technical_spec]
+
+  # --- identifier schemes ---------------------------------------------------
+  # Three schemes, one per kind, because a kind that a relation may name needs
+  # an identifier and every relation here names a kind.
+  #
+  # No namespace on any of them, for the reason the base declares none: a bundle
+  # ships to adopters, and a constant written here would be minted by all of
+  # them at once. The consumer's overlay declares it, and `taxonomy validate`
+  # refuses a resolved scheme that carries none.
+  #
+  # `minted-once` and not `reconcile-first`. A standard and a specification are
+  # cited from outside the corpus, in a contract, an audit trail and a ticket,
+  # so an identifier that a later reconciliation could move is an identifier
+  # that breaks a citation nobody here can rewrite. The `{slug}` in the pattern
+  # is what makes that possible: the name is derived from the subject rather
+  # than from a counter, so no run has to allocate the next free number.
+
+  identifier_schemes.standard_id:
+    pattern: "{namespace}-STD-{slug}"
+    allocation: minted-once
+
+  identifier_schemes.functional_spec_id:
+    pattern: "{namespace}-FS-{slug}"
+    allocation: minted-once
+
+  identifier_schemes.technical_spec_id:
+    pattern: "{namespace}-TS-{slug}"
+    allocation: minted-once
+
+  # --- obligations ----------------------------------------------------------
+  # The three invariants this tradition exists to hold, and no control
+  # discharges any of them. Each one carries a disposition rather than silence,
+  # which is what spec 4 asks of an obligation that nothing discharges.
+
+  obligations.OB-SS-1:
+    statement: A technical specification meets every requirement of the standards that regulate its functional specification
+    rationale: This is the whole point of writing a standard down. A corpus that keeps the ladder and never checks the rungs has the paperwork of conformance and none of it, and the reader who cites the standard learns nothing about the component that answers to it
+    class: coherence
+    prevents: content.inconsistent
+    severity: high
+    disposition:
+      unverifiable:
+        reasoning: To decide that one document meets a requirement of another is to reason about what the prose of both asserts, which spec 1 forswears. The edges say which standard reaches which specification and no rule reads the requirement under the heading
+  obligations.OB-SS-2:
+    statement: Every requirement of a standard is traceable to the specification that meets it
+    rationale: A requirement that no specification answers is either unmet or met somewhere nobody can find, and the two look the same from the standard. Traceability is the property every cited source in this tradition asks for by name
+    class: cohesion
+    prevents: content.incomplete
+    severity: high
+    disposition:
+      gap:
+        owner: the standards-spec entry
+        target: sub-document identity, which no declaration in this language holds. Identity is per document, and a requirement is a heading inside one. Contract sidecars are where the answer probably lives
+  obligations.OB-SS-3:
+    statement: A deviation from a current standard is registered with an owner and an expiry
+    rationale: An unregistered deviation is the failure mode every one of these traditions was written against. The corpus that holds the standard reads as conformant, the component that departed from it reads as governed, and nobody owns the difference
+    class: cohesion
+    prevents: content.incomplete
+    severity: high
+    disposition:
+      gap:
+        owner: the standards-spec entry
+        target: the `does_not_comply_with` relation, which spec 2 names as package content under `$package.optional` and the package holds nothing there. The address is reserved, so this entry may not declare it

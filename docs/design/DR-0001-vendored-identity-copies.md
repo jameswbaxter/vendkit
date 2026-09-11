@@ -1,7 +1,13 @@
-# DR-0001 — Vendored identity copies, not package distribution
+---
+id: DR-0001
+title: "Vendored identity copies, not package distribution"
+status: current
+status_since: "2026-07-08"
+last_verified: "2026-07-08"
+summary: "Slices travel as verbatim bytes committed in the consumer's own tree and tracked by a checksum manifest, rather than installed from a package registry."
+---
 
-- **Status:** accepted
-- **Date:** 2026-07-08
+# DR-0001 — Vendored identity copies, not package distribution
 
 ## Context
 

@@ -1,0 +1,23 @@
+# The consumer declaration for the Headwater docs-governance pilot (DR-0021).
+#
+# Scope is the design-record shelf only. `internal/docsgen` still renders the
+# site (DR-0018); Headwater types and checks this shelf and generates its index,
+# and is never linked into `cmd/vendkit`.
+#
+# `headwater taxonomy resolve` reads this and writes .headwater/taxonomy.lock.
+# Everything after that reads the lock and never these sources.
+
+taxonomy:
+  package: headwater/standard
+  version: 4.2.0
+  digest: sha256:961ecf2ae2c3c74f251adea575d16b2efda37d9a7fb10d2889e12bb77f4c2eb5
+  bundles: [decision-record, evidence-and-obligation]
+  overlay: .headwater/overlay.yml
+
+corpus:
+  root: docs/design
+  exclude:
+    - path: docs/design/README.md
+      reason: the generated shelf index, a projection of the shelf and not a member of it
+    - path: docs/design/TEMPLATE.md
+      reason: the blank DR form, carrying placeholder headings and no decision

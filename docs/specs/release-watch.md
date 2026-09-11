@@ -9,6 +9,8 @@ summary: "A scheduled consumer job compares each slice's pin against the publish
 relations:
   realizes:
     - VK-FS-releases-and-versioning
+  regulated_by:
+    - VK-STD-invariants
 ---
 
 # Spec: Release watch

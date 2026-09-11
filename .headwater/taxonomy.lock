@@ -22,7 +22,7 @@
 
 lock:
   format: 3
-  digest: sha256:a58e10d0f5d827efcb6a57910e74f9fe3bb514c43346120ba8809512d3fddd2b
+  digest: sha256:a2b95d52d66618cd3237f4c95994d82c58c63625b547a9498206ba7747ab70e4
   rules: 1
   package: headwater/standard
   version: 4.2.0
@@ -36,7 +36,7 @@ lock:
     - path: packages/headwater-standard/bundles/standards-spec/bundle.yml
       digest: sha256:23646425cc7d7e2d69674cf7f8975c3c8f37742774c6b0c088523f957bba54f4
     - path: .headwater/overlay.yml
-      digest: sha256:9da6f2376a71ce5f9f0e722101a280f2e99828b62a2613761659d44532b106ef
+      digest: sha256:e042d353e4e77527dd2c915cc01453f4ab2c82245313653c356801d0323724e7
 
 # The resolved taxonomy. The digest above is over this text with the two
 # leading spaces of each line removed, which is the form the resolver writes
@@ -398,7 +398,7 @@ resolved:
         - technical_spec
   shelves:
     decisions:
-      path: "docs/design/**"
+      path: "./docs/design/**"
       homogeneous: true
       kind: decision
       layout: "DR-{seq:04d}-{slug}.md"
@@ -408,6 +408,11 @@ resolved:
       homogeneous: true
       kind: specification
       title: Specifications
+    compatibility:
+      homogeneous: true
+      kind: standard
+      path: "./COMPATIBILITY.md"
+      title: "Compatibility policy"
     component_specs:
       discriminator: spec_layer
       homogeneous: false
@@ -427,13 +432,18 @@ resolved:
       layout: "{seq:04d}-{slug}.md"
       path: "docs/obligations/**"
       title: "Obligation records"
+    repo_standards:
+      homogeneous: true
+      kind: standard
+      path: "./docs/standards/**"
+      title: Standards
     specs:
       discriminator: spec_layer
       homogeneous: false
       kinds:
         - functional_spec
         - technical_spec
-      path: "docs/specs/**"
+      path: "./docs/specs/**"
       title: "Component specifications"
     standards:
       homogeneous: true
@@ -476,6 +486,7 @@ resolved:
         - decisions
         - specifications
         - specs
+        - repo_standards
       output: "{shelf}/README.md"
   obligations:
     OB-COV-1:

@@ -4,43 +4,77 @@
   "emitter_set": 1,
   "corpora": [
     {
-      "root": "docs",
+      "root": ".",
       "excluded": [
         {
-          "path": "docs/design/README.md",
+          "path": "./packages/**",
+          "reason": "the vendored taxonomy package's own prose, written by its publisher and admitted against a digest; this corpus does not own it and may not edit it"
+        },
+        {
+          "path": "./docs/design/README.md",
           "reason": "the generated shelf index, a projection of the shelf and not a member of it"
         },
         {
-          "path": "docs/design/TEMPLATE.md",
+          "path": "./docs/design/TEMPLATE.md",
           "reason": "the blank DR form, carrying placeholder headings and no decision"
         },
         {
-          "path": "docs/specs/README.md",
+          "path": "./docs/specs/README.md",
           "reason": "the generated shelf index, a projection of the shelf and not a member of it"
         },
         {
-          "path": "docs/architecture.md",
-          "reason": "a layering overview that no shelf reaches; it describes the whole system rather than one component, and no kind of this taxonomy fits it yet"
+          "path": "./docs/standards/README.md",
+          "reason": "the generated shelf index, a projection of the shelf and not a member of it"
         },
         {
-          "path": "docs/testing.md",
-          "reason": "a testing strategy that no shelf reaches; its conformance-kit obligations are cited by the specs rather than stated as one component's behaviour"
+          "path": "./docs/architecture.md",
+          "reason": "a layering and orientation overview; it describes the whole system rather than one component, and no kind of this taxonomy fits it"
+        },
+        {
+          "path": "./README.md",
+          "reason": "the repository front page, a landing document whose job is to route a reader elsewhere"
+        },
+        {
+          "path": "./CONTRIBUTING.md",
+          "reason": "contributor process, which states how to work here rather than what the system does"
+        },
+        {
+          "path": "./ROADMAP.md",
+          "reason": "deferred work, whose future-tense voice every declarative regime in this package forbids"
+        },
+        {
+          "path": "./GLOSSARY.md",
+          "reason": "normative terminology; it defines the words the other documents use, and no kind of this package models a term list"
+        },
+        {
+          "path": "./SECURITY.md",
+          "reason": "the vulnerability-reporting policy, addressed to outside reporters rather than to this corpus"
         }
       ],
       "taxonomy": {
         "package": "headwater/standard",
         "version": "4.2.0",
-        "lock": "sha256:a58e10d0f5d827efcb6a57910e74f9fe3bb514c43346120ba8809512d3fddd2b"
+        "lock": "sha256:a2b95d52d66618cd3237f4c95994d82c58c63625b547a9498206ba7747ab70e4"
       },
       "entry_points": [
         {
           "shelf": "decisions",
-          "path": "docs/design/DR-0001-vendored-identity-copies.md",
+          "path": "./docs/design/DR-0001-vendored-identity-copies.md",
           "id": "DR-0001"
         },
         {
+          "shelf": "compatibility",
+          "path": "./COMPATIBILITY.md",
+          "id": "VK-STD-compatibility"
+        },
+        {
+          "shelf": "repo_standards",
+          "path": "./docs/standards/invariants.md",
+          "id": "VK-STD-invariants"
+        },
+        {
           "shelf": "specs",
-          "path": "docs/specs/cli.md",
+          "path": "./docs/specs/cli.md",
           "id": "VK-FS-cli"
         }
       ],

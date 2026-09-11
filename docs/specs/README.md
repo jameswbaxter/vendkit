@@ -2,7 +2,7 @@
 
 # Component specifications
 
-12 documents on this shelf, in the reading order this corpus derives.
+13 documents on this shelf, in the reading order this corpus derives.
 
 - [The vendkit command surface](cli.md) — One static binary whose command set, flags and key=value facts are frozen public API, split into a machine tier and a human tier composed from it.
 - [Conformance rules and the fleet view](conformance.md) — A rule set shipped inside each release answers whether a consumer is correctly wired, degrading to attestation where a platform fact is not decidable from the tree.
@@ -16,3 +16,4 @@
 - [Release detection and handoff](release-watch.md) — A scheduled consumer job compares each slice's pin against the publisher's latest qualifying release over the git protocol, producing findings that a handoff handler turns into work.
 - [The trust boundary and what guards it](security-model.md) — Write access to a publisher plus release capability is code execution in every consumer, and the framework makes that boundary explicit, narrow and tamper-evident rather than pretending otherwise.
 - [The sync lane and materialisation](sync.md) — Materialise rewrites the tracked files and manifest from a target release and opens one reviewed PR, never merging, never deleting from disk, and never widening scope without review.
+- [The testing strategy and the conformance kit](testing.md) — Three tiers make each invariant executable on both platforms: pure-function unit tests, a scenario kit that drives the CLI as a subprocess, and a platform matrix that runs the same scenarios against both backends.

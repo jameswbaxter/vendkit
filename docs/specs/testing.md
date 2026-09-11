@@ -1,9 +1,37 @@
+---
+id: VK-TS-testing
+title: "The testing strategy and the conformance kit"
+status: current
+status_since: "2026-07-08"
+last_verified: "2026-07-08"
+spec_layer: technical_spec
+summary: "Three tiers make each invariant executable on both platforms: pure-function unit tests, a scenario kit that drives the CLI as a subprocess, and a platform matrix that runs the same scenarios against both backends."
+relations:
+  regulated_by:
+    - VK-STD-invariants
+---
+
 # Testing strategy and the conformance kit
 
-The invariants (architecture §3) are the product. Testing exists to make each
-one executable, on both platforms, forever. Three tiers:
+## Scope
 
-## 1. Unit/property tests (Layer 0)
+This document states how the framework is tested: what each tier covers, where
+a tier stops, and which of them a consumer runs for itself. It is the
+realization of the conformance claims the other specifications make, so where
+one of them says a property is asserted by the scenario kit, this is the
+document that says what the scenario kit is.
+
+It realizes no single contract, because it verifies all of them. What it is
+governed by is the invariants, which are what every tier below exists to make
+executable.
+
+The invariants ([standards/invariants.md](../standards/invariants.md)) are
+the product. Testing exists to make each one executable, on both platforms,
+forever. Three tiers:
+
+## Design
+
+### 1. Unit/property tests (Layer 0)
 
 Pure-function coverage: normalisation (CRLF/CR/trailing-ws/binary round-trips),
 glob matching (one shared matcher — resolver, verifier, and gate must use the
@@ -19,7 +47,7 @@ Property tests worth the setup:
 - **INV-1:** `generate → materialise → gate --strict` is clean across random
   profile bindings and adapter configs.
 
-## 2. Scenario kit (the machinery testing itself)
+### 2. Scenario kit (the machinery testing itself)
 
 A harness that builds throwaway publisher/consumer git repos and drives the
 CLI end-to-end, no network, neutral CI surface, deliveries asserted through
@@ -53,7 +81,7 @@ the journal handler. Core scenario matrix:
 | CODEOWNERS opt-in | absent by default; `--codeowners` writes stanza (GitHub); refused on azure-repos with policy pointer |
 | PR/handoff intents | journal handler receives protocol-versioned documents; dedup keys and deterministic branch as specified |
 
-## 3. Platform matrix (Layer 1/2)
+### 3. Platform matrix (Layer 1/2)
 
 The scenario kit (§2) pins `VENDKIT_PLATFORM=neutral` by construction, so it
 proves *behaviour* platform-free but never touches the two live output
@@ -65,12 +93,12 @@ and has three layers:
   `GITHUB_OUTPUT` append, `::error::` annotation, step-summary; `##vso`
   `setvariable`/`logissue`/`uploadsummary` mapping — plus `Detect` precedence.
 - **Live wiring smoke** (real runner/agent, not self-injected env):
-  - **GHA** — [`.github/workflows/platform-matrix.yml`](../.github/workflows/platform-matrix.yml):
+  - **GHA** — [`.github/workflows/platform-matrix.yml`](../../.github/workflows/platform-matrix.yml):
     under a real runner `Detect()` resolves to `github-actions`, so
     `generate --check` must append `fresh=true` to the runner-provided
     `$GITHUB_OUTPUT`, and a downstream step must consume it via
     `steps.<id>.outputs.fresh` (isOutput round-trip). **Live and green.**
-  - **ADO** — [`azure-pipelines.yml`](../azure-pipelines.yml): the mirror,
+  - **ADO** — [`azure-pipelines.yml`](../../azure-pipelines.yml): the mirror,
     asserting the `##vso[task.setvariable …;isOutput=true]` directive is emitted
     and consumed across steps. **Authored but dormant** — this repo is on
     GitHub, so it needs an Azure DevOps project + GitHub service connection
@@ -83,12 +111,12 @@ and has three layers:
   fetch+verify the scaffold ships), then runs the downloaded binary against the
   repo checked out at the released tag until `generate --check` reports
   `fresh=true`.
-  - **GHA** — [`.github/workflows/release-smoke.yml`](../.github/workflows/release-smoke.yml):
+  - **GHA** — [`.github/workflows/release-smoke.yml`](../../.github/workflows/release-smoke.yml):
     triggered on `release: published`, weekly, and on demand; matrixed over
     every OS family GitHub hosts — linux/amd64, linux/arm64, darwin/amd64,
     darwin/arm64, windows/amd64. **Live.** windows/arm64 ships in the release
     but has no GitHub-hosted runner, so it is built-and-checksummed, not run.
-  - **ADO** — [`azure-pipelines-release-smoke.yml`](../azure-pipelines-release-smoke.yml):
+  - **ADO** — [`azure-pipelines-release-smoke.yml`](../../azure-pipelines-release-smoke.yml):
     the mirror across the three hosted ADO OS families. **Authored but
     dormant** — same GitHub-service-connection prerequisite as the surface
     smoke above.
@@ -120,9 +148,25 @@ live Layer-1 branch (with an anchor), every Layer-1 platform fork ↔ an entry o
 an allowlisted dialect divergence — is enforced by the ledger audit
 (`cmd/vendkit/ledger_test.go`), which parses §6 at test time.
 
-## 4. Consumer-facing self-tests
+### 4. Consumer-facing self-tests
 
 Scaffolded pipelines each carry a PR-time dry-run self-test (no secrets):
 gate runs for real; sync/watch/conformance run `--dry-run` / `--check` against
 the pinned release. A consumer PR that breaks its own vendkit wiring fails
 before merge, not at the next scheduled run.
+
+## Conformance
+
+The tiers above are load-bearing rather than advisory, and three rules keep
+them so.
+
+- **A behavioural change ships with a scenario case.** Every PR that changes
+  behaviour adds or extends one, which is what stops the kit from lagging the
+  code it is meant to pin.
+- **The kit is implementation-blind.** It drives the CLI as a subprocess, so it
+  asserts the shipped binary rather than an internal function, and a second
+  implementation could be held to the identical matrix (DR-0017).
+- **The matrix runs on both backends.** A property asserted on one platform and
+  not the other is not asserted; where the platforms genuinely differ, the
+  difference is recorded in the differences ledger with its mitigation rather
+  than tested away.

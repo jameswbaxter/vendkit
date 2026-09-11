@@ -163,7 +163,7 @@ func TestLedgerCrossReferencesResolve(t *testing.T) {
 	docFor := map[string]string{
 		"conformance spec": "docs/specs/conformance.md",
 		"security model":   "docs/specs/security-model.md",
-		"testing.md":       "docs/testing.md",
+		"testing.md":       "docs/specs/testing.md",
 		"":                 "docs/specs/platform-integration.md",
 	}
 

@@ -9,6 +9,9 @@ summary: "The manifest is the integrity contract between publisher and consumer,
 relations:
   realizes:
     - VK-FS-export-declaration
+  regulated_by:
+    - VK-STD-invariants
+    - VK-STD-compatibility
 ---
 
 # Spec: Manifest and gate lane

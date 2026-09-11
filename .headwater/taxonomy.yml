@@ -1,8 +1,13 @@
 # The consumer declaration for the Headwater docs-governance adoption (DR-0021).
 #
-# Two shelves are governed: the design records under `docs/design/`, and the
-# component specifications under `docs/specs/`, which are split into functional
-# and technical layers by the `spec_layer` facet.
+# The corpus is the repository, not `docs/`, because the compatibility policy
+# is a governed standard and conventionally lives at the root where GitHub
+# surfaces it. Widening the root means every shelf and exclusion path is
+# written `./`-prefixed, which is what the census walks.
+#
+# Three shelves are governed: the design records, the component specifications
+# split into functional and technical layers by the `spec_layer` facet, and the
+# standards that regulate them.
 #
 # `internal/docsgen` still renders the site (DR-0018); Headwater types and
 # checks these shelves and generates their indexes, and is never linked into
@@ -19,15 +24,27 @@ taxonomy:
   overlay: .headwater/overlay.yml
 
 corpus:
-  root: docs
+  root: .
   exclude:
-    - path: docs/design/README.md
+    - path: ./packages/**
+      reason: the vendored taxonomy package's own prose, written by its publisher and admitted against a digest; this corpus does not own it and may not edit it
+    - path: ./docs/design/README.md
       reason: the generated shelf index, a projection of the shelf and not a member of it
-    - path: docs/design/TEMPLATE.md
+    - path: ./docs/design/TEMPLATE.md
       reason: the blank DR form, carrying placeholder headings and no decision
-    - path: docs/specs/README.md
+    - path: ./docs/specs/README.md
       reason: the generated shelf index, a projection of the shelf and not a member of it
-    - path: docs/architecture.md
-      reason: a layering overview that no shelf reaches; it describes the whole system rather than one component, and no kind of this taxonomy fits it yet
-    - path: docs/testing.md
-      reason: a testing strategy that no shelf reaches; its conformance-kit obligations are cited by the specs rather than stated as one component's behaviour
+    - path: ./docs/standards/README.md
+      reason: the generated shelf index, a projection of the shelf and not a member of it
+    - path: ./docs/architecture.md
+      reason: a layering and orientation overview; it describes the whole system rather than one component, and no kind of this taxonomy fits it
+    - path: ./README.md
+      reason: the repository front page, a landing document whose job is to route a reader elsewhere
+    - path: ./CONTRIBUTING.md
+      reason: contributor process, which states how to work here rather than what the system does
+    - path: ./ROADMAP.md
+      reason: deferred work, whose future-tense voice every declarative regime in this package forbids
+    - path: ./GLOSSARY.md
+      reason: normative terminology; it defines the words the other documents use, and no kind of this package models a term list
+    - path: ./SECURITY.md
+      reason: the vulnerability-reporting policy, addressed to outside reporters rather than to this corpus

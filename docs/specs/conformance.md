@@ -9,6 +9,9 @@ summary: "A rule set shipped inside each release answers whether a consumer is c
 relations:
   realized_by:
     - VK-TS-onboarding
+  regulated_by:
+    - VK-STD-invariants
+    - VK-STD-compatibility
 ---
 
 # Spec: Conformance

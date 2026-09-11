@@ -9,6 +9,9 @@ summary: "Everything platform-flavoured that is not the handler protocol: the CI
 relations:
   realizes:
     - VK-FS-handler-protocol
+  regulated_by:
+    - VK-STD-invariants
+    - VK-STD-compatibility
 ---
 
 # Spec: Platform integration — CI surfaces, credentials, differences ledger

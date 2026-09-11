@@ -9,6 +9,9 @@ summary: "One config file per slice holds every consumer-local value, and the sc
 relations:
   realizes:
     - VK-FS-conformance
+  regulated_by:
+    - VK-STD-invariants
+    - VK-STD-compatibility
 ---
 
 # Spec: Onboarding and consumer configuration

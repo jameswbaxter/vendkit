@@ -9,6 +9,9 @@ summary: "One publisher-side YAML file carries every piece of slice identity, th
 relations:
   realized_by:
     - VK-TS-manifest-and-gate
+  regulated_by:
+    - VK-STD-invariants
+    - VK-STD-compatibility
 ---
 
 # Spec: Export declaration

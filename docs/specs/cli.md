@@ -9,6 +9,9 @@ summary: "One static binary whose command set, flags and key=value facts are fro
 relations:
   realized_by:
     - VK-TS-sync
+  regulated_by:
+    - VK-STD-invariants
+    - VK-STD-compatibility
 ---
 
 # Spec: CLI surface

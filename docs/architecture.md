@@ -86,50 +86,11 @@ Component inventory, each with its own spec:
 
 ## 3. The invariants
 
-Numbered; other specs cite them as INV-n. The conformance kit
-([testing.md](testing.md)) turns each into an executable check.
-
-- **INV-1 (Composition).** For any release, declaration, profile and consumer
-  tree: `sync apply` produces a tree and manifest that pass `gate verify
-  --strict` with zero findings.
-- **INV-2 (Purity).** `materialise` output is a pure function of
-  (release tree, export declaration, consumer profile, current consumer
-  manifest). No clock, no network, no environment dependence.
-- **INV-3 (Prediction).** `sync check` reports exactly what `sync apply` would
-  write. A successful check always exits 0 and prints `changed=true|false`; any
-  non-zero exit is an infrastructure failure — a crash can never masquerade as
-  staleness (the *porcelain contract*).
-- **INV-4 (Refresh by default).** Without explicit scope reconciliation, sync
-  refreshes the currently tracked file set only. Scope changes (additions via
-  reconcile, removals detected upstream) are always surfaced in a reviewed PR;
-  files are **never deleted from disk automatically**.
-- **INV-5 (Immutability).** A released tag is never moved or reused. A fix is a
-  strictly newer release. Consumers additionally record the resolved commit SHA
-  so tag substitution is detectable (see security model).
-- **INV-6 (Engine-version).** Materialise always runs the *target* release's
-  engine (the pinned platform reference resolves the same tree that supplies
-  both content and engine). Gate verification always runs against the *pinned*
-  release's manifest. There is no version skew inside either operation.
-  With the compiled engine shipped (DR-0017), this holds as an explicit,
-  checksummed engine pin with schema-competence gating (DR-0016): the
-  scaffolded lane fetches and `self-verify`s the pinned binary, and the sync
-  PR advances the engine pin in lockstep with content. The human-tier CLI
-  documents its own relaxation (cli spec).
-- **INV-7 (Disjointness).** Across all slices vendored by one consumer, the
-  `consumer_path` sets are pairwise disjoint. Checked by the gate lane on every
-  PR.
-- **INV-8 (Neutral core).** Layer 0 behaves identically on every platform and
-  in no-CI (local/dev) execution — it calls no vendor service (DR-0014).
-  Platform behaviour differences are confined to Layer 1 (CI surface,
-  handlers, dialect parsing) and are enumerated in the platform-integration
-  spec's differences ledger.
-- **INV-9 (Dependency-free gate).** The consumer-side gate path runs a single
-  static binary with no runtime prerequisites at all (DR-0016) — no
-  interpreter, no third-party packages, no YAML parsing (the gate reads only
-  the JSON manifest).
-- **INV-10 (Review sovereignty).** No machinery ever merges, pushes to a
-  protected branch, or mutates consumer-owned content directly. Every change
-  lands as a PR under the consumer's normal review rules.
+The ten invariants are the properties every release, lane and consumer tree
+satisfies. They are a governed standard of their own and live at
+[standards/invariants.md](standards/invariants.md), which states each `INV-n`
+and where it is held. Other documents cite them by number; this section is the
+pointer, so a reader arriving from "architecture §3" lands on the numbers.
 
 ## 4. Repository layout
 

@@ -1,13 +1,13 @@
 ---
 id: DR-0021
-title: "The design records and the specifications are a governed corpus, typed and indexed by a pinned Headwater"
+title: "The documentation is a governed corpus, typed and indexed by a pinned Headwater"
 status: current
 status_since: "2026-09-11"
 last_verified: "2026-09-11"
-summary: "Both documentation shelves become a typed corpus checked in CI by a pinned Headwater binary, with the specifications split into functional and technical layers and both shelf indexes generated."
+summary: "The design records, the component specifications and the standards that bind them become one typed corpus checked in CI by a pinned Headwater binary, with the specifications split into functional and technical layers and every shelf index generated."
 ---
 
-# DR-0021 — The design records and the specifications are a governed corpus, typed and indexed by a pinned Headwater
+# DR-0021 — The documentation is a governed corpus, typed and indexed by a pinned Headwater
 
 ## Context
 
@@ -37,6 +37,13 @@ on" and a reader asking "how is this built" opened the same directory and got
 the same undifferentiated list. Their headings were bespoke and numbered per
 document, so nothing could check that a specification stated its scope, and
 most of them never said how anyone would know the specification held.
+
+The invariants were the sharpest case of the same problem. Ten numbered
+properties carry the whole design, and the rest of the corpus cites them by
+number a hundred times — but they lived as section 3 of an architecture
+overview, which is orientation rather than specification. The most depended-upon
+content in the repository was the least governed, and nothing stated where each
+invariant was actually held.
 
 Headwater is a taxonomy-driven typing and validation engine for documentation
 corpora. Its `decision-record` bundle matches this shelf's tradition closely:
@@ -95,11 +102,43 @@ blocker — no release binary existed, only a `cargo build` from source. Version
    and a closing Acceptance or Conformance section.
 
    Where a technical specification realizes a functional one, the pair is
-   declared as a reciprocal `realizes` edge. `docs/architecture.md` and
-   `docs/testing.md` stay excluded with stated reasons: they describe the whole
-   system rather than one component, and no kind in this package fits them.
+   declared as a reciprocal `realizes` edge. `docs/architecture.md` stays
+   excluded with a stated reason: it orients a reader across the whole system
+   rather than specifying one component, and no kind in this package fits it.
 
-6. **Existing records keep their prose.** Accepted DRs are immutable, so the
+6. **The standards that bind the specifications are governed too, and the
+   corpus is the repository rather than `docs/`.** A `standard` sits above the
+   ladder, requires Scope, Requirements and Conformance, and `regulates` the
+   specifications it binds. Two documents are standards here.
+
+   The ten invariants move out of `docs/architecture.md` §3 and become
+   `docs/standards/invariants.md`. They are cited by number a hundred times
+   across this corpus and by location twice, so the thing most depended upon
+   was the thing least governed: it sat inside a document this taxonomy
+   excludes. Section 3 of the architecture overview stays, as a pointer, so a
+   reader arriving from "architecture §3" still lands on the numbers. The
+   Conformance section is new and states where each invariant is actually
+   held.
+
+   `COMPATIBILITY.md` is a standard by every test the package applies, and it
+   stays at the repository root where a reader and a host expect it and where
+   six documents already link to it. Reaching it means the corpus root is the
+   repository, which costs a `./` prefix on every shelf and exclusion path and
+   an exclusion for the vendored package's own prose. That is the price of not
+   moving a file for a tool's convenience, and it is worth paying once.
+
+   Its shelf is deliberately absent from `projections`: a shelf index for a
+   shelf whose directory is the repository root would be written to
+   `./README.md`, over the front page.
+
+7. **The testing strategy joins the specifications as a technical spec.** It
+   states how the framework is tested, which is a realization and not a
+   contract, so it moves to `docs/specs/testing.md` and takes Scope, Design and
+   Conformance. It declares no `realizes` edge because it realizes no single
+   contract — it verifies all of them — and is instead `regulated_by` the
+   invariants, which every tier in it exists to make executable.
+
+8. **Existing records keep their prose.** Accepted DRs are immutable, so the
    backfill adds front matter and removes the header lines that the front
    matter now states, and changes no argument. Every record is `current`: the
    three partial `Supersedes:` lines are kept as prose and declared as no
@@ -128,13 +167,31 @@ blocker — no release binary existed, only a `cargo build` from source. Version
   documents it cannot say anything about — so the editorial cost of the real
   sections was taken instead.
 
-- **Adopt the `standard` kind for the security model.** It fits: a standard
-  sits above the ladder, requires Scope, Requirements and Conformance, and
-  `regulates` the functional specs it binds. It was not taken because the
-  package's standards shelf is a separate path, and two shelves cannot both
-  claim `docs/specs/**`. Moving the file would rewrite every cross-reference to
-  it for a gain the `functional_spec` kind already delivers. The same reasoning
-  applies to `COMPATIBILITY.md`, which sits outside `docs/` entirely.
+- **Adopt the `standard` kind for the security model too.** It would fit: the
+  document is cross-cutting and constrains the others. It stays a
+  `functional_spec` because it reads as a statement of what a consumer may rely
+  on, which is what that kind is for, and because moving it to the standards
+  shelf would rewrite every cross-reference to it for a distinction the
+  `regulates` edges already draw.
+
+- **Adopt the Diátaxis bundle.** Rejected on the package's own evidence. Its
+  central obligation — that a document is in one reader mode — is declared
+  `unverifiable` there, on the grounds that deciding a page serves two readers
+  means reasoning about what the prose asserts. No check reads the facet. The
+  value set catches a misspelled mode name and nothing else, so adoption buys a
+  label with no enforcement behind it.
+
+- **Adopt `obligation_record` for the invariants or the roadmap.** The
+  obligation lifecycle ends in discharge, and an invariant is never discharged;
+  a document saying INV-1 is waiting to be paid off would be false. The
+  roadmap's outstanding items are decisions not to act, with nothing in flight,
+  so each would become a document with a Discharge section describing work
+  nobody is doing.
+
+- **Adopt the business- and product-requirement kinds, or the design-spec
+  registers.** They model documents this repository does not have, and require
+  `doc_type` and `sequence` facets that would be invented here rather than
+  recorded.
 
 - **Build the engine from source in CI.** This is what 0.1.0 forced and what
   deferred the decision in #20. A Rust toolchain in the docs job reintroduces
@@ -162,6 +219,16 @@ blocker — no release binary existed, only a `cargo build` from source. Version
   ninety days, which is the corpus asking whether a requirement was ever
   built. Migrations and the security model sit unrealized today, honestly, and
   will raise that warning.
+
+- The invariants are now a document rather than a section, with a stated place
+  where each one is held. Extracting them cost two reference updates, because
+  the corpus cited them by number rather than by location — which is the
+  measure of how load-bearing the numbers had quietly become.
+
+- The corpus root is the repository, so a document added anywhere is walked and
+  must be typed or excluded with a reason. That is stricter than scoping to
+  `docs/`, and it is the point: a governed corpus that stops at a directory
+  boundary governs whatever happens to be inside it.
 
 - Each specification now carries an Acceptance or Conformance section, which
   is the part most of them lacked. Writing them surfaced what was already

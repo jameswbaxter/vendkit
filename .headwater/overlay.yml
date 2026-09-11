@@ -32,13 +32,13 @@ override:
   # `projections` is a list, so naming a third shelf means restating the whole
   # value; the two package entries are kept verbatim and `specs` is appended.
   projections:
-    - {kind: shelf_index, for: [decisions, specifications, specs], output: "{shelf}/README.md"}
+    - {kind: shelf_index, for: [decisions, specifications, specs, repo_standards], output: "{shelf}/README.md"}
 
   # --- INTERVIEW 3: where is the shelf? --------------------------------------
   # This repository has kept design records at `docs/design/` since DR-0001,
   # and the file name carries the `DR-` prefix. The pilot moves no files.
   shelves.decisions:
-    path: docs/design/**
+    path: ./docs/design/**
     homogeneous: true
     kind: decision
     layout: "DR-{seq:04d}-{slug}.md"
@@ -55,8 +55,31 @@ add:
   # Heterogeneous and discriminated by `spec_layer`, which is the package's own
   # shape for a shelf holding both rungs: a reader opens one directory and the
   # facet says which layer each document is.
+  # The standards that regulate the shelves above. `standard` comes from the
+  # `standards-spec` bundle, which this corpus already takes for the ladder.
+  # The package's own `standards` shelf is declared by that bundle with `add`,
+  # which an overlay `override` cannot reach, so these are new shelves beside it.
+  shelves.repo_standards:
+    path: ./docs/standards/**
+    homogeneous: true
+    kind: standard
+    title: Standards
+
+  # A shelf of one, and deliberately so. COMPATIBILITY.md is a standard by
+  # every test the package applies, and it stays at the repository root where
+  # GitHub surfaces it and where six documents already link to it. A shelf is
+  # one glob, so reaching it means a second shelf rather than a moved file.
+  #
+  # It is absent from `projections` on purpose: a shelf index for this shelf
+  # would be written to `./README.md`, which is the repository front page.
+  shelves.compatibility:
+    path: ./COMPATIBILITY.md
+    homogeneous: true
+    kind: standard
+    title: Compatibility policy
+
   shelves.specs:
-    path: docs/specs/**
+    path: ./docs/specs/**
     homogeneous: false
     discriminator: spec_layer
     kinds: [functional_spec, technical_spec]

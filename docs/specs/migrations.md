@@ -6,6 +6,10 @@ status_since: "2026-07-08"
 last_verified: "2026-07-08"
 spec_layer: functional_spec
 summary: "A release that invalidates consumer-owned content ships a declarative payload stating what must become true, which a deterministic verifier gates and which contains no executable code."
+relations:
+  regulated_by:
+    - VK-STD-invariants
+    - VK-STD-compatibility
 ---
 
 # Spec: Migrations

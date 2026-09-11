@@ -26,8 +26,15 @@ exists.
   `docs/design/README.md` by hand; it is generated, and CI fails when it is
   stale.
 - **Terminology:** [GLOSSARY.md](GLOSSARY.md) wins. Fix specs that diverge.
-- **Invariants (architecture §3) are load-bearing.** A change that weakens an
-  INV-n needs a DR, not just a diff.
+- **Invariants are load-bearing.** They are a standard of their own —
+  [docs/standards/invariants.md](docs/standards/invariants.md) — and a change
+  that weakens an INV-n needs a DR, not just a diff.
+- **A standard regulates what it binds.** `docs/standards/` and the
+  [compatibility policy](COMPATIBILITY.md) carry Scope, Requirements and
+  Conformance, and name the specs they govern with a `regulates` edge that both
+  ends declare. The corpus is the whole repository, so a new Markdown file
+  anywhere is either typed onto a shelf or excluded with a stated reason in
+  `.headwater/taxonomy.yml`.
 - **Platform parity:** anything platform-visible ships for ADO and GHA
   together, with the differences ledger updated (DR-0007).
 - **Gate-path purity:** code on the consumer PR path imports stdlib only
@@ -40,7 +47,8 @@ exists.
 - Branch from `main`; PRs small and single-topic; maintainers squash-merge.
 - Conventional commit prefixes (`spec:`, `dr:`, `feat:`, `fix:`, `test:`,
   `docs:`).
-- Every behavioural PR adds/extends a scenario-kit case (testing.md §2);
+- Every behavioural PR adds/extends a scenario-kit case (the testing spec
+  §2);
   breaking changes follow the [compatibility policy](COMPATIBILITY.md)
   (MAJOR + migration entry — the surface frozen at 1.0 is enumerated there).
 

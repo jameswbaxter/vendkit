@@ -9,6 +9,8 @@ summary: "Materialise rewrites the tracked files and manifest from a target rele
 relations:
   realizes:
     - VK-FS-cli
+  regulated_by:
+    - VK-STD-invariants
 ---
 
 # Spec: Sync lane and materialisation

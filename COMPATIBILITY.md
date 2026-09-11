@@ -1,13 +1,38 @@
+---
+id: VK-STD-compatibility
+title: "The compatibility policy"
+status: current
+status_since: "2026-07-08"
+last_verified: "2026-07-08"
+summary: "The single authoritative statement of what is frozen at 1.0, what a breaking change means, and the release event a breaking change is required to ship as."
+relations:
+  regulates:
+    - VK-FS-cli
+    - VK-FS-conformance
+    - VK-FS-export-declaration
+    - VK-FS-handler-protocol
+    - VK-FS-migrations
+    - VK-TS-manifest-and-gate
+    - VK-TS-onboarding
+    - VK-TS-platform-integration
+---
+
 # Compatibility policy
 
-Status: in force from v1.0.0 · Owner: Layer 0
+## Scope
 
-VendKit is 1.0. This document is the single authoritative statement of what is
-frozen, what "a breaking change" means, and how one is allowed to ship. It is
-the "compatibility policy in force" that [CONTRIBUTING.md](CONTRIBUTING.md) and
-[SECURITY.md](SECURITY.md) refer to.
+VendKit is 1.0. This document governs change itself: it is the single
+authoritative statement of what is frozen, what "a breaking change" means, and
+how one is allowed to ship. Where another document describes a surface, this one
+states the conditions under which that surface may move.
 
-## 1. Versioning
+It is the "compatibility policy in force" that [CONTRIBUTING.md](CONTRIBUTING.md)
+and [SECURITY.md](SECURITY.md) refer to, and it stays at the repository root,
+where a reader and a host both expect to find it.
+
+## Requirements
+
+### 1. Versioning
 
 Releases are annotated Git tags `vMAJOR.MINOR.PATCH` (the tag *is* the release —
 [docs/specs/releases-and-versioning.md](docs/specs/releases-and-versioning.md)).
@@ -24,7 +49,7 @@ not inferred:
 release and refuses a bump smaller than the delta implies, so the table is a
 gate, not a convention.
 
-## 2. What is frozen at 1.0
+### 2. What is frozen at 1.0
 
 The following are public API. A change that removes, renames, or reshapes any of
 them — or alters its documented semantics — is a **breaking change**:
@@ -55,7 +80,15 @@ them — or alters its documented semantics — is a **breaking change**:
   and third-party handlers implement
   ([docs/specs/handler-protocol.md](docs/specs/handler-protocol.md)).
 
-## 3. How a breaking change ships
+## Conformance
+
+A promise in this document is kept by a refusal, not by good intentions. The
+release command computes the export-surface delta against the previous release
+and refuses a bump smaller than the delta implies, and the migration pre-gate
+refuses a consumer-reshaping release that ships no payload. The sections below
+state the obligations those gates enforce.
+
+### 3. How a breaking change ships
 
 A breaking change to anything in §2 requires, together:
 
@@ -70,7 +103,7 @@ A breaking change to anything in §2 requires, together:
 There is no back-door: deprecations still land as a MAJOR removal with a
 migration, never as a silent drop within a MINOR/PATCH.
 
-## 4. Supported versions
+### 4. Supported versions
 
 Security fixes and bug fixes land on the **latest** release line. There is no
 back-porting to superseded `v0.x` tags or to older `v1.x` lines; upgrade to the

@@ -9,6 +9,8 @@ summary: "An annotated SemVer tag is the entire release, its bump class is compu
 relations:
   realized_by:
     - VK-TS-release-watch
+  regulated_by:
+    - VK-STD-invariants
 ---
 
 # Spec: Releases and versioning

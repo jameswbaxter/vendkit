@@ -6,6 +6,9 @@ status_since: "2026-07-08"
 last_verified: "2026-07-08"
 spec_layer: functional_spec
 summary: "Write access to a publisher plus release capability is code execution in every consumer, and the framework makes that boundary explicit, narrow and tamper-evident rather than pretending otherwise."
+relations:
+  regulated_by:
+    - VK-STD-invariants
 ---
 
 # Spec: Security model

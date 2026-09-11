@@ -9,6 +9,9 @@ summary: "Core judgments become deliveries by composing a JSON intent and handin
 relations:
   realized_by:
     - VK-TS-platform-integration
+  regulated_by:
+    - VK-STD-invariants
+    - VK-STD-compatibility
 ---
 
 # Spec: Handler protocol

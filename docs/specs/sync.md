@@ -1,13 +1,28 @@
+---
+id: VK-TS-sync
+title: "The sync lane and materialisation"
+status: current
+status_since: "2026-07-08"
+last_verified: "2026-07-08"
+spec_layer: technical_spec
+summary: "Materialise rewrites the tracked files and manifest from a target release and opens one reviewed PR, never merging, never deleting from disk, and never widening scope without review."
+relations:
+  realizes:
+    - VK-FS-cli
+---
+
 # Spec: Sync lane and materialisation
 
-Status: stable (frozen at v1.0.0) · Owner: Layer 0 (materialise), Layer 1 (PR), Layer 2 (pipeline)
+## Scope
 
 The sync lane keeps a consumer's vendored slice fresh: it detects that the pin
 is behind a target release, rewrites the tracked files and manifest from that
 release, and opens **one reviewed PR**. It never merges, never deletes files
 from disk, and never changes scope silently (INV-4, INV-10).
 
-## 1. Version model
+## Design
+
+### 1. Version model
 
 Per slice, two versions exist during a sync:
 
@@ -28,7 +43,7 @@ The comparison is strict SemVer (see releases spec), internal to
 `sync-pipeline` and `watch`. Retracted targets are refused (exit 3,
 `refused=retracted`).
 
-## 2. Materialise semantics
+### 2. Materialise semantics
 
 `vendkit sync --check|--apply --consumer-root <path> --target <v>
 [--reconcile-scope] [--porcelain]`
@@ -42,7 +57,7 @@ declaration in it, the consumer's current manifest and bound profile:
    listed above). Classification is against the **consumer working tree**, not
    the recorded hash — so a locally drifted or missing file simply counts as
    `updated`, and `--check` predicts `--apply` exactly (INV-3).
-2. **Removals.** A tracked `path` no longer exported by the target is reported
+2. **Removals.** A tracked `path` that the target does not export is reported
    `removed-upstream` and dropped from the refreshed manifest; the vendored file
    is **left on disk** for the PR to delete under review.
 3. **Additions (opt-in).** With `--reconcile-scope`, exported files inside the
@@ -62,7 +77,7 @@ Report classes: `updated`, `removed-upstream`, `added`, `seeded`,
 always exits 0 and prints exactly one `changed=` line; machine callers treat any
 non-zero exit as an infrastructure failure, never as "changes exist".
 
-## 3. Pipeline behaviour (Layer 2, per platform)
+### 3. Pipeline behaviour (Layer 2, per platform)
 
 The scaffolded sync pipeline, on both platforms:
 
@@ -94,7 +109,7 @@ hint (publisher release completion → run now; see platform-integration spec
 §4). Both trigger paths run the identical pipeline — push is a latency
 optimisation, pull remains the reconciler (DR-0006).
 
-## 4. Content adapters at materialise time
+### 4. Content adapters at materialise time
 
 Adapters (declared in the export declaration, DR-0009) run inside step 1/3:
 
@@ -106,7 +121,7 @@ Everything else is an identity copy. Adapters must be deterministic and
 byte-stable (INV-2); an adapter that needs consumer context may read only the
 bound profile name and adapter parameters — never the consumer tree.
 
-## 5. Failure and race behaviour
+### 5. Failure and race behaviour
 
 - Two concurrent syncs of one slice converge on the same branch name; the
   second force-push wins with identical content (materialise is pure) — worst
@@ -120,7 +135,7 @@ bound profile name and adapter parameters — never the consumer tree.
   pipeline red — the sync lane is only trustworthy if its failure is visible
   (see security model §4).
 
-## 6. Seeded files (scaffold-once — DR-0013)
+### 6. Seeded files (scaffold-once — DR-0013)
 
 Paths under the declaration's `seed:` surface are templates handed out once,
 then consumer-owned. Semantics, all decided by the manifest entry (which is
@@ -145,3 +160,27 @@ the "seeding happened" record — no other state):
   `consumer_path` (INV-7). INV-1 is unaffected: the gate skips exactly what
   sync refuses to write. Template hashes refresh only when a sync PR actually
   ships, so a `template-updated` note may repeat until the next real sync.
+
+## Conformance
+
+Three properties make the lane safe to run unattended, and each is asserted
+by the scenario kit rather than argued for here.
+
+- **The composition invariant (INV-1).** Sync output always passes the strict
+  gate, because the files and the manifest are rewritten from one release
+  tree in one operation. A sync PR is green by construction, so a red gate on
+  a sync PR is a real defect and never noise.
+- **Prediction equals application (INV-3).** `--check` classifies against the
+  consumer working tree rather than the recorded hash, so it predicts
+  `--apply` exactly even when a file has drifted or gone missing. Under
+  `--porcelain` a successful check exits 0 and prints exactly one `changed=`
+  line, so a machine caller reads the fact and treats any nonzero exit as
+  infrastructure failure.
+- **Purity (INV-2).** Materialise depends only on the target tree, the
+  declaration in it, the consumer manifest and the bound profile. Nothing
+  reads the consumer tree for adapter input, which is what makes two
+  concurrent syncs converge rather than corrupt (§5).
+
+Seeded paths are the deliberate exception and are exempt by construction:
+the gate skips exactly what sync refuses to write (§6), so INV-1 holds
+across them rather than in spite of them.

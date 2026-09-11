@@ -1,6 +1,19 @@
+---
+id: VK-TS-release-watch
+title: "Release detection and handoff"
+status: current
+status_since: "2026-07-08"
+last_verified: "2026-07-08"
+spec_layer: technical_spec
+summary: "A scheduled consumer job compares each slice's pin against the publisher's latest qualifying release over the git protocol, producing findings that a handoff handler turns into work."
+relations:
+  realizes:
+    - VK-FS-releases-and-versioning
+---
+
 # Spec: Release watch
 
-Status: stable (frozen at v1.0.0) · Owner: Layer 0 (compare) + Layer 1 (ref listing, handoff)
+## Scope
 
 The sync lane refreshes content once a pin is advanced, but never *detects* a
 new upstream release. Watch closes that gap: a scheduled job in the consumer
@@ -8,7 +21,9 @@ that compares each vendored slice's pin against the publisher's latest
 qualifying release. **Watch is pure detection** (DR-0014): it produces
 findings; turning findings into tickets is the handoff handler's job (§3).
 
-## 1. Configuration
+## Design
+
+### 1. Configuration
 
 Watch has **no config file of its own**: it iterates every consumer slice config
 (`.vendkit/consumer/*.yml`, see onboarding spec), each of which carries the fields watch
@@ -33,7 +48,7 @@ handlers:
 This removes the separate watch-config file and its lockstep risk: adding a
 slice automatically adds its watch entry.
 
-## 2. Collector contract
+### 2. Collector contract
 
 `vendkit watch [--slice <name>] [--dry-run] [--no-handoff]`
 
@@ -64,7 +79,7 @@ beyond success/failure.
 `--dry-run` performs no network calls and emits an empty successful report —
 this is the consumer's PR-time self-test (no credentials needed).
 
-## 3. Handoff
+### 3. Handoff
 
 Each actionable finding becomes one `handoff` intent to the configured
 handler (handler-protocol spec §3), which owns the vendor API and the
@@ -84,7 +99,7 @@ idempotency contract:
   automated pin-bump; the sync PR that results still passes normal review
   (INV-10).
 
-## 4. Cadence and interplay with push hints
+### 4. Cadence and interplay with push hints
 
 Watch cadence is a consumer decision (scaffold default: weekly). Where the push
 hint is wired (publisher release completion triggers the sync pipeline —
@@ -92,3 +107,23 @@ platform-integration spec §4), watch degrades gracefully into the safety net fo
 missed events and for **tier-chain visibility** (an upstream-of-upstream release
 does not push to this consumer). Watch is mandatory in the conformance core
 rules; push hints are optional.
+
+## Conformance
+
+Watch is mandatory in the conformance core rules, so its correctness is
+checked in three places.
+
+- **Findings are data, not failure.** Exit 0 means the run succeeded whether
+  or not it found anything; exit 1 is an infrastructure or config error.
+  Machine callers read `findings=<n>` and never infer state from the exit
+  code beyond success or failure.
+- **Config rot is loud.** A pin pattern present with no parsable version
+  raises `pin-unreadable` rather than skipping the slice, because a watch
+  that quietly stops watching is worse than one that fails.
+- **The dry run is the PR-time self-test.** `--dry-run` makes no network
+  call, needs no credentials, and emits an empty successful report, so a
+  consumer PR can prove the wiring without reaching the publisher.
+- **The wiring itself is a conformance rule.** `pipeline-wired` for the
+  watch component checks that a pinned pipeline invokes it on a schedule,
+  and reports `skipped` under `ci: none` so manual mode is visible rather
+  than hidden.

@@ -1,8 +1,33 @@
+---
+id: VK-FS-releases-and-versioning
+title: "Releases, version grammar and retraction"
+status: current
+status_since: "2026-07-08"
+last_verified: "2026-07-08"
+spec_layer: functional_spec
+summary: "An annotated SemVer tag is the entire release, its bump class is computed from the export-surface delta rather than asserted, and a harmful release is retracted rather than deleted."
+relations:
+  realized_by:
+    - VK-TS-release-watch
+---
+
 # Spec: Releases and versioning
 
-Status: stable (frozen at v1.0.0) · Owner: Layer 0 (+ Layer 1 for ref listing)
+## Scope
 
-## 1. The tag is the release
+This document states what a release is, how versions are written and ordered,
+what a consumer may rely on when it adopts one, and how a bad release is
+withdrawn. It is owned by Layer 0, with Layer 1 supplying the tag listing,
+and is frozen public API at v1.0.0.
+
+The release mechanism is deliberately small: there is no artefact registry
+and no release object to keep in step with the tree. What the sections below
+add to a bare Git tag is a declared meaning for each bump class, a gate that
+enforces it, and a provenance record that makes tag substitution detectable.
+
+## Behavior
+
+### 1. The tag is the release
 
 A release is an **annotated Git tag** `vMAJOR.MINOR.PATCH` on the publisher
 repository. There is no artefact, package, or release object: the pinned tree
@@ -11,7 +36,7 @@ spec and migrations — *is* the payload. (On GitHub, creating a Release object
 from the tag is a permitted nicety for humans; tags remain canonical and are
 what watch reads.)
 
-## 2. Version grammar and ordering
+### 2. Version grammar and ordering
 
 - **Stable:** `v` + strict `MAJOR.MINOR.PATCH` (no leading zeros).
 - **Pre-release (rc channel only):** `vMAJOR.MINOR.PATCH-rc.N`, N ≥ 1.
@@ -30,7 +55,7 @@ The release command **computes** surface deltas against the previous release
 (diff of export sets) and refuses a bump smaller than the delta implies
 (e.g. removals demand MAJOR). This turns the table from convention into a gate.
 
-## 3. Cutting a release
+### 3. Cutting a release
 
 `vendkit release --bump patch|minor|major | --version vX.Y.Z [--summary <text>]`
 
@@ -51,7 +76,7 @@ The release command **computes** surface deltas against the previous release
 The release pipeline is manual-trigger only, and the tag namespace must be
 write-restricted to it (security model §2).
 
-## 4. Retraction
+### 4. Retraction
 
 A shipped release found harmful is **retracted, not deleted**: add its version
 to `retracted:` in the export declaration and cut a new (patch) release.
@@ -64,7 +89,7 @@ Note the bootstrapping quirk: retraction data lives at HEAD-of-latest-release,
 so watch reads the *newest* release's declaration for the retraction list, not
 the pinned one.
 
-## 5. Channels
+### 5. Channels
 
 A consumer follows a channel per slice (slice config, default `stable`):
 
@@ -77,15 +102,36 @@ A consumer follows a channel per slice (slice config, default `stable`):
 Publishers are not obliged to cut rc tags; the channel mechanism simply makes
 them adoptable when they exist.
 
-## 6. Provenance
+### 6. Provenance
 
 At sync time the consumer records `source.commit` — the SHA the target tag
 resolved to (manifest spec §1). Verification duties:
 
-- **sync (next run):** if the *pinned* tag no longer resolves to the recorded
-  SHA, fail loudly (`refused=tag-moved`) — do not materialise from a
+- **sync (next run):** if the *pinned* tag resolves to a SHA other than the
+  recorded one, fail loudly (`refused=tag-moved`) — do not materialise from a
   substituted tree.
 - **watch:** same check, surfaced as a `tag-moved` finding (highest severity).
 
 This is the detection half of tag immutability; the prevention half is ref
 permissions (security model §2).
+
+## Acceptance
+
+The version grammar is only worth as much as the refusals behind it, and the
+release command is where they sit.
+
+- **The bump class is computed, not claimed** (§2). The release command
+  diffs export sets against the previous release and refuses a bump smaller
+  than the delta implies, which turns the bump table from a convention into
+  a gate.
+- **Two pre-gates run before a tag exists** (§3). The freshness pre-gate
+  requires `generate --check` to pass, so a release cannot be cut from a
+  stale manifest. The migration pre-gate requires a matching payload for a
+  consumer-reshaping change, or an override recorded in the annotation.
+- **An unknown baseline is a hard error.** A failure to list remote tags
+  stops the cut rather than computing a version from an unknown latest.
+- **The remote is the serialisation point.** Concurrent cuts resolve by the
+  remote's ref rejection, so no locking is needed and no cut silently wins.
+- **Provenance is checked on every later run** (§6). Sync refuses
+  `tag-moved` and watch raises it as the highest-severity finding, which is
+  the detection half of tag immutability.

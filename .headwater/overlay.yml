@@ -1,8 +1,8 @@
-# The vendkit adopter overlay for the Headwater docs pilot (DR-0021).
+# The vendkit adopter overlay (DR-0021).
 #
 # An overlay is add-only over the package: nothing here weakens a base rule.
-# What it states is the three things no tree answers — what a task routes to,
-# what a DR identifier looks like here, and where this corpus keeps its shelf.
+# What it states is what no tree answers — what a task routes to, what an
+# identifier looks like here, and where this corpus keeps its two shelves.
 
 override:
   # --- INTERVIEW 1: what does each purpose answer? ---------------------------
@@ -28,6 +28,12 @@ override:
     namespace: VK
     allocation: reconcile-first
 
+  # The package declares one `shelf_index` projection over its own two shelves.
+  # `projections` is a list, so naming a third shelf means restating the whole
+  # value; the two package entries are kept verbatim and `specs` is appended.
+  projections:
+    - {kind: shelf_index, for: [decisions, specifications, specs], output: "{shelf}/README.md"}
+
   # --- INTERVIEW 3: where is the shelf? --------------------------------------
   # This repository has kept design records at `docs/design/` since DR-0001,
   # and the file name carries the `DR-` prefix. The pilot moves no files.
@@ -39,4 +45,24 @@ override:
     title: Design records
 
 add:
+  # The component specifications have lived at `docs/specs/` since before the
+  # ladder existed, so a shelf moves to the files rather than the files to a
+  # shelf. It is a new shelf and not an override of the package's
+  # `component_specs`: a bundle states that one with `add`, and an overlay
+  # `override` over a bundle `add` does not commute, so the package's shelf
+  # stays where it is and this corpus declares its own beside it.
+  #
+  # Heterogeneous and discriminated by `spec_layer`, which is the package's own
+  # shape for a shelf holding both rungs: a reader opens one directory and the
+  # facet says which layer each document is.
+  shelves.specs:
+    path: docs/specs/**
+    homogeneous: false
+    discriminator: spec_layer
+    kinds: [functional_spec, technical_spec]
+    title: Component specifications
+
   identifier_schemes.obligation_record_id.namespace: VK
+  identifier_schemes.standard_id.namespace: VK
+  identifier_schemes.functional_spec_id.namespace: VK
+  identifier_schemes.technical_spec_id.namespace: VK

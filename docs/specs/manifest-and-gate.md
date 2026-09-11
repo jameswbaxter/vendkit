@@ -1,12 +1,27 @@
+---
+id: VK-TS-manifest-and-gate
+title: "Manifest schema and the gate lane"
+status: current
+status_since: "2026-07-08"
+last_verified: "2026-07-08"
+spec_layer: technical_spec
+summary: "The manifest is the integrity contract between publisher and consumer, and the gate lane re-hashes vendored files on every consumer PR so a hand-edit or deletion cannot merge."
+relations:
+  realizes:
+    - VK-FS-export-declaration
+---
+
 # Spec: Manifest and gate lane
 
-Status: stable (frozen at v1.0.0) · Manifest schema version: 1 · Owner: Layer 0
+## Scope
 
 The manifest is the integrity contract between publisher and consumer. The gate
 lane is its enforcement point: a check on every consumer PR that re-hashes
 vendored files and fails on any hand-edit or deletion.
 
-## 1. Manifest schema (v1)
+## Design
+
+### 1. Manifest schema (v1)
 
 One manifest per slice. Publisher-side it lives under `manifest_name` in
 `publisher.manifest_dir` — `.vendkit/publisher/` by default; consumer-side always
@@ -76,7 +91,7 @@ non-ASCII, no HTML escaping of `<`/`>`/`&`, and a single trailing newline.
     **template's** hash (publisher-side at publish, consumer-side as of the
     last shipped sync) — a divergence-note comparator, never a gate input.
 
-## 2. Normalisation recipe v1
+### 2. Normalisation recipe v1
 
 `utf8;lf;strip-trailing-ws;single-final-newline;sha256`:
 
@@ -89,7 +104,7 @@ non-ASCII, no HTML escaping of `<`/`>`/`&`, and a single trailing newline.
 Rationale: a consumer's checkout/autocrlf settings can never masquerade as
 drift, while any substantive edit changes the hash (DR-0004).
 
-## 3. Publisher operations
+### 3. Publisher operations
 
 - `vendkit generate` — build the manifest from the declaration + working tree.
 - `vendkit generate --check` — fail (exit 1) if the committed manifest differs
@@ -101,7 +116,7 @@ drift, while any substantive edit changes the hash (DR-0004).
   (export-declaration spec §3.2): publisher CI diffs actual localised output
   against a publisher-authored expectation file; findings exit 1.
 
-## 4. Gate lane (consumer)
+### 4. Gate lane (consumer)
 
 `vendkit gate [--strict] [--manifest <path> | --all]`
 
@@ -124,7 +139,7 @@ drift, while any substantive edit changes the hash (DR-0004).
   no YAML, no third-party packages, no network, no export declaration. It must
   run as a bare static binary — no interpreter, no runtime prerequisites (DR-0016).
 
-### Gate wiring per platform
+#### Gate wiring per platform
 
 The gate must run on every PR that *could* touch a vendored path, and the
 platform's enforcement mechanism must make it required:
@@ -140,14 +155,20 @@ see conformance spec). The scaffolded default is **no path filter** — run the
 gate on every PR; it is cheap (hashing a few hundred files) and the lockstep
 trap disappears.
 
-## 5. Provenance markers (optional, adapter-provided)
+### 5. Provenance markers (optional, adapter-provided)
 
 For reviewable text formats a publisher may enable an in-band provenance marker
 (e.g. front-matter `vendored: <slice>`) via a future adapter. The marker is
 versionless — releases must not churn every vendored file — and is a courtesy
 for humans; the manifest, not the marker, is authoritative.
 
-## 6. Conformance kit obligations (see testing.md)
+## Conformance
+
+The obligations below are the executable form of this contract: each is a
+property the conformance kit asserts on both platforms, not a claim this
+document makes about itself.
+
+### 6. Conformance kit obligations (see testing.md)
 
 - Round-trip: generate → materialise → gate = clean (INV-1).
 - CRLF re-checkout does not trip the gate; a one-character edit does.

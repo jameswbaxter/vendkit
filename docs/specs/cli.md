@@ -1,6 +1,26 @@
+---
+id: VK-FS-cli
+title: "The vendkit command surface"
+status: current
+status_since: "2026-07-08"
+last_verified: "2026-07-08"
+spec_layer: functional_spec
+summary: "One static binary whose command set, flags and key=value facts are frozen public API, split into a machine tier and a human tier composed from it."
+relations:
+  realized_by:
+    - VK-TS-sync
+---
+
 # Spec: CLI surface
 
-Status: frozen at v1.0.0 (public API; command set test-enforced against the binary) · Owner: Layer 0 (surface), delegating per command
+## Scope
+
+This document states the command surface of `vendkit`: what commands exist,
+what each is for, and the output and exit-code conventions every one of them
+honours. It is owned by Layer 0 for the surface as a whole and delegates the
+behaviour of each command to the spec named in the table. The command set,
+the documented flags and the `key=value` fact names are frozen public API at
+v1.0.0.
 
 One entrypoint: `vendkit` — a single static Go binary with no runtime
 prerequisites (DR-0017). The only truly global flag is `--platform` (CI output
@@ -10,6 +30,8 @@ before the command. `--export-decl`, `--consumer-root`, `--publisher-root`, and
 A relative `--export-decl` is resolved against the publisher root — `--root` for
 `generate`, `--publisher-root` elsewhere — never against the process working
 directory; absolute paths are used verbatim.
+
+## Behavior
 
 | Command | Role | Layer | Spec |
 |---|---|---|---|
@@ -33,7 +55,7 @@ Removed pre-1.0: `is-newer` (an artefact of step-wise wrappers; the compare
 is internal to `sync-pipeline` and `watch`, and remains unit-tested as
 `core.IsNewer`).
 
-## Human tier
+### Human tier
 
 Human-first verbs, layered strictly as **compositions of the machine tier**
 — never a parallel code path, so the invariants cover what humans actually
@@ -56,7 +78,7 @@ pinned checkout supplies both content and engine. The declaration/manifest
 schema-version gates make skew loud rather than silent; consumers wanting
 the strict property use the scheduled lane.
 
-## Conventions (uniform across commands)
+### Conventions (uniform across commands)
 
 - **Exit codes:** 0 success; 1 findings-in-strict-mode; 2 usage/config error;
   3 refusal (`refused=` reason emitted: `retracted`, `tag-moved`, …);
@@ -86,3 +108,22 @@ the strict property use the scheduled lane.
   The command set is locked to the binary by `cmd/vendkit/surface_test.go`, so a
   command cannot be added or dropped without a deliberate edit to the frozen
   snapshot.
+
+## Acceptance
+
+The surface is verified rather than asserted.
+
+- **The command set is locked to the binary.** `cmd/vendkit/surface_test.go`
+  holds a frozen snapshot (`frozenSurface`) and fails CI when a command is
+  added or removed, so the table above cannot drift from what ships.
+- **The exit-code contract is observable.** Every command returns one of the
+  documented classes, and a refusal names itself on `refused=`, so a caller
+  distinguishes a finding from a usage error from an infrastructure failure
+  without parsing prose.
+- **The machine tier is the stable one.** Facts emitted as `key=value` and
+  mirrored to the CI output surface are covered by the formatting promise;
+  the human tier is explicitly not, and scripts that parse it are outside
+  the contract.
+- **Changes ship as a release event.** Removing or reshaping any of the
+  above requires a MAJOR release and a migration entry, per
+  [COMPATIBILITY.md](../../COMPATIBILITY.md).

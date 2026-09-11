@@ -1,6 +1,19 @@
+---
+id: VK-TS-platform-integration
+title: "CI surfaces, credentials and the differences ledger"
+status: current
+status_since: "2026-07-09"
+last_verified: "2026-07-09"
+spec_layer: technical_spec
+summary: "Everything platform-flavoured that is not the handler protocol: the CI output dialect, who resolves which credential, how push hints reach a consumer, and where cross-platform differences are recorded."
+relations:
+  realizes:
+    - VK-FS-handler-protocol
+---
+
 # Spec: Platform integration — CI surfaces, credentials, differences ledger
 
-Status: stable (frozen at v1.0.0) · Owner: Layer 1 (+ Layer 2 packaging)
+## Scope
 
 This spec covers everything platform-flavoured that is *not* the handler
 protocol (which has [its own spec](handler-protocol.md)). After DR-0014 and
@@ -20,7 +33,9 @@ handlers (INV-8). A third platform is added by a template pack, a handler
 executable, and (if its output dialect differs) one small CI surface class —
 with no engine change.
 
-## 1. CI surface selection
+## Design
+
+### 1. CI surface selection
 
 `vendkit.ci.detect()`:
 
@@ -34,7 +49,7 @@ and only here; every other platform decision reads recorded config
 (DR-0015). Note the runner's CI, the consumer's `ci:`, and the publisher's
 `scm` are three independent facts.
 
-## 2. The CI output surface
+### 2. The CI output surface
 
 The whole in-process interface:
 
@@ -56,7 +71,7 @@ file reads, PRs, work items, fact verification, credential objects. File
 I/O, hashing, globbing, version compare, PR body composition, and branch
 naming were never here (Layer 0).
 
-## 3. Credential model
+### 3. Credential model
 
 Credentials are resolved *by the party that spends them*:
 
@@ -95,7 +110,7 @@ forbidden. The scaffold wires a scheduled *credential liveness probe*
 (each purpose exercised read-only) beside watch, so expiry is a visible
 failure on a cadence rather than a missed release later.
 
-## 4. Push hints (release → consumer sync trigger)
+### 4. Push hints (release → consumer sync trigger)
 
 Pull (schedule) is the reconciler; push is a latency optimisation (DR-0006).
 Mechanisms differ by *consumer CI*:
@@ -117,7 +132,7 @@ Mechanisms differ by *consumer CI*:
 - **Tier chains:** hints compose hop-by-hop, collapsing multi-cadence
   propagation latency to same-day while every hop stays a reviewed PR.
 
-### The subscribers file and the dispatch step
+#### The subscribers file and the dispatch step
 
 The publisher-held subscribers file (default `.vendkit/publisher/subscribers.yml`,
 overridable with `push-hint --subscribers`) is *publisher-side* config — read
@@ -153,7 +168,7 @@ not correctness. A missing subscribers file is a soft no-op (exit 0), so the
 release workflow can run the step unconditionally. Emitted facts:
 `subscribers`, `dispatched`, `skipped`, `failed`.
 
-## 5. Layer 2 packaging
+### 5. Layer 2 packaging
 
 Per component (gate, sync, watch, conformance, migration-verify, release),
 each CI platform ships a thin wrapper:
@@ -168,7 +183,14 @@ Wrapper rules (architecture §1): no logic, no API calls (the CLI + handlers
 do that), identical parameter names across platforms wherever the concept
 exists on both. The scaffolder generates the consumer-side callers.
 
-## 6. Behavioural differences ledger
+## Conformance
+
+Parity between GitHub and Azure DevOps is a claim, and the ledger is the
+evidence for it. Every known behavioural difference is recorded here as it is
+discovered, together with the mitigation that keeps the two backends peers.
+An unrecorded difference is the defect; a recorded one is a design decision.
+
+### 6. Behavioural differences ledger
 
 Every known cross-platform behaviour difference must be recorded here as it
 is discovered, with its mitigation. Seed entries:

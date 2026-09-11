@@ -1,6 +1,16 @@
+---
+id: VK-FS-migrations
+title: "Declarative migrations for consumer-owned content"
+status: current
+status_since: "2026-07-08"
+last_verified: "2026-07-08"
+spec_layer: functional_spec
+summary: "A release that invalidates consumer-owned content ships a declarative payload stating what must become true, which a deterministic verifier gates and which contains no executable code."
+---
+
 # Spec: Migrations
 
-Status: stable (frozen at v1.0.0) · Owner: Layer 0 (resolve/verify) + Layer 1 (handoff)
+## Scope
 
 Mechanical sync refreshes manifest-tracked files only. A release that also
 invalidates **consumer-owned** content — renamed trees, retired conventions,
@@ -9,7 +19,9 @@ carry *what must become true*, expressed as machine-checkable obligations; *how*
 is left to the consumer (human or AI agent), and a deterministic verifier gates
 the result. No migration contains executable code.
 
-## 1. Payload schema
+## Behavior
+
+### 1. Payload schema
 
 One YAML file per migration under `migrations/` in the publisher repo.
 `migrations/` is deliberately **outside the export surface** — payloads
@@ -43,7 +55,7 @@ lane already performs (informational; excluded from handoff by default);
 `structural`/`convention` require consumer judgment and drive the lifecycle
 below.
 
-## 2. Resolve
+### 2. Resolve
 
 `vendkit migrations --pinned <v> --target <v> [--profile <p>] [--json]`
 
@@ -53,7 +65,7 @@ all; an unbound consumer matches only `"*"` entries). Obligations across
 selected entries are unioned. Output: `count=`, `ids=`, and a JSON document of
 applicable entries + aggregated verification.
 
-## 3. Handoff
+### 3. Handoff
 
 Resolved migrations render into one `handoff` intent for the configured
 handler (handler-protocol spec §3, dedup key
@@ -63,7 +75,7 @@ aggregated **definition of done** — the verification obligations plus the exac
 verifier invocation. Platforms with AI coding agents may assign the item; the
 remediation PR is ordinary and reviewed (INV-10).
 
-## 4. Verify
+### 4. Verify
 
 `vendkit migrations-verify --obligations <json> [--consumer-root <path>]`
 
@@ -82,7 +94,7 @@ The sync PR body lists the window's applicable migrations (sync spec §3), so a
 consumer reviewing a version bump sees its judgment-bearing consequences in the
 same view.
 
-## 5. No arbitrary shell in obligations
+### 5. No arbitrary shell in obligations
 
 Obligations are declarative globs plus **named checks** drawn from the same
 registry as conformance detectors. A publisher needing a custom check ships it
@@ -93,10 +105,29 @@ shell from upstream is an unnecessary second code-execution channel with no
 integrity anchor; vendored tools are already inside the trust boundary
 (security model §1).
 
-## 6. Publisher discipline
+### 6. Publisher discipline
 
 The release command's migration pre-gate (releases spec §3) enforces: a MAJOR
 release (or any surface removal / adapter change) must ship a matching
 `migrations/` entry or an explicit recorded override. Windows compose across
 multi-version jumps: a consumer syncing v1.3 → v3.0 resolves every entry in
 `(v1.3, v3.0]`, in `applies_from` order.
+
+## Acceptance
+
+A migration is done when the verifier says so, and the verifier is the whole
+definition of done.
+
+- **`vendkit migrations-verify` is the gate** (§4). Every `must_be_absent`
+  glob matches zero tracked files, every `must_be_present` glob matches at
+  least one, and every named check passes. It reads tracked files only.
+- **Zero obligations is a green no-op**, which is what makes the verifier
+  safe to wire as a required check on every consumer PR: it gates remediation
+  PRs and costs nothing elsewhere.
+- **The resolver and the verifier share one glob matcher**, so a window that
+  resolves an obligation and a verification that checks it cannot disagree
+  about what a glob means. That shared semantics is part of the conformance
+  kit contract.
+- **Publishers are gated too** (§6). The release command refuses a MAJOR
+  release, a surface removal, or an adapter change that ships no matching
+  payload, unless an override is recorded in the tag annotation.

@@ -1,6 +1,19 @@
+---
+id: VK-FS-conformance
+title: "Conformance rules and the fleet view"
+status: current
+status_since: "2026-07-08"
+last_verified: "2026-07-08"
+spec_layer: functional_spec
+summary: "A rule set shipped inside each release answers whether a consumer is correctly wired, degrading to attestation where a platform fact is not decidable from the tree."
+relations:
+  realized_by:
+    - VK-TS-onboarding
+---
+
 # Spec: Conformance
 
-Status: stable (frozen at v1.0.0) · Owner: Layer 0 (engine) + Layer 1 (detector bindings)
+## Scope
 
 Conformance answers "is this consumer correctly wired?" against a rule spec
 that **ships inside each release** — so advancing a pin brings the current rule
@@ -16,7 +29,9 @@ Two rule sources compose:
   declaration): slice-specific requirements a publisher adds (e.g. "profile
   declared", domain-specific checks via `tool` detectors).
 
-## 1. Rule schema (v1)
+## Behavior
+
+### 1. Rule schema (v1)
 
 ```yaml
 schema_version: 1
@@ -44,7 +59,7 @@ the consumer slice config (`waivers: [{rule, reason}]`) and are honoured only
 for `severity: waivable` rules — a waiver on a mandatory rule is itself a
 finding.
 
-## 2. Detector registry
+### 2. Detector registry
 
 Platform-neutral kinds, implemented in Layer 0 unless noted:
 
@@ -67,7 +82,7 @@ Publishers may not invent detector kinds; they extend via `tool` (vendored,
 gate-verified executables). This keeps the checker's trusted computing base
 fixed.
 
-## 3. `pipeline-wired`: per-CI decidability
+### 3. `pipeline-wired`: per-CI decidability
 
 The same rule is decided differently per CI dialect (selected by the slice
 config's `ci:` field, never env-sniffed — a fleet audit decides identically
@@ -88,7 +103,7 @@ changes (INV-8). Where a platform fact is not tree-decidable the binding
 degrades to an `attest` sub-check automatically, with the fact-verify
 handler as the upgrade path (§4).
 
-## 4. Attestations
+### 4. Attestations
 
 Non-tree-decidable prerequisites (branch protection enabled, sync credential
 provisioned and policy-exempt, publisher repo readable by CI identity) are
@@ -126,7 +141,7 @@ the fact key is unrecognised (forward-compatible). Verification uses a
 read-scoped `VENDKIT_TOKEN_FACT_VERIFY` (GitHub: `GITHUB_TOKEN`/`GH_TOKEN`
 fallback; ADO: `SYSTEM_ACCESSTOKEN`/`ADO_PAT`).
 
-## 5. Fleet view
+### 5. Fleet view
 
 `vendkit conformance --json` emits a machine document (per-rule status,
 gap count, pin, pin lag, slice, profile). A **fleet audit** — a scheduled,
@@ -136,7 +151,7 @@ consumer of this format. It requires only read access (no inversion of the
 trust model) and is specified as a Layer 3 optional component in the roadmap
 (M4), not core.
 
-### 5.1 The `conformance --json` document
+#### 5.1 The `conformance --json` document
 
 `--json` emits a single object (not a bare rule array) — the fleet-view
 interchange format:
@@ -172,7 +187,7 @@ This replaces the pre-existing `--json` output (a bare array of rule results):
 the array is now the `rules` field. The human (non-`--json`) output is
 unchanged.
 
-### 5.2 The `fleet` command
+#### 5.2 The `fleet` command
 
 `vendkit fleet [--json] [<path>…]` is the read-only aggregation half of the
 fleet audit. The clone-and-run over many repos is the scheduled external job
@@ -213,3 +228,24 @@ enforcement (`ci: none`), then deliberately accepted, then clean. Rows are
 sorted by that rank (desc), then gap count (desc), then slice name — so the
 worst offenders lead the dashboard. `fleet` is advisory: it aggregates and
 reports, exiting 0 (usage/parse failures aside).
+
+## Acceptance
+
+Conformance is itself the acceptance mechanism for adoption, so what matters
+here is when its own verdict may be trusted.
+
+- **`vendkit conformance --strict` exits 1 on any non-waived gap**, and
+  exits 0 with a report otherwise. Advisory by default is deliberate: a
+  consumer adopts in stages and sees the gaps before they block.
+- **A status says how much it knows.** `pass` is decided from the tree,
+  `attested` is asserted by the consumer and not verified, `skipped` is
+  enforcement forfeited under `ci: none`, and `waived` is deliberately
+  accepted with a recorded reason. A waiver on a `mandatory` rule is itself
+  a finding, so severity cannot be waived away.
+- **Attestations are upgradeable to facts** (§4). `--verify-attestations`
+  promotes an attested rule to `pass` on a `true` verdict and demotes it to
+  `fail` on `false`, because a wrong attestation is a finding rather than an
+  error. A token that lacks scope yields `unknown` and never `false`.
+- **The trusted computing base is fixed.** Publishers extend through `tool`
+  detectors, which execute manifest-tracked, gate-verified files, and may not
+  invent detector kinds.

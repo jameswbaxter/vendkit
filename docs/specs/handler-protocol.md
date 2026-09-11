@@ -1,6 +1,19 @@
+---
+id: VK-FS-handler-protocol
+title: "The handler protocol for vendor deliveries"
+status: current
+status_since: "2026-07-09"
+last_verified: "2026-07-09"
+spec_layer: functional_spec
+summary: "Core judgments become deliveries by composing a JSON intent and handing it to a configured executable, so any protocol-honouring handler replaces the reference ones without an engine change."
+relations:
+  realized_by:
+    - VK-TS-platform-integration
+---
+
 # Spec: Handler protocol
 
-Status: stable (frozen at v1.0.0) · Protocol version: 1 · Owner: Layer 1
+## Scope
 
 The engine never integrates with a vendor *service* (DR-0014). Where a core
 judgment must become a delivery — a sync PR, a watch or migration work item,
@@ -15,7 +28,9 @@ The boundary rule (DR-0015): core may understand vendor file *formats*
 (pipeline YAML dialects, CODEOWNERS syntax, output conventions); it must not
 call vendor *services*. Handlers are where services live.
 
-## 1. Invocation contract
+## Behavior
+
+### 1. Invocation contract
 
 - The engine runs the handler command with the intent document as **JSON on
   stdin** (UTF-8, one document).
@@ -31,7 +46,7 @@ call vendor *services*. Handlers are where services live.
   credentials like `VENDKIT_TOKEN_OPEN_PR` reach them) and run with the
   consumer root as working directory.
 
-## 2. Envelope
+### 2. Envelope
 
 Every intent document carries:
 
@@ -46,9 +61,9 @@ Every intent document carries:
 A handler must reject (nonzero) a protocol version or kind it does not
 understand — silent misdelivery is worse than a red run.
 
-## 3. Kinds
+### 3. Kinds
 
-### `pr` — deliver the sync PR
+#### `pr` — deliver the sync PR
 
 Sent by `sync-pipeline` after the branch is committed and pushed (the engine
 does all git work itself; the handler only speaks to the PR API).
@@ -73,7 +88,7 @@ an open PR with that head exists the handler must *update* it (title/body),
 never open a duplicate. The handler must never merge, approve, or bypass
 review (INV-10) — a handler with merge capability is non-conforming.
 
-### `handoff` — deliver a finding as a work item
+#### `handoff` — deliver a finding as a work item
 
 Sent by `watch` (and migration handoff) per actionable finding.
 
@@ -94,7 +109,7 @@ exists (GitHub: open issue labelled with the key; ADO: active work item
 tagged with it), append the report as a comment — a chronological trail —
 rather than creating a sibling.
 
-### `fact-verify` — verify an attested platform fact
+#### `fact-verify` — verify an attested platform fact
 
 Sent by `conformance --verify-attestations` for each `attested` rule result.
 
@@ -133,7 +148,7 @@ needs a read-scoped token: `VENDKIT_TOKEN_FACT_VERIFY` (GitHub falls back to
 `GITHUB_TOKEN`/`GH_TOKEN` with `repo`/`administration:read`; ADO falls back to
 `SYSTEM_ACCESSTOKEN`/`ADO_PAT` with policy read).
 
-### `push-hint` — nudge a subscriber's sync pipeline
+#### `push-hint` — nudge a subscriber's sync pipeline
 
 Sent by `push-hint` (the publisher-side dispatch step) once per **github-actions**
 subscriber after a release is published (platform-integration spec §4, DR-0006).
@@ -161,7 +176,7 @@ exit for one subscriber as a warning and continues — but the handler itself
 still obeys the protocol (a genuine API failure is a nonzero exit; the engine
 decides it is non-fatal *here* because push is best-effort).
 
-## 4. Configuration and resolution
+### 4. Configuration and resolution
 
 Handlers are wired per slice in the consumer config (onboarding spec §1):
 
@@ -190,7 +205,7 @@ behaviour is defined per producer and always visible, never silent:
 - `fact-verify` unwired → `--verify-attestations` is a usage error; without
   the flag, attestation degradation applies as normal.
 
-## 5. Upstream reads are NOT handler territory
+### 5. Upstream reads are NOT handler territory
 
 Listing a publisher's release tags and reading a file at a tag are plain
 **git protocol** operations (`internal/core/upstream.go`): identical against GitHub,
@@ -199,7 +214,7 @@ handler, no vendor API. The only vendor knowledge is the clone-URL template
 that expands an `owner/repo` shorthand (`github`) or `org/project/repo`
 (`azure-repos`); a full URL or filesystem path is used verbatim.
 
-## 6. Reference handlers
+### 6. Reference handlers
 
 Shipped in-tree, released and conformance-tested with the framework:
 
@@ -218,7 +233,7 @@ Writing a third handler (Jira, Slack, GitLab…) = one executable + a
 against the journal handler; a new handler can be smoke-tested by pointing
 `VENDKIT_HANDLER_HANDOFF` at it and running `vendkit watch`.
 
-## 7. Security posture
+### 7. Security posture
 
 Handlers run with the credentials the consumer's pipeline grants them —
 least scope per purpose (security model §4). The engine passes no secrets in
@@ -226,3 +241,26 @@ the intent document; credentials travel by environment only. A handler is
 consumer-configured, consumer-audited code: it lives in the consumer's trust
 boundary like any other pipeline step, and the reference handlers are
 manifest-tracked, gate-verified files when the machinery slice is vendored.
+
+## Acceptance
+
+A handler is conforming when it satisfies all of the following, and the
+framework provides a way to observe each.
+
+- **It rejects what it does not understand.** An unknown protocol version or
+  `kind` exits nonzero rather than silently succeeding, because a silent
+  misdelivery is worse than a red run.
+- **It separates delivery from judgment.** Exit 0 means delivered and nonzero
+  means infrastructure failure; no decision is encoded in the exit code,
+  because every judgment happened in core before the handler ran.
+- **It is idempotent on its key.** A `pr` intent keyed on the deterministic
+  head branch updates an existing PR, and a `handoff` intent keyed on
+  `dedup_key` comments on an existing item. Neither opens a duplicate.
+- **It carries no merge capability.** A handler able to merge, approve, or
+  bypass review is non-conforming (INV-10).
+
+The neutral journal handler in `internal/e2e/journalhandler` records intents
+to `VENDKIT_NEUTRAL_JOURNAL` and is what the scenario kit asserts these
+properties against. A third-party handler is smoke-tested the same way, by
+pointing `VENDKIT_HANDLER_<KIND>` at it and running the lane that produces
+that intent.

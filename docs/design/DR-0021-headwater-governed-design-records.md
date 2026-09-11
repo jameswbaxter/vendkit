@@ -1,18 +1,18 @@
 ---
 id: DR-0021
-title: "Design records are a governed corpus, typed and indexed by a pinned Headwater"
+title: "The design records and the specifications are a governed corpus, typed and indexed by a pinned Headwater"
 status: current
 status_since: "2026-09-11"
 last_verified: "2026-09-11"
-summary: "The design-record shelf becomes a typed corpus checked in CI by a pinned Headwater binary, which also generates the shelf index the repository used to maintain by hand."
+summary: "Both documentation shelves become a typed corpus checked in CI by a pinned Headwater binary, with the specifications split into functional and technical layers and both shelf indexes generated."
 ---
 
-# DR-0021 — Design records are a governed corpus, typed and indexed by a pinned Headwater
+# DR-0021 — The design records and the specifications are a governed corpus, typed and indexed by a pinned Headwater
 
 ## Context
 
 Two properties of `docs/design/` were asserted by convention and held by
-nobody.
+nobody, and `docs/specs/` had no stated structure at all.
 
 The first is the shelf index. `docs/design/README.md` carried a hand-written
 table of every DR and its status. Nothing compared that table to the shelf, so
@@ -29,6 +29,14 @@ of the five records a date at all; their dates survive only in git history.
 Three records carry a `Supersedes:` line whose meaning is partial — one
 *refines*, one *amends*, one supersedes a named part of an earlier record —
 and no reader or tool could tell those from a full replacement.
+
+`docs/specs/` had a third problem, and a larger one. Twelve documents sat in
+one flat directory with no stated relationship between them, and nothing said
+which were contracts and which were mechanism. A reader asking "what may I rely
+on" and a reader asking "how is this built" opened the same directory and got
+the same undifferentiated list. Their headings were bespoke and numbered per
+document, so nothing could check that a specification stated its scope, and
+most of them never said how anyone would know the specification held.
 
 Headwater is a taxonomy-driven typing and validation engine for documentation
 corpora. Its `decision-record` bundle matches this shelf's tradition closely:
@@ -67,10 +75,29 @@ blocker — no release binary existed, only a `cargo build` from source. Version
    its `summary`, and `generate --check` fails CI when the committed file and
    the shelf disagree. The hand-maintained status table is retired.
 
-5. **The scope is the design shelf only.** `docs/specs/` stays ungoverned:
-   those documents map only loosely onto the `design-spec` and
-   `standards-spec` bundles, and a taxonomy fit for that shelf is a separate
-   decision to be taken after this one has run for a while.
+5. **The component specifications take the functional/technical ladder.**
+   `docs/specs/` becomes a second governed shelf, heterogeneous and
+   discriminated by the `spec_layer` facet, so one directory holds both rungs
+   and the facet says which each document is. A `functional_spec` states what
+   a caller may rely on and requires Scope, Behavior and Acceptance; a
+   `technical_spec` states how that is realized and requires Scope, Design and
+   Conformance. Seven documents are functional — the command surface, the
+   handler protocol, the export declaration, migrations, conformance, releases
+   and the security model — and five are technical: the manifest and gate, the
+   sync lane, release watch, platform integration and onboarding.
+
+   The prose is refactored to fit, because the section requirements of a
+   bundle kind cannot be relaxed: an overlay `override` does not commute with
+   the `add` a bundle uses to declare a kind, so the sections are what the
+   package says they are. Every existing section keeps its number and its
+   position and is demoted one level, so the section references other specs
+   make (`conformance spec §4`) keep resolving; what is new is a Scope lead-in
+   and a closing Acceptance or Conformance section.
+
+   Where a technical specification realizes a functional one, the pair is
+   declared as a reciprocal `realizes` edge. `docs/architecture.md` and
+   `docs/testing.md` stay excluded with stated reasons: they describe the whole
+   system rather than one component, and no kind in this package fits them.
 
 6. **Existing records keep their prose.** Accepted DRs are immutable, so the
    backfill adds front matter and removes the header lines that the front
@@ -90,10 +117,24 @@ blocker — no release binary existed, only a `cargo build` from source. Version
   invisible to a program that only counts files. It is also a second
   docs-shaped tool to own.
 
-- **Adopt Headwater across all of `docs/`.** Rejected on fit rather
-  than on principle. The specs shelf would need taxonomy adaptation the design
-  shelf does not, and adapting a taxonomy while also learning what the engine
-  does in CI conflates two risks. Point 5 holds the question open.
+- **Govern the specs with the base `specification` kind and relaxed
+  sections.** The base kind requires only Scope and Behavior, and unlike a
+  bundle kind it *can* be overridden from the overlay, so its section list
+  could have been emptied to match the headings the specs already had. It was
+  measured: doing so leaves the corpus with front matter and nothing else,
+  because the ladder is where the value is. No `spec_layer` discriminator, no
+  `realizes` edge between a contract and its realization, and no `regulates`
+  edge from a standard. That is governance theatre — a checker that types
+  documents it cannot say anything about — so the editorial cost of the real
+  sections was taken instead.
+
+- **Adopt the `standard` kind for the security model.** It fits: a standard
+  sits above the ladder, requires Scope, Requirements and Conformance, and
+  `regulates` the functional specs it binds. It was not taken because the
+  package's standards shelf is a separate path, and two shelves cannot both
+  claim `docs/specs/**`. Moving the file would rewrite every cross-reference to
+  it for a gain the `functional_spec` kind already delivers. The same reasoning
+  applies to `COMPATIBILITY.md`, which sits outside `docs/` entirely.
 
 - **Build the engine from source in CI.** This is what 0.1.0 forced and what
   deferred the decision in #20. A Rust toolchain in the docs job reintroduces
@@ -111,7 +152,22 @@ blocker — no release binary existed, only a `cargo build` from source. Version
 
 - The DR index cannot go stale without CI saying so, and it now carries each
   record's summary, so the shelf is scannable in a way the status table was
-  not.
+  not. `docs/specs/README.md` is generated on the same terms, which is an
+  index the specs shelf never had at all.
+
+- Every specification now states its layer, and the ladder is load-bearing
+  rather than decorative: a reader who wants the contract reads a
+  `functional_spec`, and one who wants the mechanism follows its `realizes`
+  edge down. A functional spec that nothing realizes raises a warning after
+  ninety days, which is the corpus asking whether a requirement was ever
+  built. Migrations and the security model sit unrealized today, honestly, and
+  will raise that warning.
+
+- Each specification now carries an Acceptance or Conformance section, which
+  is the part most of them lacked. Writing them surfaced what was already
+  true and merely unstated: that the command surface is locked by a frozen
+  snapshot test, that a migration is done when the verifier says so, and that
+  "fully onboarded" means `vendkit conformance --strict` passing.
 
 - A new DR has obligations a new file did not: front matter, the three
   required sections, and an identifier claim under `.headwater/ids/`. The

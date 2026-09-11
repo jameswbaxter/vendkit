@@ -10,6 +10,13 @@ exists.
   `docs/design/` (DRs). A PR that changes behaviour updates the spec in the
   same PR; a PR that changes a *decision* adds a superseding DR — accepted DRs
   are immutable.
+- **Specs come in two layers** (DR-0021). A *functional* spec states what a
+  caller may rely on and carries Scope, Behavior and Acceptance. A *technical*
+  spec states how that is realized and carries Scope, Design and Conformance.
+  The `spec_layer` front-matter facet says which, the required sections are
+  checked, and a technical spec names the functional one it `realizes` — an
+  edge both ends must declare. Never edit `docs/specs/README.md` by hand; it is
+  generated.
 - **Design records are governed** (DR-0021). IDs are `DR-NNNN`, allocated
   sequentially and never reused. Copy
   [docs/design/TEMPLATE.md](docs/design/TEMPLATE.md) — its front matter is what

@@ -1,8 +1,12 @@
-# The consumer declaration for the Headwater docs-governance pilot (DR-0021).
+# The consumer declaration for the Headwater docs-governance adoption (DR-0021).
 #
-# Scope is the design-record shelf only. `internal/docsgen` still renders the
-# site (DR-0018); Headwater types and checks this shelf and generates its index,
-# and is never linked into `cmd/vendkit`.
+# Two shelves are governed: the design records under `docs/design/`, and the
+# component specifications under `docs/specs/`, which are split into functional
+# and technical layers by the `spec_layer` facet.
+#
+# `internal/docsgen` still renders the site (DR-0018); Headwater types and
+# checks these shelves and generates their indexes, and is never linked into
+# `cmd/vendkit`.
 #
 # `headwater taxonomy resolve` reads this and writes .headwater/taxonomy.lock.
 # Everything after that reads the lock and never these sources.
@@ -11,13 +15,19 @@ taxonomy:
   package: headwater/standard
   version: 4.2.0
   digest: sha256:961ecf2ae2c3c74f251adea575d16b2efda37d9a7fb10d2889e12bb77f4c2eb5
-  bundles: [decision-record, evidence-and-obligation]
+  bundles: [decision-record, evidence-and-obligation, standards-spec]
   overlay: .headwater/overlay.yml
 
 corpus:
-  root: docs/design
+  root: docs
   exclude:
     - path: docs/design/README.md
       reason: the generated shelf index, a projection of the shelf and not a member of it
     - path: docs/design/TEMPLATE.md
       reason: the blank DR form, carrying placeholder headings and no decision
+    - path: docs/specs/README.md
+      reason: the generated shelf index, a projection of the shelf and not a member of it
+    - path: docs/architecture.md
+      reason: a layering overview that no shelf reaches; it describes the whole system rather than one component, and no kind of this taxonomy fits it yet
+    - path: docs/testing.md
+      reason: a testing strategy that no shelf reaches; its conformance-kit obligations are cited by the specs rather than stated as one component's behaviour

@@ -63,21 +63,25 @@ func parseLedger(t *testing.T, root string) []ledgerEntry {
 		t.Fatalf("read %s: %v", path, err)
 	}
 	lines := strings.Split(string(data), "\n")
-	start := -1
+	// Level-agnostic: the ledger is nested under the spec's Conformance
+	// section (DR-0021), and its depth is the taxonomy's business, not this
+	// test's. Match the heading by text and stop at the next heading that is
+	// no deeper than it.
+	start, depth := -1, 0
 	for i, ln := range lines {
-		if strings.HasPrefix(ln, "## ") && strings.Contains(ln, "Behavioural differences ledger") {
-			start = i
+		if d := headingDepth(ln); d > 0 && strings.Contains(ln, "Behavioural differences ledger") {
+			start, depth = i, d
 			break
 		}
 	}
 	if start < 0 {
-		t.Fatal("could not find the '## 6. Behavioural differences ledger' section")
+		t.Fatal("could not find the 'Behavioural differences ledger' section")
 	}
 	rowRx := regexp.MustCompile(`^\|\s*(\d+)\s*\|(.+?)\|(.+?)\|\s*$`)
 	var entries []ledgerEntry
 	for i := start + 1; i < len(lines); i++ {
-		if strings.HasPrefix(lines[i], "## ") {
-			break // next section
+		if d := headingDepth(lines[i]); d > 0 && d <= depth {
+			break // next section at the same level or shallower
 		}
 		m := rowRx.FindStringSubmatch(lines[i])
 		if m == nil {
@@ -109,8 +113,23 @@ func TestLedgerNumberingContiguous(t *testing.T) {
 	}
 }
 
+// headingDepth returns the level of a Markdown ATX heading, or 0 for any other
+// line. A heading's depth moved by one when the specs took the functional and
+// technical section shapes (DR-0021), so the parsers here read depth rather
+// than assuming it.
+func headingDepth(line string) int {
+	n := 0
+	for n < len(line) && line[n] == '#' {
+		n++
+	}
+	if n == 0 || n > 6 || n >= len(line) || line[n] != ' ' {
+		return 0
+	}
+	return n
+}
+
 // headingExists reports whether the file at path has a Markdown heading whose
-// text begins with "<sec>." — e.g. sec="3" matches "## 3. Attestations".
+// text begins with "<sec>." — e.g. sec="3" matches "### 3. Attestations".
 func headingExists(t *testing.T, path, sec string) bool {
 	t.Helper()
 	data, err := os.ReadFile(path)

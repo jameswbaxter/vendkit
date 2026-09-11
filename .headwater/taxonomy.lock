@@ -22,7 +22,7 @@
 
 lock:
   format: 3
-  digest: sha256:bea207d7fb30dd2fd78ce38ed62a84eb70431308a2cb9b308021cf7bba688f65
+  digest: sha256:a58e10d0f5d827efcb6a57910e74f9fe3bb514c43346120ba8809512d3fddd2b
   rules: 1
   package: headwater/standard
   version: 4.2.0
@@ -33,8 +33,10 @@ lock:
       digest: sha256:a1d0295f3af618bb371291f264a5f3d85925aabdd171ccea64629ee42a0e1c24
     - path: packages/headwater-standard/bundles/evidence-and-obligation/bundle.yml
       digest: sha256:1092c56eb53e4f4d439e6e15c932087ee84b256eb0fd27cc3edbafb1abb3202f
+    - path: packages/headwater-standard/bundles/standards-spec/bundle.yml
+      digest: sha256:23646425cc7d7e2d69674cf7f8975c3c8f37742774c6b0c088523f957bba54f4
     - path: .headwater/overlay.yml
-      digest: sha256:c53b8455828cfcc4e746504678c06e9150be79dd5911d9c9c319cfa25207029d
+      digest: sha256:9da6f2376a71ce5f9f0e722101a280f2e99828b62a2613761659d44532b106ef
 
 # The resolved taxonomy. The digest above is over this text with the two
 # leading spaces of each line removed, which is the form the resolver writes
@@ -57,6 +59,12 @@ resolved:
       answers:
         - "what does this component do"
         - "what may I rely on"
+    constraint:
+      answers:
+        - "what am I required to do"
+        - "what does this rule out"
+        - "which rule does this document answer to"
+      intent: "state what must hold across the documents and code it governs, and what it rules out"
     evidence:
       answers:
         - "what closed this question"
@@ -122,6 +130,16 @@ resolved:
       role: name
       type: string
       required: false
+      volatility: stable
+    spec_layer:
+      guidance:
+        functional_spec: "the document states what the component does and what a caller may rely on, which is the level a standard binds and the level a reader cites"
+        technical_spec: "the document states how the component is realized, which is the level that changes when the implementation changes and the behavior does not"
+      required: false
+      type: string
+      values:
+        - functional_spec
+        - technical_spec
       volatility: stable
     waiting_on:
       guidance:
@@ -215,6 +233,32 @@ resolved:
       lifecycle: standard
       purpose: evidence
       voice: narrative
+    functional_spec:
+      facets:
+        require:
+          - spec_layer
+      identifier:
+        scheme: functional_spec_id
+      is_a: governed_document
+      lifecycle: standard
+      purpose: behavior
+      relations:
+        expect:
+          - id: functional-realized
+            relation: realized_by
+            to_kind: technical_spec
+            when:
+              status: current
+            within: 90d
+            since: state_entered
+            severity: warn
+            rationale: "a functional spec that nothing realizes is a requirement nobody built"
+      sections:
+        require:
+          - Scope
+          - Behavior
+          - Acceptance
+      voice: declarative
     obligation_record:
       facets:
         require:
@@ -230,6 +274,47 @@ resolved:
           - Context
           - Obligation
           - Discharge
+      voice: declarative
+    standard:
+      facets:
+        forbid:
+          - spec_layer
+      identifier:
+        scheme: standard_id
+      is_a: governed_document
+      lifecycle: standard
+      purpose: constraint
+      relations:
+        expect:
+          - id: standard-applied
+            relation: regulates
+            to_kind: functional_spec
+            when:
+              status: current
+            within: 180d
+            since: state_entered
+            severity: warn
+            rationale: "a standard that governs no document governs nothing, and a corpus keeps it because somebody wrote it"
+      sections:
+        require:
+          - Scope
+          - Requirements
+          - Conformance
+      voice: declarative
+    technical_spec:
+      facets:
+        require:
+          - spec_layer
+      identifier:
+        scheme: technical_spec_id
+      is_a: governed_document
+      lifecycle: standard
+      purpose: behavior
+      sections:
+        require:
+          - Scope
+          - Design
+          - Conformance
       voice: declarative
   relations:
     supersedes:
@@ -289,6 +374,28 @@ resolved:
       reciprocal: required
       to:
         - obligation_record
+    realizes:
+      created_by: scaffold
+      family: derivation
+      from:
+        - technical_spec
+      inverse: realized_by
+      nuclearity: nucleus-satellite
+      nucleus: to
+      reciprocal: required
+      to:
+        - functional_spec
+    regulates:
+      cardinality: many
+      created_by: agent
+      family: governance
+      from:
+        - standard
+      inverse: regulated_by
+      reciprocal: required
+      to:
+        - functional_spec
+        - technical_spec
   shelves:
     decisions:
       path: "docs/design/**"
@@ -301,6 +408,14 @@ resolved:
       homogeneous: true
       kind: specification
       title: Specifications
+    component_specs:
+      discriminator: spec_layer
+      homogeneous: false
+      kinds:
+        - functional_spec
+        - technical_spec
+      path: "docs/component-specs/**"
+      title: "Component specifications"
     evaluations:
       homogeneous: true
       kind: evaluation
@@ -312,15 +427,40 @@ resolved:
       layout: "{seq:04d}-{slug}.md"
       path: "docs/obligations/**"
       title: "Obligation records"
+    specs:
+      discriminator: spec_layer
+      homogeneous: false
+      kinds:
+        - functional_spec
+        - technical_spec
+      path: "docs/specs/**"
+      title: "Component specifications"
+    standards:
+      homogeneous: true
+      kind: standard
+      path: "docs/standards/**"
+      title: Standards
   identifier_schemes:
     decision_id:
       pattern: "DR-{seq:04d}"
       allocation: reconcile-first
       namespace: VK
+    functional_spec_id:
+      allocation: minted-once
+      namespace: VK
+      pattern: "{namespace}-FS-{slug}"
     obligation_record_id:
       allocation: reconcile-first
       namespace: VK
       pattern: "{namespace}-OBL-{seq:04d}"
+    standard_id:
+      allocation: minted-once
+      namespace: VK
+      pattern: "{namespace}-STD-{slug}"
+    technical_spec_id:
+      allocation: minted-once
+      namespace: VK
+      pattern: "{namespace}-TS-{slug}"
   core:
     requires:
       - facet_role: state
@@ -335,6 +475,7 @@ resolved:
       for:
         - decisions
         - specifications
+        - specs
       output: "{shelf}/README.md"
   obligations:
     OB-COV-1:
@@ -558,6 +699,35 @@ resolved:
       rationale: "Two decisions in one record cannot be superseded apart, so the first of them to fall takes the second with it or keeps it alive under a heading nobody reads"
       severity: medium
       statement: "A decision record records one decision"
+    OB-SS-1:
+      class: coherence
+      disposition:
+        unverifiable:
+          reasoning: "To decide that one document meets a requirement of another is to reason about what the prose of both asserts, which spec 1 forswears. The edges say which standard reaches which specification and no rule reads the requirement under the heading"
+      prevents: content.inconsistent
+      rationale: "This is the whole point of writing a standard down. A corpus that keeps the ladder and never checks the rungs has the paperwork of conformance and none of it, and the reader who cites the standard learns nothing about the component that answers to it"
+      severity: high
+      statement: "A technical specification meets every requirement of the standards that regulate its functional specification"
+    OB-SS-2:
+      class: cohesion
+      disposition:
+        gap:
+          owner: "the standards-spec entry"
+          target: "sub-document identity, which no declaration in this language holds. Identity is per document, and a requirement is a heading inside one. Contract sidecars are where the answer probably lives"
+      prevents: content.incomplete
+      rationale: "A requirement that no specification answers is either unmet or met somewhere nobody can find, and the two look the same from the standard. Traceability is the property every cited source in this tradition asks for by name"
+      severity: high
+      statement: "Every requirement of a standard is traceable to the specification that meets it"
+    OB-SS-3:
+      class: cohesion
+      disposition:
+        gap:
+          owner: "the standards-spec entry"
+          target: "the `does_not_comply_with` relation, which spec 2 names as package content under `$package.optional` and the package holds nothing there. The address is reserved, so this entry may not declare it"
+      prevents: content.incomplete
+      rationale: "An unregistered deviation is the failure mode every one of these traditions was written against. The corpus that holds the standard reads as conformant, the component that departed from it reads as governed, and nobody owns the difference"
+      severity: high
+      statement: "A deviation from a current standard is registered with an owner and an expiry"
   controls:
     CT-COV-1:
       mechanism: "phase:census.classification"
